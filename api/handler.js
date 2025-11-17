@@ -445,8 +445,8 @@ if (req.method !== "POST") {
   }
 }
 
-// Rota: /api/historico_pedidos
-if (url.startsWith("/api/historico_pedidos")) {
+// Rota: /api/orders
+if (url.startsWith("/api/orders")) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Método não permitido" });
   }
