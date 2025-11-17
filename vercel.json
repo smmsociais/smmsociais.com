@@ -9,6 +9,7 @@
       { "source": "/orders", "destination": "/orders.html" },
       { "source": "/services", "destination": "/services.html" },
       { "source": "/servicos", "destination": "/servicos.html" },
+      { "source": "/affiliates", "destination": "/affiliates.html" },
       { "source": "/massorder", "destination": "/massorder.html" },
       { "source": "/addfunds", "destination": "/addfunds.html" },
       { "source": "/account", "destination": "/account.html" },
