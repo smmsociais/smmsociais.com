@@ -391,13 +391,13 @@
     </script>
     <script type="text/javascript" src="https://storage.perfectcdn.com/global/zfq5snh4og5je3zk.js">
     </script>
-    
+
     <!-- Script para carregar serviços da API -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Função para carregar serviços da API
             function loadServices() {
-                fetch('https://smmsociais.com/api/servicos')
+                fetch('https://smmsociais.com/api/servico')
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('Erro ao carregar serviços da API');
@@ -410,7 +410,7 @@
                     })
                     .catch(error => {
                         console.error('Erro:', error);
-                        document.getElementById('service-tbody').innerHTML = 
+                        document.getElementById('service-tbody').innerHTML =
                             '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
                     });
             }
@@ -419,18 +419,18 @@
             function renderServices(services) {
                 const tbody = document.getElementById('service-tbody');
                 const loadingRow = document.getElementById('loading-row');
-                
+
                 if (loadingRow) {
                     loadingRow.remove();
                 }
-                
+
                 tbody.innerHTML = '';
-                
+
                 if (!services || services.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
                     return;
                 }
-                
+
                 // Agrupar serviços por categoria
                 const servicesByCategory = {};
                 services.forEach(service => {
@@ -439,12 +439,12 @@
                     }
                     servicesByCategory[service.category_id].push(service);
                 });
-                
+
                 // Renderizar serviços por categoria
                 Object.keys(servicesByCategory).forEach(categoryId => {
                     const categoryServices = servicesByCategory[categoryId];
                     const firstService = categoryServices[0];
-                    
+
                     // Adicionar título da categoria
                     const categoryRow = document.createElement('tr');
                     categoryRow.className = 'services-list-category-title';
@@ -460,18 +460,18 @@
                         </td>
                     `;
                     tbody.appendChild(categoryRow);
-                    
+
                     // Adicionar serviços da categoria
                     categoryServices.forEach(service => {
                         const serviceRow = document.createElement('tr');
                         serviceRow.setAttribute('data-filter-table-category-id', categoryId);
                         serviceRow.setAttribute('data-platform-name', '');
-                        
+
                         const pricePer1000 = service.price_per_1000 ? `R$ ${parseFloat(service.price_per_1000).toFixed(2)}` : '-';
                         const minOrder = service.min_order || '-';
                         const maxOrder = service.max_order || '-';
                         const avgTime = service.average_time || '-';
-                        
+
                         serviceRow.innerHTML = `
                             <td data-label="Favorite services">
                                 <a href="#" data-favorite-service-id="${service.id}">
@@ -508,7 +508,7 @@
                         tbody.appendChild(serviceRow);
                     });
                 });
-                
+
                 // Re-inicializar event listeners para os botões de descrição
                 initializeServiceDescriptionButtons();
             }
@@ -517,23 +517,23 @@
             function renderCategories(services) {
                 const categoryMenu = document.getElementById('category-filter-menu');
                 const existingCategories = new Set();
-                
+
                 // Coletar categorias únicas
                 services.forEach(service => {
                     if (service.category_id && service.category_name && !existingCategories.has(service.category_id)) {
                         existingCategories.add(service.category_id);
-                        
+
                         const categoryItem = document.createElement('a');
                         categoryItem.className = 'dropdown-item d-flex align-items-center text-decoration-none';
                         categoryItem.href = '#';
                         categoryItem.setAttribute('data-filter-category-id', service.category_id);
                         categoryItem.setAttribute('data-filter-category-name', service.category_name);
-                        
+
                         categoryItem.innerHTML = `
                             ${service.category_icon ? `<span class="align-middle mr-1">${service.category_icon}</span>` : ''}
                             <div>${service.category_name}</div>
                         `;
-                        
+
                         // Inserir antes do item de favoritos
                         const favoritesItem = categoryMenu.querySelector('[data-filter-category-id="favorites"]');
                         categoryMenu.insertBefore(categoryItem, favoritesItem);
@@ -545,17 +545,17 @@
             function initializeServiceDescriptionButtons() {
                 const viewButtons = document.querySelectorAll('.btn-view-service-description');
                 viewButtons.forEach(button => {
-                    button.addEventListener('click', function() {
+                    button.addEventListener('click', function () {
                         const contentId = this.getAttribute('data-content-id');
                         const serviceId = this.getAttribute('data-service-id');
                         const serviceName = this.getAttribute('data-service-name');
                         const min = this.getAttribute('data-min');
                         const max = this.getAttribute('data-max');
-                        
+
                         const contentElement = document.querySelector(contentId);
                         if (contentElement) {
                             document.querySelector('.service-description-content').innerHTML = contentElement.innerHTML;
-                            
+
                             // Atualizar o botão de criar pedido rápido
                             const quickOrderBtn = document.getElementById('createQuickOrder');
                             quickOrderBtn.setAttribute('data-service-id', serviceId);
@@ -565,14 +565,14 @@
                         }
                     });
                 });
-                
+
                 // Event listener para o botão de criar pedido rápido
-                document.getElementById('createQuickOrder').addEventListener('click', function() {
+                document.getElementById('createQuickOrder').addEventListener('click', function () {
                     const serviceId = this.getAttribute('data-service-id');
                     const serviceName = this.getAttribute('data-service-name');
                     const min = this.getAttribute('data-min');
                     const max = this.getAttribute('data-max');
-                    
+
                     // Redirecionar para a página de novo pedido com os parâmetros do serviço
                     window.location.href = `/?service=${serviceId}`;
                 });
@@ -582,7 +582,7 @@
             loadServices();
         });
     </script>
-    
+
     <script type="text/javascript">
         window.modules.layouts = { "theme_id": 23, "auth": 1, "live": true, "csrftoken": "L1tjeQBUwXhimMFOQW-mfPQhCHSYYdNSO4lVo5RDUQtYLDsvSiSoFVvqlQ8RPukxw255E7UPoz9O3SL0-iRhXQ==" };   </script>
     <script type="text/javascript">
