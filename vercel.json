@@ -12,6 +12,7 @@
       { "source": "/affiliates", "destination": "/affiliates.html" },
       { "source": "/massorder", "destination": "/massorder.html" },
       { "source": "/addfunds", "destination": "/addfunds.html" },
+      { "source": "/como-usar", "destination": "/como-usar.html" },
       { "source": "/account", "destination": "/account.html" },
       { "source": "/recover-password", "destination": "/recover-password.html" },
       { "source": "/reset-password", "destination": "/reset-password.html" },
