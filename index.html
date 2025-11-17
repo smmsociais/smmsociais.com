@@ -1040,7 +1040,7 @@
                     // Salvar o token no localStorage ou sessionStorage
                     localStorage.setItem('token', data.token);
                     // Redirecionar para a página principal ou dashboard
-                    window.location.href = '/dashboard';
+                    window.location.href = '/painel';
                 } else {
                     // Erro no login
                     alert('Erro: ' + data.error);
@@ -1056,7 +1056,7 @@
             const token = localStorage.getItem('token');
             if (token) {
                 // Usuário já está logado, redirecionar
-                window.location.href = '/dashboard';
+                window.location.href = '/painel';
             }
         });
     </script>
