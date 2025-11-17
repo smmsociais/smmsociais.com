@@ -6,65 +6,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Orders</title>
-    <meta name="keywords" content="">
-    <meta name="description" content="">
-    <meta name="google-site-verification" content="" />
-    <meta name="format-detection" content="telephone=no">
-
-    <link rel="shortcut icon" type="image/ico" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-    <link rel="icon" type="image/png" sizes="192x192"
-        href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-    <link rel="icon" type="image/png" sizes="512x512"
-        href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-    <link rel="icon" type="image/png" sizes="16x16" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-    <link rel="apple-touch-icon" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-55XYV3KBYF"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'G-55XYV3KBYF');
-    </script>
-
-    <script>
-        function generateRandomNumber() {
-            return Math.floor(Math.random() * 90000) + 10000;
-        }
-
-        function hideInputAndDiv() {
-            var input = document.getElementById('field-cpf_cnpj');
-            var div = document.getElementById('order_cpf_cnpj');
-
-            if (input) {
-                input.style.display = 'none';
-            }
-
-            if (div) {
-                div.style.display = 'none';
-            }
-        }
-
-        function fillAndHideInput() {
-            var input = document.getElementById('field-cpf_cnpj');
-            if (input) {
-                var randomNumber = generateRandomNumber();
-                input.value = randomNumber;
-                hideInputAndDiv();
-            } else {
-                setTimeout(fillAndHideInput, 100);
-            }
-        }
-
-        fillAndHideInput();
-    </script>
-    <link href="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js" rel="preload" as="script">
-    <link href="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js" rel="preload" as="script">
-    <link href="https://storage.perfectcdn.com/global/2t0wrbkqkg6p2yz4.js" rel="preload" as="script">
-    <link href="https://storage.perfectcdn.com/global/zfq5snh4og5je3zk.js" rel="preload" as="script">
-
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <script>
@@ -383,62 +324,6 @@
     <script type="text/javascript">
         window.modules.alerts = { "alerts": [] };   </script>
     <script type="text/javascript">
-        // BLOQUEAR QUALQUER TIPO DE RECARREGAMENTO AUTOMÁTICO
-        (function() {
-            // Bloquear F5
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'F5' || (e.ctrlKey && e.key === 'r') || (e.key === 'F5')) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }
-            });
-
-            // Bloquear menu de contexto (botão direito)
-            document.addEventListener('contextmenu', function(e) {
-                e.preventDefault();
-                return false;
-            });
-
-            // Bloquear recarregamento via navegador
-            window.addEventListener('beforeunload', function(e) {
-                // Não fazer nada - isso previne o recarregamento
-                return null;
-            });
-
-            // Bloquear qualquer tentativa de recarregamento programático
-            const originalReload = window.location.reload;
-            window.location.reload = function() {
-                console.log('Recarregamento bloqueado');
-                return false;
-            };
-
-            // Bloquear navegação que causaria recarregamento
-            const originalAssign = window.location.assign;
-            window.location.assign = function(url) {
-                console.log('Navegação assign bloqueada para:', url);
-                return false;
-            };
-
-            const originalReplace = window.location.replace;
-            window.location.replace = function(url) {
-                console.log('Navegação replace bloqueada para:', url);
-                return false;
-            };
-
-            // Prevenir recarregamento automático por scripts
-            setInterval(function() {
-                // Monitorar e prevenir qualquer tentativa de recarregamento
-                if (window.performance && window.performance.navigation) {
-                    if (window.performance.navigation.type === 1) {
-                        console.log('Recarregamento de página detectado e bloqueado');
-                    }
-                }
-            }, 1000);
-
-            console.log('Sistema de bloqueio de recarregamento ativado');
-        })();
-
         // Função para determinar o status baseado na URL
         function getStatusFromURL() {
             let path = window.location.pathname.replace(/\/$/, ""); // remove barra final
@@ -454,13 +339,6 @@
             };
 
             return statusMap[path] || 'todos';
-        }
-
-        function getTokenFromCookie() {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; auth=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
         }
 
         function loadToken() {
@@ -642,19 +520,6 @@
                     console.log('Buscar por:', searchTerm);
                 });
             }
-
-            // Prevenir recarregamento por qualquer link que tente recarregar a página
-            document.addEventListener('click', function(e) {
-                const target = e.target.closest('a');
-                if (target && target.getAttribute('href') && 
-                    (target.getAttribute('href') === '#' || 
-                     target.getAttribute('href').includes('javascript') ||
-                     target.getAttribute('onclick'))) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }
-            });
         });
     </script>
 </body>
