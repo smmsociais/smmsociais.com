@@ -1,10 +1,27 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html id="theme_23" lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Histórico de Pedidos - SMM Sociais</title>
+    <meta name="keywords" content="">
+    <meta name="description" content="">
+    <meta name="format-detection" content="telephone=no">
+
+    <link rel="shortcut icon" type="image/ico" href="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png" />
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png" />
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -19,9 +36,6 @@
             --hover-light: #f1f1f1;
             --shadow-light: rgba(0, 0, 0, 0.1);
             --label-light: #586069;
-            --positive-color: #2ecc71;
-            --negative-color: #e74c3c;
-            --neutral-color: #3498db;
 
             --bg-dark: #121212;
             --text-dark: #e0e0e0;
@@ -34,11 +48,6 @@
             --hover-dark: #2d2d2d;
             --shadow-dark: rgba(0, 0, 0, 0.3);
             --label-dark: #8b949e;
-            --positive-color-dark: #27ae60;
-            --negative-color-dark: #c0392b;
-            --neutral-color-dark: #2980b9;
-            --error-color: #f85149;
-            --success-color-dark: #238636;
 
             --card-radius: 12px;
             --transition: all 0.3s ease;
@@ -53,199 +62,238 @@
             min-height: 100vh;
             transition: var(--transition);
             line-height: 1.6;
-            overflow-x: auto; /* Permite rolagem horizontal */
         }
 
-        /* Header Styles */
-        .header {
+        .wrapper {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 25px;
-            background: var(--primary-gradient);
-            color: white;
-            box-shadow: 0 2px 10px var(--shadow-light);
-            position: relative;
-            z-index: 10;
+            min-height: 100vh;
         }
 
-        .left-header {
+        .wrapper-sidebar-navbar {
+            padding-left: 280px;
+        }
+
+        .wrapper-content {
+            flex: 1;
             display: flex;
-            align-items: center;
-            gap: 20px;
+            flex-direction: column;
         }
 
-        .right-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .logo {
-            height: 32px;
-            margin-right: 10px;
-        }
-
-        /* Balance Styles */
-        .balance-container {
-            background: rgba(0, 0, 0, 0.05);
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .balance-value {
-            color: var(--success-color);
-        }
-
-        .refresh-balance {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-light);
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-        }
-
-        .desktop-balance-container {
-            position: fixed;
-            top: 15px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.05);
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            z-index: 10;
-        }
-
-        .container {
-            background: var(--container-light);
-            border-radius: var(--card-radius);
-            box-shadow: 0 4px 20px var(--shadow-light);
-            overflow: hidden;
-            transition: var(--transition);
-            margin-bottom: 30px;
-            border: 1px solid var(--border-light);
-            width: 100%;
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 25px;
-            overflow-x: auto; /* Permite rolagem horizontal no container */
-        }
-
-        .container-header {
+        .wrapper-content__body {
+            flex: 1;
             padding: 20px;
-            border-bottom: 1px solid var(--border-light);
-            background: var(--primary-gradient);
-            color: white;
         }
 
-        .container-header h2 {
+        /* Sidebar Styles */
+        .component_private_sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--container-light);
+            box-shadow: 2px 0 10px var(--shadow-light);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .component-sidebar__menu {
+            padding: 20px 0;
+        }
+
+        .component-sidebar__menu-logo {
+            padding: 0 20px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 20px;
+        }
+
+        .component-sidebar__menu-brand h3 {
             margin: 0;
             font-size: 1.5rem;
+        }
+
+        .sidebar-block__left-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .component-sidebar__menu-item {
+            margin: 0;
+        }
+
+        .component-sidebar__menu-item-link {
+            display: block;
+            padding: 12px 20px;
+            color: var(--text-light);
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+        }
+
+        .component-sidebar__menu-item-link:hover {
+            background-color: var(--hover-light);
+            color: var(--button-light);
+        }
+
+        .component-sidebar__menu-item-active .component-sidebar__menu-item-link {
+            background-color: var(--hover-light);
+            border-left-color: var(--button-light);
+            color: var(--button-light);
             font-weight: 600;
         }
 
-        .container-body {
-            padding: 20px;
+        /* Header Balance */
+        .component-navbar-balance-item__navbar-private {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: var(--success-color) !important;
         }
 
-        /* Filter Buttons */
-        .filter-buttons {
+        /* Content Styles */
+        .container-fluid {
+            padding: 0 15px;
+        }
+
+        .orders-history__margin-tab {
+            margin-bottom: 20px;
+        }
+
+        .component_status_tabs .nav-pills {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            scrollbar-width: none;
+            flex-wrap: wrap;
         }
 
-        .filter-buttons::-webkit-scrollbar {
-            display: none;
-        }
-
-        .filter-button {
-            padding: 10px 15px;
-            border: none;
+        .component_status_tabs .nav-link {
+            padding: 10px 20px;
             border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            white-space: nowrap;
             background-color: var(--hover-light);
             color: var(--text-light);
-            transition: var(--transition);
             text-decoration: none;
-            display: inline-block;
-            flex-shrink: 0;
+            transition: var(--transition);
+            border: none;
         }
 
-        .filter-button.active {
+        .component_status_tabs .nav-link.active {
             background-color: var(--button-light);
             color: white;
         }
 
-        .filter-button:hover {
+        .component_status_tabs .nav-link:hover {
             background-color: var(--button-light);
             color: white;
         }
 
         /* Table Styles */
-        table {
+        .orders-history__margin-table {
+            margin-bottom: 20px;
+        }
+
+        .table-bg {
+            background: var(--container-light);
+            border-radius: var(--card-radius);
+            box-shadow: 0 2px 10px var(--shadow-light);
+            overflow: hidden;
+        }
+
+        .table-wr {
+            overflow-x: auto;
+        }
+
+        .table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            min-width: 800px; /* Aumentei para garantir que a tabela tenha espaço suficiente */
-            table-layout: auto;
-            white-space: nowrap;
+            margin-bottom: 0;
         }
 
-        th,
-        td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-light);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        th {
-            font-weight: 600;
+        .table thead th {
             background-color: rgba(0, 0, 0, 0.02);
+            border-bottom: 2px solid var(--border-light);
+            padding: 15px;
+            font-weight: 600;
+            text-align: left;
+            white-space: nowrap;
         }
 
-        tr:hover {
+        .table tbody td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
             background-color: var(--hover-light);
         }
 
-        .link-cell {
+        .table-link a {
+            color: var(--button-light);
+            text-decoration: none;
             max-width: 200px;
+            display: inline-block;
             overflow: hidden;
             text-overflow: ellipsis;
-            word-break: break-all;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        .table-link a:hover {
+            text-decoration: underline;
+        }
+
+        .nowrap {
             white-space: nowrap;
         }
 
-        .date-cell {
-            min-width: 140px;
+        /* Search Form */
+        .component_form_group {
+            margin-bottom: 0;
+        }
+
+        .input-group {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .form-control {
+            border: 1px solid var(--border-light);
+            border-radius: 6px 0 0 6px;
+            padding: 10px 15px;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--button-light);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .btn-big-secondary {
+            background-color: var(--button-light);
+            border: 1px solid var(--button-light);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 0 6px 6px 0;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-big-secondary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
         }
 
         /* Status Badges */
         .status {
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: bold;
             text-align: center;
             white-space: nowrap;
+            display: inline-block;
         }
 
         .status-pending {
@@ -268,312 +316,185 @@
             color: #721c24;
         }
 
-        /* Menu Styles */
-        .menu-item[href="orders"] {
-            color: white;
-            font-weight: bold;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-left: 3px solid white;
-        }
-
-        .menu-toggle {
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-        }
-
-        .menu-toggle span {
-            display: block;
-            height: 3px;
-            width: 100%;
-            background-color: white;
-            border-radius: 3px;
-            transition: var(--transition);
-        }
-
-        .menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+        /* Mobile Navigation */
+        .navbar-private__header {
             display: none;
-            backdrop-filter: blur(3px);
         }
 
-        .menu-content {
-            position: fixed;
-            top: 0;
-            left: -300px;
-            width: 280px;
-            height: 100%;
-            background: var(--container-light);
-            box-shadow: 2px 0 15px var(--shadow-light);
-            transition: var(--transition);
-            padding: 20px 0;
-            z-index: 1001;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        .menu-content.active {
-            left: 0;
-        }
-
-        .menu-overlay.active {
-            display: block;
-        }
-
-        .menu-item {
-            padding: 15px 25px;
-            cursor: pointer;
-            color: var(--text-light);
-            font-size: 16px;
-            text-decoration: none;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .menu-item i {
-            width: 24px;
-            text-align: center;
-        }
-
-        .menu-item:hover {
-            background-color: var(--hover-light);
-        }
-
-        .menu-footer {
-            margin-top: auto;
-            padding: 25px 0;
-            border-top: 1px solid var(--border-light);
-        }
-
-        .menu-logout {
-            padding: 15px 25px;
-            cursor: pointer;
-            color: #dc3545;
-            font-size: 16px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: var(--transition);
-        }
-
-        .menu-logout:hover {
-            background-color: rgba(220, 53, 69, 0.1);
-        }
-
-        /* Desktop Menu */
-        @media (min-width: 992px) {
-            body {
-                padding-left: 280px;
-            }
-
-            .desktop-header {
-                display: none;
-            }
-
-            .menu-toggle {
-                display: none;
-            }
-
-            .menu-content {
-                left: 0;
-                box-shadow: none;
-            }
-
-            .menu-overlay {
-                display: none !important;
-            }
-
-            .logo-mobile {
-                display: none;
-            }
-
-            .menu-close-btn {
-                display: none !important;
-            }
-
-            .desktop-balance-container {
-                display: flex;
-            }
-        }
-
-        @media (max-width: 991px) {
-            .logo-mobile {
-                display: block;
-            }
-
-            body.menu-open .header {
-                display: none;
-            }
-
-            .menu-close-btn {
-                display: block;
-                position: absolute;
-                top: 15px;
-                right: 15px;
-                background: none;
-                border: none;
-                color: #afaeae;
-                font-size: 1.5rem;
-                cursor: pointer;
-                z-index: 1002;
-            }
-
-            .menu-close-btn:hover {
-                color: #dc3545;
-            }
-
-            .desktop-balance-container {
-                display: none;
-            }
-        }
-
-        /* Dark Mode Styles */
+        /* Dark Mode */
         @media (prefers-color-scheme: dark) {
             body {
                 background-color: var(--bg-dark);
                 color: var(--text-dark);
             }
 
-            .header {
-                background: var(--primary-gradient-dark);
-            }
-
-            .container {
+            .component_private_sidebar {
                 background: var(--container-dark);
-                box-shadow: 0 4px 20px var(--shadow-dark);
-                border-color: var(--border-dark);
+                box-shadow: 2px 0 10px var(--shadow-dark);
             }
 
-            .container-header {
-                background: var(--primary-gradient-dark);
-                border-color: var(--border-dark);
-            }
-
-            .filter-button {
-                background-color: var(--hover-dark);
+            .component-sidebar__menu-item-link {
                 color: var(--text-dark);
             }
 
-            .filter-button.active {
-                background-color: var(--button-dark);
-                color: white;
+            .component-sidebar__menu-item-link:hover {
+                background-color: var(--hover-dark);
+                color: var(--button-dark);
             }
 
-            .filter-button:hover {
-                background-color: var(--button-dark);
-                color: white;
+            .component-sidebar__menu-item-active .component-sidebar__menu-item-link {
+                background-color: var(--hover-dark);
+                border-left-color: var(--button-dark);
+                color: var(--button-dark);
             }
 
-            th,
-            td {
-                border-bottom: 1px solid var(--border-dark);
+            .component-sidebar__menu-logo {
+                border-bottom-color: var(--border-dark);
             }
 
-            th {
+            .table-bg {
+                background: var(--container-dark);
+                box-shadow: 0 2px 10px var(--shadow-dark);
+            }
+
+            .table thead th {
                 background-color: rgba(255, 255, 255, 0.05);
+                border-bottom-color: var(--border-dark);
             }
 
-            tr:hover {
+            .table tbody td {
+                border-bottom-color: var(--border-dark);
+            }
+
+            .table tbody tr:hover {
                 background-color: var(--hover-dark);
             }
 
-            .menu-content {
-                background: var(--container-dark);
-                box-shadow: 2px 0 15px var(--shadow-dark);
-            }
-
-            .menu-item {
+            .component_status_tabs .nav-link {
+                background-color: var(--hover-dark);
                 color: var(--text-dark);
             }
 
-            .menu-item:hover {
-                background-color: var(--hover-dark);
+            .component_status_tabs .nav-link.active {
+                background-color: var(--button-dark);
             }
 
-            .menu-footer {
+            .component_status_tabs .nav-link:hover {
+                background-color: var(--button-dark);
+            }
+
+            .form-control {
+                background-color: var(--container-dark);
                 border-color: var(--border-dark);
-            }
-
-            .balance-container,
-            .desktop-balance-container {
-                background: rgba(255, 255, 255, 0.05);
-            }
-
-            .refresh-balance {
                 color: var(--text-dark);
+            }
+
+            .form-control:focus {
+                border-color: var(--button-dark);
+                box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.25);
+            }
+
+            .component-navbar-balance-item__navbar-private {
+                background: rgba(255, 255, 255, 0.05);
+                color: var(--success-dark) !important;
             }
         }
 
-        /* Responsive Styles */
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-                width: calc(100% - 40px);
+        /* Responsive */
+        @media (max-width: 991px) {
+            .wrapper-sidebar-navbar {
+                padding-left: 0;
             }
 
-            .filter-buttons {
-                flex-direction: column; /* Botões um abaixo do outro no mobile */
-                gap: 8px;
+            .component_private_sidebar {
+                transform: translateX(-100%);
+                transition: var(--transition);
             }
 
-            .filter-button {
-                padding: 12px 15px;
-                font-size: 14px;
-                text-align: center;
+            .component_private_sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .navbar-private__header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 15px;
+                background: var(--container-light);
+                border-bottom: 1px solid var(--border-light);
+            }
+
+            .navbar-toggler {
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 5px;
+            }
+
+            .navbar-burger {
+                display: flex;
+                flex-direction: column;
+                width: 20px;
+                height: 16px;
+                position: relative;
+            }
+
+            .navbar-burger-line {
+                display: block;
+                height: 2px;
                 width: 100%;
+                background-color: var(--text-light);
+                margin: 2px 0;
+                transition: var(--transition);
             }
 
-            th,
-            td {
-                padding: 10px 12px;
-                font-size: 13px;
+            .component_status_tabs .nav-pills {
+                flex-direction: column;
             }
-            
-            .link-cell {
-                max-width: 120px;
+
+            .component_status_tabs .nav-link {
+                text-align: center;
             }
-            
-            .date-cell {
-                min-width: 120px;
+
+            .input-group {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .wrapper-content__body {
+                padding: 15px;
+            }
+
+            .table thead th,
+            .table tbody td {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+
+            .table-link a {
+                max-width: 150px;
             }
         }
 
         @media (max-width: 480px) {
-            th,
-            td {
-                padding: 8px 10px;
+            .wrapper-content__body {
+                padding: 10px;
+            }
+
+            .table thead th,
+            .table tbody td {
+                padding: 6px 8px;
                 font-size: 12px;
             }
 
-            .status {
-                font-size: 10px;
-                padding: 4px 8px;
+            .table-link a {
+                max-width: 120px;
             }
 
-            .filter-button {
-                padding: 10px 12px;
-                font-size: 13px;
-            }
-            
-            .link-cell {
-                max-width: 100px;
-            }
-            
-            .date-cell {
-                min-width: 100px;
+            .status {
+                padding: 4px 8px;
+                font-size: 11px;
             }
         }
 
@@ -583,7 +504,6 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -593,196 +513,216 @@
         .fade-in {
             animation: fadeIn 0.5s ease forwards;
         }
-
-        body {
-            visibility: hidden;
-        }
-
-        body.loaded {
-            visibility: visible;
-        }
-        
-        /* Melhorias para separação entre link e data */
-        .table-row {
-            display: table-row;
-        }
-        
-        .link-date-container {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        @media (min-width: 769px) {
-            .link-date-container {
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-            }
-        }
     </style>
 </head>
 
-<body>
-    <!-- Menu Lateral para Desktop -->
-    <div class="menu-content" id="menuContent">
-        <!-- Botão de fechar (visível apenas no mobile) -->
-        <button class="menu-close-btn" id="menuCloseBtn">&times;</button>
-
-        <div style="padding: 20px; text-align: left; margin-top: -20px;" class="logo-desktop">
-            <a href="painel">
-                <img src="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png"
-                    alt="Logo SMM Sociais" class="logo" style="max-width: 80%;">
-            </a>
-        </div>
-        <a class="menu-item" href="painel"><i class="fas fa-plus-circle"></i> Novo Pedido</a>
-        <a class="menu-item" href="services"><i class="fas fa-list"></i> Serviços</a>
-        <a class="menu-item" href="orders"><i class="fas fa-tasks"></i> Ordens</a>
-        <a class="menu-item" href="massorder"><i class="fas fa-layer-group"></i> Pedido em Massa</a>
-        <a class="menu-item" href="addfunds"><i class="fas fa-money-bill-wave"></i> Adicionar Saldo</a>
-        <a class="menu-item" href="profile"><i class="fas fa-user-cog"></i> Minha Conta</a>
-
-        <div class="menu-footer">
-            <a class="menu-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
-        </div>
-    </div>
-
-    <!-- Saldo para Desktop -->
-    <div class="desktop-balance-container">
-        <span class="balance-value" id="desktopUserBalance">R$ 0,00</span>
-    </div>
-
-    <!-- Overlay do Menu -->
-    <div class="menu-overlay" id="menuOverlay"></div>
-
-    <!-- Header para Mobile -->
-    <div class="header desktop-header">
-        <div class="left-header">
-            <div class="menu-toggle" id="menuToggle">
-                <span></span>
-                <span></span>
-                <span></span>
+<body class="body body-internal">
+    <div class="wrapper wrapper-sidebar-navbar">
+        <!-- Menu Lateral -->
+        <div class="component_private_sidebar" id="sidebar">
+            <div class="component-sidebar__menu">
+                <div class="component-sidebar__menu-logo">
+                    <a href="painel" class="component-navbar-brand component-sidebar__menu-brand">
+                        <img src="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png" 
+                             alt="Logo SMM Sociais" style="max-width: 80%; height: auto;">
+                    </a>
+                </div>
+                <ul class="sidebar-block__left-menu">
+                    <li class="component-sidebar__menu-item">
+                        <a class="component-sidebar__menu-item-link" href="painel">
+                            <i class="fas fa-plus-circle" style="width: 20px; margin-right: 10px;"></i>
+                            Novo pedido
+                        </a>
+                    </li>
+                    <li class="component-sidebar__menu-item">
+                        <a class="component-sidebar__menu-item-link" href="services">
+                            <i class="fas fa-list" style="width: 20px; margin-right: 10px;"></i>
+                            Serviços
+                        </a>
+                    </li>
+                    <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
+                        <a class="component-sidebar__menu-item-link" href="orders">
+                            <i class="fas fa-tasks" style="width: 20px; margin-right: 10px;"></i>
+                            Ordens
+                        </a>
+                    </li>
+                    <li class="component-sidebar__menu-item">
+                        <a class="component-sidebar__menu-item-link" href="addfunds">
+                            <i class="fas fa-money-bill-wave" style="width: 20px; margin-right: 10px;"></i>
+                            Adicionar Saldo (Depositar PIX)
+                        </a>
+                    </li>
+                    <li class="component-sidebar__menu-item">
+                        <a class="component-sidebar__menu-item-link" href="como-usar">
+                            <i class="fas fa-graduation-cap" style="width: 20px; margin-right: 10px;"></i>
+                            Aprenda a usar o painel
+                        </a>
+                    </li>
+                    <li class="component-sidebar__menu-item">
+                        <a class="component-sidebar__menu-item-link" href="affiliates">
+                            <i class="fas fa-users" style="width: 20px; margin-right: 10px;"></i>
+                            Meus indicados
+                        </a>
+                    </li>
+                    <li class="component-sidebar__menu-item">
+                        <a class="component-sidebar__menu-item-link" href="massorder">
+                            <i class="fas fa-layer-group" style="width: 20px; margin-right: 10px;"></i>
+                            Mass order
+                        </a>
+                    </li>
+                    <li class="component-sidebar__menu-item">
+                        <a class="component-sidebar__menu-item-link" href="tickets">
+                            <i class="fas fa-headset" style="width: 20px; margin-right: 10px;"></i>
+                            Suporte
+                        </a>
+                    </li>
+                    <li class="component-sidebar__menu-item">
+                        <a class="component-sidebar__menu-item-link" href="profile">
+                            <i class="fas fa-user-cog" style="width: 20px; margin-right: 10px;"></i>
+                            Minha Conta
+                        </a>
+                    </li>
+                    <li class="component-sidebar__menu-item">
+                        <a class="component-sidebar__menu-item-link" href="#" onclick="logout()">
+                            <i class="fas fa-sign-out-alt" style="width: 20px; margin-right: 10px;"></i>
+                            Sair
+                        </a>
+                    </li>
+                </ul>
             </div>
-            <!-- Logo para mobile (no header) -->
-            <a href="painel" class="logo-mobile">
-                <img src="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png"
-                    alt="Logo SMM Sociais" class="logo">
-            </a>
         </div>
-        <div class="right-header">
-            <div class="balance-container">
-                <span class="balance-value" id="userBalance">R$ 0,00</span>
+
+        <!-- Header Mobile -->
+        <div class="navbar-private__header">
+            <div class="sidebar-block__top-brand">
+                <a href="painel" class="component-navbar-brand component-navbar-public-brand">
+                    <img src="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png" 
+                         alt="Logo SMM Sociais" style="height: 32px;">
+                </a>
             </div>
+            <button class="navbar-toggler" type="button" id="mobileMenuToggle">
+                <span class="navbar-burger">
+                    <span class="navbar-burger-line"></span>
+                    <span class="navbar-burger-line"></span>
+                    <span class="navbar-burger-line"></span>
+                </span>
+            </button>
         </div>
-    </div>
 
-    <!-- Conteúdo Principal -->
-    <div class="main-container">
-        <div class="container fade-in">
-            <h2 class="page-title"><i class="fas fa-history"></i> Histórico de Pedidos</h2>
+        <!-- Conteúdo Principal -->
+        <div class="wrapper-content">
+            <div class="wrapper-content__body">
+                <div class="container-fluid">
+                    <div class="orders-history fade-in">
+                        <div class="row">
+                            <div class="col">
+                                <div class="orders-history__margin-tab">
+                                    <div class="component_status_tabs">
+                                        <div class="">
+                                            <ul class="nav nav-pills tab">
+                                                <li class="nav-item">
+                                                    <a class="nav-link active" href="orders">Tudo</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link" href="orders?status=pending">Pendente</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link" href="orders?status=progress">Em progresso</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link" href="orders?status=completed">Concluído</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link" href="orders?status=cancelled">Cancelado</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-            <div class="filter-buttons">
-                <a href="orders" class="filter-button active"><i class="fas fa-list"></i> Tudo</a>
-                <a href="orders?status=pending" class="filter-button"><i class="fas fa-clock"></i> Pendente</a>
-                <a href="orders?status=progress" class="filter-button"><i class="fas fa-spinner"></i> Em Progresso</a>
-                <a href="orders?status=completed" class="filter-button"><i class="fas fa-check-circle"></i>
-                    Concluído</a>
-                <a href="orders?status=cancelled" class="filter-button"><i class="fas fa-times-circle"></i>
-                    Cancelado</a>
+                        <div class="row">
+                            <div class="col">
+                                <div class="orders-history__margin-table">
+                                    <div class="table-bg component_table">
+                                        <div class="table-wr">
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>
+                                                            <div class="orders-history__margin-search orders-history__header-search">
+                                                                <div class="component_form_group component_button_search">
+                                                                    <div class="">
+                                                                        <form action="/orders" method="get" id="history-search">
+                                                                            <div class="input-group">
+                                                                                <input type="text" name="search" class="form-control" value="" placeholder="Procurar">
+                                                                                <div class="input-group-append">
+                                                                                    <button class="btn btn-big-secondary" type="submit">
+                                                                                        <span class="fas fa-search"></span>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                            </table>
+                                            <div class="table-responsive table-responsive__search">
+                                                <table class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>ID</th>
+                                                            <th>Data</th>
+                                                            <th>Link</th>
+                                                            <th>Valor</th>
+                                                            <th>Quantidade</th>
+                                                            <th>Serviço</th>
+                                                            <th>Status</th>
+                                                            <th>Restam</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="ordersTableBody">
+                                                        <!-- Os pedidos serão carregados aqui via JavaScript -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th class="date-cell">Data</th>
-                        <th>Link</th>
-                        <th>Valor</th>
-                        <th>Quantidade</th>
-                        <th>Serviço</th>
-                        <th>Status</th>
-                        <th>Restam</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Os pedidos serão carregados aqui via JavaScript -->
-                </tbody>
-            </table>
         </div>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            document.body.classList.add('loaded');
-
             // Busca o saldo quando a página carrega
             fetchBalance();
 
-            // Ativar botão de filtro correspondente ao status atual
-            const urlParams = new URLSearchParams(window.location.search);
-            const status = urlParams.get('status');
+            // Controle do menu mobile
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const sidebar = document.getElementById('sidebar');
 
-            if (status) {
-                const buttons = document.querySelectorAll('.filter-button');
-                buttons.forEach(button => button.classList.remove('active'));
+            mobileMenuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('mobile-open');
+            });
 
-                let activeButton;
-                switch (status) {
-                    case 'pending':
-                        activeButton = document.querySelector('.filter-buttons a[href*="pending"]');
-                        break;
-                    case 'progress':
-                        activeButton = document.querySelector('.filter-buttons a[href*="progress"]');
-                        break;
-                    case 'completed':
-                        activeButton = document.querySelector('.filter-buttons a[href*="completed"]');
-                        break;
-                    case 'cancelled':
-                        activeButton = document.querySelector('.filter-buttons a[href*="cancelled"]');
-                        break;
-                    default:
-                        activeButton = document.querySelector('.filter-buttons a[href*="orders"]');
-                }
-
-                if (activeButton) {
-                    activeButton.classList.add('active');
-                }
-            }
-
-            // Controle do menu hamburguer
-            const menuToggle = document.getElementById('menuToggle');
-            const menuOverlay = document.getElementById('menuOverlay');
-            const menuContent = document.getElementById('menuContent');
-            const menuCloseBtn = document.getElementById('menuCloseBtn');
-
-            function toggleMenu() {
-                menuContent.classList.toggle('active');
-                menuOverlay.classList.toggle('active');
-
-                const spans = menuToggle.querySelectorAll('span');
-                if (menuContent.classList.contains('active')) {
-                    spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-                    spans[1].style.opacity = '0';
-                    spans[2].style.transform = 'rotate(-45deg) translate(7px, -6px)';
-                } else {
-                    spans[0].style.transform = 'none';
-                    spans[1].style.opacity = '1';
-                    spans[2].style.transform = 'none';
-                }
-            }
-
-            function closeMenu() {
-                menuContent.classList.remove('active');
-                menuOverlay.classList.remove('active');
-                const spans = menuToggle.querySelectorAll('span');
-                spans[0].style.transform = 'none';
-                spans[1].style.opacity = '1';
-                spans[2].style.transform = 'none';
-            }
-
-            menuToggle.addEventListener('click', toggleMenu);
-            menuCloseBtn.addEventListener('click', closeMenu);
-            menuOverlay.addEventListener('click', closeMenu);
+            // Fechar menu ao clicar em um link (mobile)
+            const menuLinks = document.querySelectorAll('.component-sidebar__menu-item-link');
+            menuLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 991) {
+                        sidebar.classList.remove('mobile-open');
+                    }
+                });
+            });
 
             // Carrega histórico de pedidos
             carregarHistoricoPedidos();
@@ -805,18 +745,18 @@
                 }
 
                 const data = await response.json();
-
                 const formattedBalance = new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
                     currency: 'BRL'
                 }).format(data.saldo || 0);
 
-                document.getElementById('userBalance').textContent = formattedBalance;
-                document.getElementById('desktopUserBalance').textContent = formattedBalance;
+                // Atualizar saldo no menu se necessário
+                const balanceElements = document.querySelectorAll('.component-navbar-balance-item__navbar-private');
+                balanceElements.forEach(el => {
+                    el.textContent = formattedBalance;
+                });
             } catch (error) {
                 console.error('Erro ao buscar saldo:', error);
-                document.getElementById('userBalance').textContent = 'R$ 0,00';
-                document.getElementById('desktopUserBalance').textContent = 'R$ 0,00';
             }
         }
 
@@ -839,7 +779,7 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    const tbody = document.querySelector("tbody");
+                    const tbody = document.getElementById("ordersTableBody");
                     tbody.innerHTML = "";
 
                     if (data.acoes.length === 0) {
@@ -857,28 +797,39 @@
                         }
 
                         tr.innerHTML = `
-<td>#${acao.id_servico || "-"}</td>
-<td class="date-cell">${dataCriacao}</td>
-<td class="link-cell" title="${acao.link || ''}">${linkDisplay || '-'}</td>
-<td>R$ ${parseFloat(acao.valor).toFixed(2)}</td>
-<td>${acao.quantidade}</td>
-<td>${acao.servicoDetalhes ? acao.servicoDetalhes.nome : acao.nome}</td>
-<td><span class="status status-${acao.status}">${acao.status.charAt(0).toUpperCase() + acao.status.slice(1)}</span></td>
-<td>${(acao.quantidade || 0) - (acao.validadas || 0)}</td>
-`;
+                            <td>#${acao.id_servico || "-"}</td>
+                            <td class="nowrap">${dataCriacao}</td>
+                            <td class="table-link">
+                                <a href="${acao.link || '#'}" target="_blank" title="${acao.link || ''}">
+                                    ${linkDisplay || '-'}
+                                </a>
+                            </td>
+                            <td>R$ ${parseFloat(acao.valor).toFixed(2)}</td>
+                            <td>${acao.quantidade}</td>
+                            <td>${acao.servicoDetalhes ? acao.servicoDetalhes.nome : acao.nome}</td>
+                            <td>
+                                <span class="status status-${acao.status}">
+                                    ${acao.status.charAt(0).toUpperCase() + acao.status.slice(1)}
+                                </span>
+                            </td>
+                            <td>${(acao.quantidade || 0) - (acao.validadas || 0)}</td>
+                        `;
 
                         tbody.appendChild(tr);
                     });
 
                 } else {
                     console.error(data.error || "Erro ao carregar histórico.");
+                    document.getElementById("ordersTableBody").innerHTML = 
+                        `<tr><td colspan="8" style="text-align:center;">Erro ao carregar pedidos.</td></tr>`;
                 }
             } catch (error) {
                 console.error("Erro ao carregar pedidos:", error);
+                document.getElementById("ordersTableBody").innerHTML = 
+                    `<tr><td colspan="8" style="text-align:center;">Erro ao carregar pedidos.</td></tr>`;
             }
         }
     </script>
-    <script src="https://smmsociais.com/chat-widget.js"></script>
 </body>
 
 </html>
