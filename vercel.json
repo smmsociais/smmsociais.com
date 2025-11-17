@@ -17,6 +17,7 @@
       { "source": "/termos", "destination": "/termos.html" },
       { "source": "/suporte", "destination": "/suporte.html" },
       { "source": "/api", "destination": "/api.html" },
+      { "source": "/example.txt", "destination": "/example.txt" },
 
       { "source": "/api/login", "destination": "/api/handler.js" },
       { "source": "/api/signup", "destination": "/api/handler.js" },
