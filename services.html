@@ -416,102 +416,102 @@
             }
 
             // Função para renderizar os serviços na tabela
-            function renderServices(services) {
-                const tbody = document.getElementById('service-tbody');
-                const loadingRow = document.getElementById('loading-row');
+function renderServices(services) {
+    const tbody = document.getElementById('service-tbody');
+    const loadingRow = document.getElementById('loading-row');
 
-                if (loadingRow) {
-                    loadingRow.remove();
-                }
+    if (loadingRow) loadingRow.remove();
+    tbody.innerHTML = '';
 
-                tbody.innerHTML = '';
+    if (!services || services.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
+        return;
+    }
 
-                if (!services || services.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
-                    return;
-                }
+    // AGRUPAR POR CATEGORIA REAL DA API
+    const servicesByCategory = {};
+    services.forEach(service => {
+        const categoryName = service.categoria || "Outros";
 
-                // Agrupar serviços por categoria
-                const servicesByCategory = {};
-                services.forEach(service => {
-                    if (!servicesByCategory[service.category_id]) {
-                        servicesByCategory[service.category_id] = [];
-                    }
-                    servicesByCategory[service.category_id].push(service);
-                });
+        if (!servicesByCategory[categoryName]) {
+            servicesByCategory[categoryName] = [];
+        }
+        servicesByCategory[categoryName].push(service);
+    });
 
-                // Renderizar serviços por categoria
-                Object.keys(servicesByCategory).forEach(categoryId => {
-                    const categoryServices = servicesByCategory[categoryId];
-                    const firstService = categoryServices[0];
+    // RENDERIZAR POR CATEGORIA
+    Object.keys(servicesByCategory).forEach(categoryName => {
+        const categoryServices = servicesByCategory[categoryName];
 
-                    // Adicionar título da categoria
-                    const categoryRow = document.createElement('tr');
-                    categoryRow.className = 'services-list-category-title';
-                    categoryRow.setAttribute('data-filter-table-category-id', categoryId);
-                    categoryRow.innerHTML = `
-                        <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
-                            <div class="w-100">
-                                <h4>
-                                    ${firstService.category_icon ? `<span class="align-middle mr-1">${firstService.category_icon}</span>` : ''}
-                                    <span class="align-middle">${firstService.category_name}</span>
-                                </h4>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(categoryRow);
+        // Linha de título da categoria
+        const categoryRow = document.createElement('tr');
+        categoryRow.className = 'services-list-category-title';
+        categoryRow.innerHTML = `
+            <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
+                <div class="w-100">
+                    <h4>${categoryName}</h4>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(categoryRow);
 
-                    // Adicionar serviços da categoria
-                    categoryServices.forEach(service => {
-                        const serviceRow = document.createElement('tr');
-                        serviceRow.setAttribute('data-filter-table-category-id', categoryId);
-                        serviceRow.setAttribute('data-platform-name', '');
+        // Serviços da categoria
+        categoryServices.forEach(service => {
+            const pricePer1000 = service.preco_1000 ? `R$ ${parseFloat(service.preco_1000).toFixed(2)}` : '-';
+            const minOrder = service.minimo || '-';
+            const maxOrder = service.maximo || '-';
+            const avgTime = service.tempo_medio || '-';
 
-                        const pricePer1000 = service.price_per_1000 ? `R$ ${parseFloat(service.price_per_1000).toFixed(2)}` : '-';
-                        const minOrder = service.min_order || '-';
-                        const maxOrder = service.max_order || '-';
-                        const avgTime = service.average_time || '-';
+            const serviceRow = document.createElement('tr');
 
-                        serviceRow.innerHTML = `
-                            <td data-label="Favorite services">
-                                <a href="#" data-favorite-service-id="${service.id}">
-                                    <span data-favorite-icon class="far fa-star"></span>
-                                </a>
-                            </td>
-                            <td data-label="ID" data-filter-table-service-id="${service.id}">${service.id}</td>
-                            <td data-label="Serviço" class="table-service" data-filter-table-service-name="true">${service.name}</td>
-                            <td data-label="Preço por 1000">${pricePer1000}</td>
-                            <td data-label="Pedido mínimo">${minOrder}</td>
-                            <td data-label="Pedido máximo">${maxOrder}</td>
-                            <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
-                            <td data-label="" class="services-list__description">
-                                ${service.description ? `
-                                <div class="component_button_view">
-                                    <div class="">
-                                        <button class="btn btn-actions btn-view-service-description"
-                                            data-toggle="modal"
-                                            data-content-id="#service-description-id-55-${service.id}"
-                                            data-service-id="${service.id}"
-                                            data-service-name="${service.name}"
-                                            data-min="${minOrder}" data-max="${maxOrder}"
-                                            data-target="#service-description-55">
-                                            Visualizar
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="d-none" id="service-description-id-55-${service.id}">
-                                    ${service.description}
-                                </div>
-                                ` : ''}
-                            </td>
-                        `;
-                        tbody.appendChild(serviceRow);
-                    });
-                });
+            serviceRow.innerHTML = `
+                <td data-label="Favorite services">
+                    <a href="#" data-favorite-service-id="${service.id_servico}">
+                        <span data-favorite-icon class="far fa-star"></span>
+                    </a>
+                </td>
 
-                // Re-inicializar event listeners para os botões de descrição
-                initializeServiceDescriptionButtons();
-            }
+                <td data-label="ID">${service.id_servico}</td>
+
+                <td data-label="Serviço" class="table-service">
+                    ${service.nome}
+                </td>
+
+                <td data-label="Preço por 1000">${pricePer1000}</td>
+
+                <td data-label="Pedido mínimo">${minOrder}</td>
+
+                <td data-label="Pedido máximo">${maxOrder}</td>
+
+                <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
+
+                <td data-label="" class="services-list__description">
+                    ${service.descricao ? `
+                    <div class="component_button_view">
+                        <button class="btn btn-actions btn-view-service-description"
+                            data-toggle="modal"
+                            data-content-id="#service-description-id-55-${service.id_servico}"
+                            data-service-id="${service.id_servico}"
+                            data-service-name="${service.nome}"
+                            data-min="${minOrder}"
+                            data-max="${maxOrder}"
+                            data-target="#service-description-55">
+                            Visualizar
+                        </button>
+                    </div>
+                    <div class="d-none" id="service-description-id-55-${service.id_servico}">
+                        ${service.descricao.replace(/\n/g, "<br>")}
+                    </div>
+                    ` : ''}
+                </td>
+            `;
+
+            tbody.appendChild(serviceRow);
+        });
+    });
+
+    initializeServiceDescriptionButtons();
+}
 
             // Função para renderizar categorias no filtro
             function renderCategories(services) {
