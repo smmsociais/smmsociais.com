@@ -13,7 +13,7 @@
       { "source": "/profile", "destination": "/profile.html" },
       { "source": "/recover-password", "destination": "/recover-password.html" },
       { "source": "/reset-password", "destination": "/reset-password.html" },
-      { "source": "/terms", "destination": "/terms.html" },
+      { "source": "/termos", "destination": "/termos.html" },
 
       { "source": "/api/login", "destination": "/api/handler.js" },
       { "source": "/api/signup", "destination": "/api/handler.js" },
