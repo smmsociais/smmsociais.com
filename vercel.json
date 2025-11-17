@@ -14,7 +14,7 @@
       { "source": "/addfunds", "destination": "/addfunds.html" },
       { "source": "/account", "destination": "/account.html" },
       { "source": "/recover-password", "destination": "/recover-password.html" },
-      { "source": "/reset-password", "destination": "/reset-password.html" },
+      { "source": "/resetpassword", "destination": "/resetpassword.html" },
       { "source": "/termos", "destination": "/termos.html" },
       { "source": "/suporte", "destination": "/suporte.html" },
       { "source": "/api", "destination": "/api.html" },
