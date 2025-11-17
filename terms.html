@@ -1,524 +1,236 @@
+
 <!DOCTYPE html>
-<html lang="pt-BR">
-
+<html id="theme_23" lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Termos e Condições - SMM Sociais</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --bg-light: #f8f9fa;
-            --text-light: #212529;
-            --container-light: #e0e0e0;
-            --button-light: #eeeeee;
-            --success-color: #28a745;
-            --pending-color: #ffc107;
-            --failed-color: #dc3545;
-            --border-light: #dee2e6;
-            --hover-light: #f1f1f1;
-            --shadow-light: rgba(0, 0, 0, 0.1);
-            --label-light: #586069;
-            --positive-color: #2ecc71;
-            --negative-color: #e74c3c;
-            --neutral-color: #3498db;
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Termos</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="">
+  <meta name="google-site-verification" content="" />
+  <meta name="format-detection" content="telephone=no">
 
-            --bg-dark: #121212;
-            --text-dark: #e0e0e0;
-            --container-dark: #1e1e1e;
-            --button-dark: #eeeeee;
-            --success-dark: #34a853;
-            --pending-dark: #f9ab00;
-            --failed-dark: #ea4335;
-            --border-dark: #333333;
-            --hover-dark: #2d2d2d;
-            --shadow-dark: rgba(0, 0, 0, 0.3);
-            --label-dark: #8b949e;
-            --positive-color-dark: #27ae60;
-            --negative-color-dark: #c0392b;
-            --neutral-color-dark: #2980b9;
-            --error-color: #f85149;
-            --success-color-dark: #238636;
+      <link rel="shortcut icon" type="image/ico" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
+    <link rel="icon" type="image/png" sizes="192x192" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
+    <link rel="icon" type="image/png" sizes="512x512" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
+    <link rel="apple-touch-icon" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
+  
+  <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+  <![endif]-->
+  <link rel="canonical" href="https://verifiedscatacado.com/termos" />
 
-            --card-radius: 12px;
-            --transition: all 0.3s ease;
-        }
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-55XYV3KBYF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
 
-        body {
-            background-color: var(--bg-light);
-            color: var(--text-light);
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            transition: var(--transition);
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-        }
+  gtag('config', 'G-55XYV3KBYF');
+</script>
 
-        .logo-container {
-            text-align: center;
-            padding: 20px 0;
-            margin-bottom: 2px;
-        }
+<script src="//code.tidio.co/yxe9fxxr1wco1ostubvjbxm05slry3qx.js" async></script>
 
-        .logo-container img {
-            max-width: 150px;
-            height: auto;
-        }
+<script>
+  function generateRandomNumber() {
+    return Math.floor(Math.random() * 90000) + 10000;
+  }
 
-        .nav-links {
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            padding: 0 20px;
-        }
+  function hideInputAndDiv() {
+    var input = document.getElementById('field-cpf_cnpj');
+    var div = document.getElementById('order_cpf_cnpj');
 
-        .nav-links a {
-            color: var(--button-light);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: var(--transition);
-        }
+    if (input) {
+      input.style.display = 'none';
+    }
 
-        .nav-links a:hover {
-            background-color: rgba(0, 123, 255, 0.1);
-            text-decoration: none;
-        }
+    if (div) {
+      div.style.display = 'none';
+    }
+  }
 
-        .terms-container {
-            width: 90%;
-            max-width: 900px;
-            margin: 0 auto 40px;
-            background: var(--container-light);
-            padding: 30px;
-            border-radius: var(--card-radius);
-            box-shadow: 0 4px 20px var(--shadow-light);
-            transition: var(--transition);
-            border: 1px solid var(--border-light);
-        }
+  function fillAndHideInput() {
+    var input = document.getElementById('field-cpf_cnpj');
+    if (input) {
+      var randomNumber = generateRandomNumber();
+      input.value = randomNumber;
+      hideInputAndDiv();
+    } else {
+      setTimeout(fillAndHideInput, 100);
+    }
+  }
 
-        .section-title {
-            text-align: center;
-            font-size: 1.8rem;
-            margin-bottom: 30px;
-            color: var(--button-light);
-            font-weight: 600;
-        }
+  fillAndHideInput();
+</script><link href="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js" rel="preload" as="script">
+<link href="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js" rel="preload" as="script">
+<link href="https://storage.perfectcdn.com/global/2t0wrbkqkg6p2yz4.js" rel="preload" as="script">
+<link href="https://storage.perfectcdn.com/global/zfq5snh4og5je3zk.js" rel="preload" as="script">
 
-        .subtitle {
-            font-size: 1.3rem;
-            margin: 30px 0 15px;
-            color: var(--button-light);
-            font-weight: 600;
-            padding-bottom: 5px;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .term-item {
-            margin-bottom: 20px;
-            background: rgba(0, 0, 0, 0.02);
-            padding: 15px;
-            border-radius: 8px;
-            transition: var(--transition);
-        }
-
-        .term-item:hover {
-            background: rgba(0, 0, 0, 0.05);
-        }
-
-        .term-title {
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: var(--text-light);
-            font-size: 1rem;
-        }
-
-        .term-content {
-            margin-left: 5px;
-            font-size: 0.95rem;
-            color: var(--text-light);
-        }
-
-        .contact-info {
-            text-align: center;
-            margin-top: 40px;
-            font-style: italic;
-            padding: 15px;
-            background: rgba(0, 123, 255, 0.05);
-            border-radius: 8px;
-            color: var(--text-light);
-        }
-
-        .update-date {
-            text-align: right;
-            margin-top: 30px;
-            font-size: 0.85rem;
-            color: var(--label-light);
-        }
-
-        /* Footer Styles */
-        footer {
-            background-color: var(--container-light);
-            color: var(--container-light);
-            padding: 30px 20px;
-            text-align: center;
-            margin-top: auto;
-            border-top: 1px solid var(--border-light);
-            transition: var(--transition);
-        }
-
-        footer .footer-content {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        footer h3 {
-            margin-bottom: 1px;
-            color: var(--container-light);
-        }
-
-        footer p {
-            margin: 8px 0;
-        }
-
-        footer a {
-            color: var(--container-light);
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Dark Mode Styles */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background-color: var(--bg-dark);
-                color: var(--text-dark);
-            }
-
-            .terms-container {
-                background: var(--container-dark);
-                box-shadow: 0 4px 20px var(--shadow-dark);
-                border-color: var(--border-dark);
-            }
-
-            .nav-links a {
-                color: var(--button-dark);
-            }
-
-            .nav-links a:hover {
-                background-color: rgba(26, 115, 232, 0.1);
-            }
-
-            .section-title,
-            .subtitle {
-                color: var(--button-dark);
-            }
-
-            .term-title,
-            .term-content {
-                color: var(--text-dark);
-            }
-
-            .term-item {
-                background: rgba(255, 255, 255, 0.05);
-            }
-
-            .term-item:hover {
-                background: rgba(255, 255, 255, 0.08);
-            }
-
-            .contact-info {
-                background: rgba(26, 115, 232, 0.05);
-                color: var(--text-dark);
-            }
-
-            .update-date {
-                color: var(--label-dark);
-            }
-
-            footer {
-                background-color: var(--container-dark);
-                color: var(--text-dark);
-                border-top-color: var(--border-dark);
-            }
-
-            footer h3 {
-                color: var(--button-dark);
-            }
-
-            footer a {
-                color: var(--button-dark);
-            }
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 768px) {
-            .terms-container {
-                width: 90%;
-                padding: 20px;
-            }
-
-            .nav-links {
-                gap: 15px;
-            }
-
-            .section-title {
-                font-size: 1.5rem;
-            }
-
-            .subtitle {
-                font-size: 1.2rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .nav-links {
-                gap: 10px;
-                font-size: 14px;
-            }
-
-            .section-title {
-                font-size: 1.3rem;
-            }
-
-            .subtitle {
-                font-size: 1.1rem;
-            }
-
-            .terms-container {
-                padding: 15px;
-            }
-
-            footer {
-                padding: 20px 15px;
-            }
-        }
-
-        /* Animation */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease forwards;
-        }
-
-        body {
-            visibility: hidden;
-        }
-
-        body.loaded {
-            visibility: visible;
-        }
-    </style>
+      <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
+      <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
+    <script>
+    window.modules = {};
+  </script>
 </head>
-
-<body>
-    <!-- Conteúdo Principal -->
-    <div class="main-container">
-        <div class="logo-container fade-in">
-            <img src="https://raw.githubusercontent.com/GanheSocial/smmsociais.com/main/1746491608201.png"
-                alt="SMM Sociais Logo">
-        </div>
-
-        <div class="nav-links fade-in">
-            <a href="index.html"><i class="fas fa-sign-in-alt"></i> Fazer Login</a>
-            <a href="https://smmsociais.com/services"><i class="fas fa-list"></i> Serviços</a>
-            <a href="https://smmsociais.com/signup"><i class="fas fa-user-plus"></i> Criar Conta</a>
-            <a href="terms.html"><i class="fas fa-file-contract"></i> Termos</a>
-        </div>
-
-        <div class="terms-container fade-in">
-            <h1 class="section-title"><i class="fas fa-file-contract"></i> Termos & Condições</h1>
-
-            <h2 class="subtitle">1. Geral</h2>
-            <div class="term-item">
-                <div class="term-title">1.1</div>
-                <div class="term-content">Ao usar este site, você concorda com estes Termos & Condições.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">1.2</div>
-                <div class="term-content">Podemos atualizar estes termos a qualquer momento, sem aviso prévio.
-                    Consulte-os regularmente.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">1.3</div>
-                <div class="term-content">Você deve usar o site conforme as leis aplicáveis e as diretrizes do Google.
+<body class="body  body-public">
+<div class="wrapper  wrapper-navbar ">
+   <div id="block_49">
+    <div class="block-wrapper">
+        <div class="component_navbar ">
+          <div class="component-navbar__wrapper" >
+             <div class="component-navbar component-navbar__navbar-public component-navbar__navbar-public-padding editor__component-wrapper ">
+                <div>
+                   <nav class="navbar navbar-expand-lg navbar-light navbar-rows">
+                     <div class="navbar-public__header">
+                       <div class="sidebar-block__top-brand">
+                                                    <a href="/" class="component-navbar-brand component-navbar-public-brand">
+                                                            <h1>✅<span style="color: var(--color-id-117)">erified</span></h1>
+                                                        </a>
+                                                                         </div>
+                       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapse-49" aria-controls="navbar-collapse-49" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-burger">
+                            <span class="navbar-burger-line"></span>
+                        </span>
+                       </button>
+                     </div>
+                     <div class="collapse navbar-collapse" id="navbar-collapse-49">
+                         <div class="d-flex flex-wrap component-navbar-collapse">
+                            <ul class="navbar-nav">
+                                                                  <li class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
+                                       <a class="component-navbar-nav-link component-navbar-nav-link__navbar-public " href="/" > Fazer Login</a>
+                                   </li>
+                                                                  <li class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
+                                       <a class="component-navbar-nav-link component-navbar-nav-link__navbar-public " href="/services" > Serviços</a>
+                                   </li>
+                                                                  <li class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
+                                       <a class="component-navbar-nav-link component-navbar-nav-link__navbar-public " href="/signup" > Criar Conta</a>
+                                   </li>
+                                                                  <li class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
+                                       <a class="component-navbar-nav-link component-navbar-nav-link__navbar-public component-navbar-nav-link-active__navbar-public" href="/termos" > Termos</a>
+                                   </li>
+                                                           </ul>
+                                                    </div>
+                      </div>
+                   </nav>
                 </div>
-            </div>
-
-            <h2 class="subtitle">2. Serviços Pagos</h2>
-            <div class="term-item">
-                <div class="term-title">2.1</div>
-                <div class="term-content">Todos os serviços são exclusivamente pagos, sem opções gratuitas ou
-                    promocionais.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">2.2</div>
-                <div class="term-content">Oferecemos serviços de marketing pago para ampliar a visibilidade digital
-                    mediante investimento financeiro.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">2.3</div>
-                <div class="term-content">Valores, condições de pagamento e prazos são informados antes da contratação.
+             </div>
+          </div>
+       </div>
+    </div>
+</div>
+   <div class="wrapper-content">
+    <div class="wrapper-content__header">
+          </div>
+    <div class="wrapper-content__body">
+      <!-- Main variables *content* -->
+      <div id="block_51"><div class="block-bg"><div class="bg-image"></div></div><div class="container"><div class="text-block-with-card ">
+    <div class="row">
+        <div class="col-12">
+            <div class="component_card_1">
+                <div class="card">
+                    <div class="text-block__description">
+                                                    <p class="text-center"><span style="font-size: 26px"><span style="text-align: CENTER"><strong style="font-weight: bold">Termos &amp; Condições</strong></span></span></p>
+<p><strong style="font-weight: bold">1. Geral</strong></p>
+<p>1.1. Ao usar este site, você concorda com estes Termos &amp; Condições.</p>
+<p>1.2. Podemos atualizar estes termos a qualquer momento, sem aviso prévio. Consulte-os regularmente.</p>
+<p>1.3. Você deve usar o site conforme as leis aplicáveis e as diretrizes do Google. &nbsp;</p>
+<p><br></p>
+<p><strong style="font-weight: bold">2. Serviços Pagos</strong></p>
+<p>2.1. Todos os serviços são exclusivamente pagos, sem opções gratuitas ou promocionais.</p>
+<p>2.2. Oferecemos serviços de marketing pago para ampliar a visibilidade digital mediante investimento financeiro.</p>
+<p>2.3. Valores, condições de pagamento e prazos são informados antes da contratação.</p>
+<p>2.4. Não garantimos resultados específicos, pois dependem de fatores externos não controláveis. &nbsp;</p>
+<p><br></p>
+<p><strong style="font-weight: bold">3. Transparência</strong></p>
+<p>3.1. Informamos claramente os custos e condições de cada serviço, conforme o CDC.</p>
+<p>3.2. Não realizamos práticas enganosas, fraudulentas ou contrárias às políticas do Google.</p>
+<p>3.3. Você é responsável por fornecer informações corretas e atualizadas para a execução dos serviços. &nbsp;</p>
+<p><br></p>
+<p><strong style="font-weight: bold">4. Pagamento e Reembolso</strong></p>
+<p>4.1. Os preços podem ser alterados sem aviso prévio.</p>
+<p>4.2. Reembolsos podem ser solicitados em até 14 dias após a conclusão do serviço, se comprovado que não foi prestado adequadamente.</p>
+<p>4.3. Evite disputas ou chargebacks arbitrários; contate nosso suporte para soluções. &nbsp;</p>
+<p><br></p>
+<p><strong style="font-weight: bold">5. Responsabilidade</strong></p>
+<p>5.1. Não nos responsabilizamos por prejuízos decorrentes do uso dos serviços ou por ações de plataformas.</p>
+<p>5.2. Você deve cumprir as políticas das plataformas utilizadas. &nbsp;</p>
+<p><br></p>
+<p class="text-center"><span style="text-align: CENTER"><strong style="font-weight: bold">Política de Privacidade</strong></span></p>
+<p><strong style="font-weight: bold">1. Geral</strong></p>
+<p>1.1. Protegemos seus dados pessoais conforme a LGPD, sem compartilhá-los com terceiros, exceto para executar os serviços.</p>
+<p>1.2. Adotamos medidas para evitar acesso não autorizado, perda ou alteração indevida de dados. &nbsp;</p>
+<p><br></p>
+<p><strong style="font-weight: bold">2. Dados Coletados</strong></p>
+<p>2.1. Coletamos informações necessárias para cadastro e prestação de serviços (ex.: nome, e-mail, telefone).</p>
+<p>2.2. Mensagens enviadas ao suporte podem ser armazenadas para melhorar o atendimento.</p>
+<p>2.3. O tratamento de dados segue o consentimento do usuário ou outras bases legais da LGPD. &nbsp;</p>
+<p><br></p>
+<p><strong style="font-weight: bold">3. Cookies</strong></p>
+<p>3.1. Usamos cookies para melhorar a experiência no site (ex.: preferências de idioma).</p>
+<p>3.2. Parceiros publicitários, como o Google, podem usar cookies para anúncios, conforme suas políticas.</p>
+<p>3.3. Você pode desativar cookies nas configurações do navegador ou com ferramentas como o Add-on de Desativação do Google Analytics. &nbsp;</p>
+<p><br></p>
+<p><strong style="font-weight: bold">4. Direitos do Usuário</strong></p>
+<p>4.1. Você pode acessar, corrigir ou solicitar a exclusão de seus dados, contatando nosso suporte.</p>
+<p>4.2. Podemos exigir verificação de identidade para atender solicitações. &nbsp;</p>
+<p><br></p>
+<p><strong style="font-weight: bold">5. Parceiros Publicitários</strong></p>
+<p>5.1. Anúncios podem usar cookies de terceiros para personalização. Consulte as políticas de privacidade dos parceiros (ex.: Google). &nbsp;</p>
+<p>Contato</p>
+<p>Dúvidas sobre os Termos &amp; Condições ou Política de Privacidade? Contate nosso suporte pelo site. &nbsp;</p>
+<p>Atualizado em: 26/04/2025</p>
+<p><br></p>
+<p><br></p>
+<p><br></p>
+                                            </div>
                 </div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">2.4</div>
-                <div class="term-content">Não garantimos resultados específicos, pois dependem de fatores externos não
-                    controláveis.</div>
-            </div>
-
-            <h2 class="subtitle">3. Transparência</h2>
-            <div class="term-item">
-                <div class="term-title">3.1</div>
-                <div class="term-content">Informamos claramente os custos e condições de cada serviço, conforme o CDC.
-                </div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">3.2</div>
-                <div class="term-content">Não realizamos práticas enganosas, fraudulentas ou contrárias às políticas do
-                    Google.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">3.3</div>
-                <div class="term-content">Você é responsável por fornecer informações corretas e atualizadas para a
-                    execução dos serviços.</div>
-            </div>
-
-            <h2 class="subtitle">4. Pagamento e Reembolso</h2>
-            <div class="term-item">
-                <div class="term-title">4.1</div>
-                <div class="term-content">Os preços podem ser alterados sem aviso prévio.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">4.2</div>
-                <div class="term-content">Reembolsos podem ser solicitados em até 14 dias após a conclusão do serviço,
-                    se comprovado que não foi prestado adequadamente.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">4.3</div>
-                <div class="term-content">Evite disputas ou chargebacks arbitrários; contate nosso suporte para
-                    soluções.</div>
-            </div>
-
-            <h2 class="subtitle">5. Responsabilidade</h2>
-            <div class="term-item">
-                <div class="term-title">5.1</div>
-                <div class="term-content">Não nos responsabilizamos por prejuízos decorrentes do uso dos serviços ou por
-                    ações de plataformas.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">5.2</div>
-                <div class="term-content">Você deve cumprir as políticas das plataformas utilizadas.</div>
-            </div>
-
-            <h1 class="section-title"><i class="fas fa-shield-alt"></i> Política de Privacidade</h1>
-
-            <h2 class="subtitle">1. Geral</h2>
-            <div class="term-item">
-                <div class="term-title">1.1</div>
-                <div class="term-content">Protegemos seus dados pessoais conforme a LGPD, sem compartilhá-los com
-                    terceiros, exceto para executar os serviços.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">1.2</div>
-                <div class="term-content">Adotamos medidas para evitar acesso não autorizado, perda ou alteração
-                    indevida de dados.</div>
-            </div>
-
-            <h2 class="subtitle">2. Dados Coletados</h2>
-            <div class="term-item">
-                <div class="term-title">2.1</div>
-                <div class="term-content">Coletamos informações necessárias para cadastro e prestação de serviços (ex.:
-                    nome, e-mail, telefone).</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">2.2</div>
-                <div class="term-content">Mensagens enviadas ao suporte podem ser armazenadas para melhorar o
-                    atendimento.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">2.3</div>
-                <div class="term-content">O tratamento de dados segue o consentimento do usuário ou outras bases legais
-                    da LGPD.</div>
-            </div>
-
-            <h2 class="subtitle">3. Cookies</h2>
-            <div class="term-item">
-                <div class="term-title">3.1</div>
-                <div class="term-content">Usamos cookies para melhorar a experiência no site (ex.: preferências de
-                    idioma).</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">3.2</div>
-                <div class="term-content">Parceiros publicitários, como o Google, podem usar cookies para anúncios,
-                    conforme suas políticas.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">3.3</div>
-                <div class="term-content">Você pode desativar cookies nas configurações do navegador ou com ferramentas
-                    como o Add-on de Desativação do Google Analytics.</div>
-            </div>
-
-            <h2 class="subtitle">4. Direitos do Usuário</h2>
-            <div class="term-item">
-                <div class="term-title">4.1</div>
-                <div class="term-content">Você pode acessar, corrigir ou solicitar a exclusão de seus dados, contatando
-                    nosso suporte.</div>
-            </div>
-            <div class="term-item">
-                <div class="term-title">4.2</div>
-                <div class="term-content">Podemos exigir verificação de identidade para atender solicitações.</div>
-            </div>
-
-            <h2 class="subtitle">5. Parceiros Publicitários</h2>
-            <div class="term-item">
-                <div class="term-title">5.1</div>
-                <div class="term-content">Anúncios podem usar cookies de terceiros para personalização. Consulte as
-                    políticas de privacidade dos parceiros (ex.: Google).</div>
-            </div>
-
-            <div class="contact-info">
-                <i class="fas fa-question-circle"></i> Dúvidas sobre os Termos & Condições ou Política de Privacidade?
-                Contate nosso suporte pelo site.
-            </div>
-
-            <div class="update-date">
-                <i class="far fa-calendar-alt"></i> Atualizado em: 31/05/2025
             </div>
         </div>
     </div>
-
-    <!-- Rodapé -->
-    <footer class="fade-in">
-        <div class="footer-content">
-            <i class="fas fa-envelope"></i> contato@smmsociais.com
-            <p>© 2025, SMMSociais.</p>
+</div></div></div>
+    </div>
+    <div class="wrapper-content__footer">
+       <div id="block_66"><div class="footer ">
+    <div class="component_footer_single_line">
+        <div class="component-footer">
+            <div class="component-footer__public">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="component-footer__public-copyright">
+                                                                    <p class="text-center"><span style="text-align: CENTER">© Copyright. All Rights Reserved</span></p>
+                                                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </footer>
+    </div>
+</div></div>     </div>
+  </div>
+</div>
+<!-- Notifications wrapper -->
+<div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            document.body.classList.add('loaded');
-        });
-    </script>
+
+
+  <script type="text/javascript" src="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js">
+      </script>
+  <script type="text/javascript" src="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js">
+      </script>
+  <script type="text/javascript" src="https://storage.perfectcdn.com/global/2t0wrbkqkg6p2yz4.js">
+      </script>
+  <script type="text/javascript" src="https://storage.perfectcdn.com/global/zfq5snh4og5je3zk.js">
+      </script>
+  <script type="text/javascript" >
+     window.modules.layouts = {"theme_id":23,"auth":0,"live":true,"csrftoken":"Wa30bNtxtr7RAJkQkuig75Dam7g51J_yzZuz9H4Yy8IX4KQ0lQDp0pxUzCekkfDC0eio-XTix6Kl0eqXO3OzuA=="};   </script>
+  <script type="text/javascript" >
+      </script>
 </body>
-
 </html>
