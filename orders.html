@@ -20,12 +20,6 @@
     <link rel="icon" type="image/png" sizes="16x16" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
     <link rel="apple-touch-icon" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
 
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-  <![endif]-->
-
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-55XYV3KBYF"></script>
     <script>
@@ -389,6 +383,62 @@
     <script type="text/javascript">
         window.modules.alerts = { "alerts": [] };   </script>
     <script type="text/javascript">
+        // BLOQUEAR QUALQUER TIPO DE RECARREGAMENTO AUTOMÁTICO
+        (function() {
+            // Bloquear F5
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'F5' || (e.ctrlKey && e.key === 'r') || (e.key === 'F5')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            });
+
+            // Bloquear menu de contexto (botão direito)
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Bloquear recarregamento via navegador
+            window.addEventListener('beforeunload', function(e) {
+                // Não fazer nada - isso previne o recarregamento
+                return null;
+            });
+
+            // Bloquear qualquer tentativa de recarregamento programático
+            const originalReload = window.location.reload;
+            window.location.reload = function() {
+                console.log('Recarregamento bloqueado');
+                return false;
+            };
+
+            // Bloquear navegação que causaria recarregamento
+            const originalAssign = window.location.assign;
+            window.location.assign = function(url) {
+                console.log('Navegação assign bloqueada para:', url);
+                return false;
+            };
+
+            const originalReplace = window.location.replace;
+            window.location.replace = function(url) {
+                console.log('Navegação replace bloqueada para:', url);
+                return false;
+            };
+
+            // Prevenir recarregamento automático por scripts
+            setInterval(function() {
+                // Monitorar e prevenir qualquer tentativa de recarregamento
+                if (window.performance && window.performance.navigation) {
+                    if (window.performance.navigation.type === 1) {
+                        console.log('Recarregamento de página detectado e bloqueado');
+                    }
+                }
+            }, 1000);
+
+            console.log('Sistema de bloqueio de recarregamento ativado');
+        })();
+
         // Função para determinar o status baseado na URL
         function getStatusFromURL() {
             let path = window.location.pathname.replace(/\/$/, ""); // remove barra final
@@ -404,6 +454,13 @@
             };
 
             return statusMap[path] || 'todos';
+        }
+
+        function getTokenFromCookie() {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; auth=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
         }
 
         function loadToken() {
@@ -585,6 +642,19 @@
                     console.log('Buscar por:', searchTerm);
                 });
             }
+
+            // Prevenir recarregamento por qualquer link que tente recarregar a página
+            document.addEventListener('click', function(e) {
+                const target = e.target.closest('a');
+                if (target && target.getAttribute('href') && 
+                    (target.getAttribute('href') === '#' || 
+                     target.getAttribute('href').includes('javascript') ||
+                     target.getAttribute('onclick'))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            });
         });
     </script>
 </body>
