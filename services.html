@@ -6,39 +6,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Services</title>
-    <meta name="keywords" content="">
-    <meta name="description" content="">
-    <meta name="google-site-verification" content="" />
-    <meta name="format-detection" content="telephone=no">
-
-    <link rel="shortcut icon" type="image/ico" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-    <link rel="icon" type="image/png" sizes="192x192"
-        href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-    <link rel="icon" type="image/png" sizes="512x512"
-        href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-    <link rel="icon" type="image/png" sizes="16x16" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-    <link rel="apple-touch-icon" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
-
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-  <![endif]-->
-
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-55XYV3KBYF"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-
-        gtag('config', 'G-55XYV3KBYF');
-    </script>
-
-    <script src="//code.tidio.co/yxe9fxxr1wco1ostubvjbxm05slry3qx.js" async></script>
-
     <script>
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
@@ -70,11 +37,6 @@
 
         fillAndHideInput();
     </script>
-    <link href="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js" rel="preload" as="script">
-    <link href="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js" rel="preload" as="script">
-    <link href="https://storage.perfectcdn.com/global/2t0wrbkqkg6p2yz4.js" rel="preload" as="script">
-    <link href="https://storage.perfectcdn.com/global/zfq5snh4og5je3zk.js" rel="preload" as="script">
-
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <script>
@@ -114,7 +76,7 @@
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/">
+                                                    href="/painel">
                                                     Novo pedido
                                                 </a>
                                             </li>
@@ -163,7 +125,7 @@
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/tickets">
+                                                    href="/suporte">
                                                     Suporte
                                                 </a>
                                             </li>
@@ -183,7 +145,7 @@
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private"
-                                                    href="/logout">Sair</a>
+                                                    href="/">Sair</a>
                                             </li>
                                         </ul>
                                     </div>
@@ -207,7 +169,7 @@
                             </div>
                             <ul class="sidebar-block__left-menu editor__component-wrapper">
                                 <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/">
+                                    <a class="component-sidebar__menu-item-link" href="/painel">
                                         Novo pedido
                                     </a>
                                 </li>
@@ -242,7 +204,7 @@
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/tickets">
+                                    <a class="component-sidebar__menu-item-link" href="/suporte">
                                         Suporte
                                     </a>
                                 </li>
@@ -416,55 +378,55 @@
             }
 
             // Função para renderizar os serviços na tabela
-function renderServices(services) {
-    const tbody = document.getElementById('service-tbody');
-    const loadingRow = document.getElementById('loading-row');
+            function renderServices(services) {
+                const tbody = document.getElementById('service-tbody');
+                const loadingRow = document.getElementById('loading-row');
 
-    if (loadingRow) loadingRow.remove();
-    tbody.innerHTML = '';
+                if (loadingRow) loadingRow.remove();
+                tbody.innerHTML = '';
 
-    if (!services || services.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
-        return;
-    }
+                if (!services || services.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
+                    return;
+                }
 
-    // AGRUPAR POR CATEGORIA REAL DA API
-    const servicesByCategory = {};
-    services.forEach(service => {
-        const categoryName = service.categoria || "Outros";
+                // AGRUPAR POR CATEGORIA REAL DA API
+                const servicesByCategory = {};
+                services.forEach(service => {
+                    const categoryName = service.categoria || "Outros";
 
-        if (!servicesByCategory[categoryName]) {
-            servicesByCategory[categoryName] = [];
-        }
-        servicesByCategory[categoryName].push(service);
-    });
+                    if (!servicesByCategory[categoryName]) {
+                        servicesByCategory[categoryName] = [];
+                    }
+                    servicesByCategory[categoryName].push(service);
+                });
 
-    // RENDERIZAR POR CATEGORIA
-    Object.keys(servicesByCategory).forEach(categoryName => {
-        const categoryServices = servicesByCategory[categoryName];
+                // RENDERIZAR POR CATEGORIA
+                Object.keys(servicesByCategory).forEach(categoryName => {
+                    const categoryServices = servicesByCategory[categoryName];
 
-        // Linha de título da categoria
-        const categoryRow = document.createElement('tr');
-        categoryRow.className = 'services-list-category-title';
-        categoryRow.innerHTML = `
+                    // Linha de título da categoria
+                    const categoryRow = document.createElement('tr');
+                    categoryRow.className = 'services-list-category-title';
+                    categoryRow.innerHTML = `
             <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
                 <div class="w-100">
                     <h4>${categoryName}</h4>
                 </div>
             </td>
         `;
-        tbody.appendChild(categoryRow);
+                    tbody.appendChild(categoryRow);
 
-        // Serviços da categoria
-        categoryServices.forEach(service => {
-            const pricePer1000 = service.preco_1000 ? `R$ ${parseFloat(service.preco_1000).toFixed(2)}` : '-';
-            const minOrder = service.minimo || '-';
-            const maxOrder = service.maximo || '-';
-            const avgTime = service.tempo_medio || '-';
+                    // Serviços da categoria
+                    categoryServices.forEach(service => {
+                        const pricePer1000 = service.preco_1000 ? `R$ ${parseFloat(service.preco_1000).toFixed(2)}` : '-';
+                        const minOrder = service.minimo || '-';
+                        const maxOrder = service.maximo || '-';
+                        const avgTime = service.tempo_medio || '-';
 
-            const serviceRow = document.createElement('tr');
+                        const serviceRow = document.createElement('tr');
 
-            serviceRow.innerHTML = `
+                        serviceRow.innerHTML = `
                 <td data-label="Favorite services">
                     <a href="#" data-favorite-service-id="${service.id_servico}">
                         <span data-favorite-icon class="far fa-star"></span>
@@ -506,12 +468,12 @@ function renderServices(services) {
                 </td>
             `;
 
-            tbody.appendChild(serviceRow);
-        });
-    });
+                        tbody.appendChild(serviceRow);
+                    });
+                });
 
-    initializeServiceDescriptionButtons();
-}
+                initializeServiceDescriptionButtons();
+            }
 
             // Função para renderizar categorias no filtro
             function renderCategories(services) {
