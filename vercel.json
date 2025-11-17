@@ -15,6 +15,7 @@
       { "source": "/recover-password", "destination": "/recover-password.html" },
       { "source": "/reset-password", "destination": "/reset-password.html" },
       { "source": "/termos", "destination": "/termos.html" },
+      { "source": "/suporte", "destination": "/suporte.html" },
 
       { "source": "/api/login", "destination": "/api/handler.js" },
       { "source": "/api/signup", "destination": "/api/handler.js" },
