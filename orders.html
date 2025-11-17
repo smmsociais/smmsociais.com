@@ -53,6 +53,7 @@
             min-height: 100vh;
             transition: var(--transition);
             line-height: 1.6;
+            overflow-x: auto; /* Permite rolagem horizontal */
         }
 
         /* Header Styles */
@@ -136,6 +137,7 @@
             max-width: 1200px;
             margin: 30px auto;
             padding: 25px;
+            overflow-x: auto; /* Permite rolagem horizontal no container */
         }
 
         .container-header {
@@ -200,18 +202,19 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            min-width: 600px;
+            min-width: 800px; /* Aumentei para garantir que a tabela tenha espaço suficiente */
             table-layout: auto;
             white-space: nowrap;
         }
 
-        th, td {
+        th,
+        td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid var(--border-light);
             white-space: nowrap;
-            overflow: visible;
-            text-overflow: clip;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         th {
@@ -224,9 +227,15 @@
         }
 
         .link-cell {
-            max-width: 150px;
+            max-width: 200px;
             overflow: hidden;
+            text-overflow: ellipsis;
             word-break: break-all;
+            white-space: nowrap;
+        }
+
+        .date-cell {
+            min-width: 140px;
         }
 
         /* Status Badges */
@@ -468,7 +477,8 @@
                 color: white;
             }
 
-            th, td {
+            th,
+            td {
                 border-bottom: 1px solid var(--border-dark);
             }
 
@@ -497,7 +507,8 @@
                 border-color: var(--border-dark);
             }
 
-            .balance-container, .desktop-balance-container {
+            .balance-container,
+            .desktop-balance-container {
                 background: rgba(255, 255, 255, 0.05);
             }
 
@@ -514,36 +525,55 @@
             }
 
             .filter-buttons {
-                gap: 5px;
+                flex-direction: column; /* Botões um abaixo do outro no mobile */
+                gap: 8px;
             }
 
             .filter-button {
-                padding: 8px 10px;
-                font-size: 12px;
+                padding: 12px 15px;
+                font-size: 14px;
+                text-align: center;
+                width: 100%;
             }
-        
-            th, td {
-                padding: 8px 10px;
+
+            th,
+            td {
+                padding: 10px 12px;
                 font-size: 13px;
-                max-width: 100px;
+            }
+            
+            .link-cell {
+                max-width: 120px;
+            }
+            
+            .date-cell {
+                min-width: 120px;
             }
         }
 
         @media (max-width: 480px) {
-            th, td {
-                padding: 6px 8px;
+            th,
+            td {
+                padding: 8px 10px;
                 font-size: 12px;
-                max-width: 80px;
             }
 
             .status {
                 font-size: 10px;
-                padding: 3px 6px;
+                padding: 4px 8px;
             }
 
             .filter-button {
-                padding: 6px 8px;
-                font-size: 11px;
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+            
+            .link-cell {
+                max-width: 100px;
+            }
+            
+            .date-cell {
+                min-width: 100px;
             }
         }
 
@@ -570,6 +600,25 @@
 
         body.loaded {
             visibility: visible;
+        }
+        
+        /* Melhorias para separação entre link e data */
+        .table-row {
+            display: table-row;
+        }
+        
+        .link-date-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        @media (min-width: 769px) {
+            .link-date-container {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
         }
     </style>
 </head>
@@ -636,15 +685,17 @@
                 <a href="orders" class="filter-button active"><i class="fas fa-list"></i> Tudo</a>
                 <a href="orders?status=pending" class="filter-button"><i class="fas fa-clock"></i> Pendente</a>
                 <a href="orders?status=progress" class="filter-button"><i class="fas fa-spinner"></i> Em Progresso</a>
-                <a href="orders?status=completed" class="filter-button"><i class="fas fa-check-circle"></i> Concluído</a>
-                <a href="orders?status=cancelled" class="filter-button"><i class="fas fa-times-circle"></i> Cancelado</a>
+                <a href="orders?status=completed" class="filter-button"><i class="fas fa-check-circle"></i>
+                    Concluído</a>
+                <a href="orders?status=cancelled" class="filter-button"><i class="fas fa-times-circle"></i>
+                    Cancelado</a>
             </div>
 
             <table>
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Data</th>
+                        <th class="date-cell">Data</th>
                         <th>Link</th>
                         <th>Valor</th>
                         <th>Quantidade</th>
@@ -799,16 +850,16 @@
                     data.acoes.forEach((acao) => {
                         const tr = document.createElement("tr");
                         const dataCriacao = new Date(acao.dataCriacao).toLocaleString("pt-BR");
-                        
+
                         let linkDisplay = acao.link;
-                        if (linkDisplay && linkDisplay.length > 20) {
-                            linkDisplay = linkDisplay.substring(0, 20) + '<wbr>' + linkDisplay.substring(20);
+                        if (linkDisplay && linkDisplay.length > 30) {
+                            linkDisplay = linkDisplay.substring(0, 30) + '...';
                         }
 
                         tr.innerHTML = `
 <td>#${acao.id_servico || "-"}</td>
-<td>${dataCriacao}</td>
-<td class="link-cell">${linkDisplay}</td>
+<td class="date-cell">${dataCriacao}</td>
+<td class="link-cell" title="${acao.link || ''}">${linkDisplay || '-'}</td>
 <td>R$ ${parseFloat(acao.valor).toFixed(2)}</td>
 <td>${acao.quantidade}</td>
 <td>${acao.servicoDetalhes ? acao.servicoDetalhes.nome : acao.nome}</td>
