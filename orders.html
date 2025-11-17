@@ -391,19 +391,21 @@
         window.modules.alerts = { "alerts": [] };   </script>
     <script type="text/javascript">
         // Função para determinar o status baseado na URL
-        function getStatusFromURL() {
-            const path = window.location.pathname;
-            const statusMap = {
-                '/orders/pending': 'pending',
-                '/orders/inprogress': 'progress', 
-                '/orders/completed': 'completed',
-                '/orders/partial': 'partial',
-                '/orders/processing': 'processing',
-                '/orders/canceled': 'canceled',
-                '/orders': 'todos'
-            };
-            return statusMap[path] || 'todos';
-        }
+function getStatusFromURL() {
+    let path = window.location.pathname.replace(/\/$/, ""); // remove barra final
+
+    const statusMap = {
+        '/orders/pending': 'pending',
+        '/orders/inprogress': 'progress',
+        '/orders/completed': 'completed',
+        '/orders/partial': 'partial',
+        '/orders/processing': 'processing',
+        '/orders/canceled': 'canceled',
+        '/orders': 'todos'
+    };
+
+    return statusMap[path] || 'todos';
+}
 
 function loadToken() {
     return (
