@@ -5,10 +5,9 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Services</title>
-    <meta name="keywords" content="">
-    <meta name="description" content="">
-    <meta name="google-site-verification" content="" />
+    <title>Serviços - Verified</title>
+    <meta name="keywords" content="serviços, marketing digital, redes sociais">
+    <meta name="description" content="Conheça nossos serviços de marketing digital e redes sociais">
     <meta name="format-detection" content="telephone=no">
 
     <link rel="shortcut icon" type="image/ico" href="https://storage.perfectcdn.com/ahnerj/a5jnm2snoljw9pgs.ico" />
@@ -26,50 +25,17 @@
   <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
   <![endif]-->
 
-
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-55XYV3KBYF"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
-
         gtag('config', 'G-55XYV3KBYF');
     </script>
 
     <script src="//code.tidio.co/yxe9fxxr1wco1ostubvjbxm05slry3qx.js" async></script>
 
-    <script>
-        function generateRandomNumber() {
-            return Math.floor(Math.random() * 90000) + 10000;
-        }
-
-        function hideInputAndDiv() {
-            var input = document.getElementById('field-cpf_cnpj');
-            var div = document.getElementById('order_cpf_cnpj');
-
-            if (input) {
-                input.style.display = 'none';
-            }
-
-            if (div) {
-                div.style.display = 'none';
-            }
-        }
-
-        function fillAndHideInput() {
-            var input = document.getElementById('field-cpf_cnpj');
-            if (input) {
-                var randomNumber = generateRandomNumber();
-                input.value = randomNumber;
-                hideInputAndDiv();
-            } else {
-                setTimeout(fillAndHideInput, 100);
-            }
-        }
-
-        fillAndHideInput();
-    </script>
     <link href="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js" rel="preload" as="script">
     <link href="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js" rel="preload" as="script">
     <link href="https://storage.perfectcdn.com/global/2t0wrbkqkg6p2yz4.js" rel="preload" as="script">
@@ -160,9 +126,9 @@
                     <div class="block-bg"></div>
                     <div class="centered-container">
                         <div class="services-content">
-                            <div class="services-list ">
+                            <div class="services-list">
                                 <div class="row">
-                                    <div class="col ">
+                                    <div class="col">
                                         <div
                                             class="services-filters component_filter_form_group component_filter_card component_platforms mb-3">
                                             <div class="card">
@@ -302,8 +268,6 @@
     <!-- Notifications wrapper -->
     <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
 
-
-
     <script type="text/javascript" src="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js">
     </script>
     <script type="text/javascript" src="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js">
@@ -368,12 +332,12 @@
                     const categoryRow = document.createElement('tr');
                     categoryRow.className = 'services-list-category-title';
                     categoryRow.innerHTML = `
-            <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
-                <div class="w-100">
-                    <h4>${categoryName}</h4>
-                </div>
-            </td>
-        `;
+                        <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
+                            <div class="w-100">
+                                <h4>${categoryName}</h4>
+                            </div>
+                        </td>
+                    `;
                     tbody.appendChild(categoryRow);
 
                     // Serviços da categoria
@@ -386,46 +350,46 @@
                         const serviceRow = document.createElement('tr');
 
                         serviceRow.innerHTML = `
-                <td data-label="Favorite services">
-                    <a href="#" data-favorite-service-id="${service.id_servico}">
-                        <span data-favorite-icon class="far fa-star"></span>
-                    </a>
-                </td>
+                            <td data-label="Favorite services">
+                                <a href="#" data-favorite-service-id="${service.id_servico}">
+                                    <span data-favorite-icon class="far fa-star"></span>
+                                </a>
+                            </td>
 
-                <td data-label="ID">${service.id_servico}</td>
+                            <td data-label="ID">${service.id_servico}</td>
 
-                <td data-label="Serviço" class="table-service">
-                    ${service.nome}
-                </td>
+                            <td data-label="Serviço" class="table-service">
+                                ${service.nome}
+                            </td>
 
-                <td data-label="Preço por 1000">${pricePer1000}</td>
+                            <td data-label="Preço por 1000">${pricePer1000}</td>
 
-                <td data-label="Pedido mínimo">${minOrder}</td>
+                            <td data-label="Pedido mínimo">${minOrder}</td>
 
-                <td data-label="Pedido máximo">${maxOrder}</td>
+                            <td data-label="Pedido máximo">${maxOrder}</td>
 
-                <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
+                            <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
 
-                <td data-label="" class="services-list__description">
-                    ${service.descricao ? `
-                    <div class="component_button_view">
-                        <button class="btn btn-actions btn-view-service-description"
-                            data-toggle="modal"
-                            data-content-id="#service-description-id-55-${service.id_servico}"
-                            data-service-id="${service.id_servico}"
-                            data-service-name="${service.nome}"
-                            data-min="${minOrder}"
-                            data-max="${maxOrder}"
-                            data-target="#service-description-55">
-                            Visualizar
-                        </button>
-                    </div>
-                    <div class="d-none" id="service-description-id-55-${service.id_servico}">
-                        ${service.descricao.replace(/\n/g, "<br>")}
-                    </div>
-                    ` : ''}
-                </td>
-            `;
+                            <td data-label="" class="services-list__description">
+                                ${service.descricao ? `
+                                <div class="component_button_view">
+                                    <button class="btn btn-actions btn-view-service-description"
+                                        data-toggle="modal"
+                                        data-content-id="#service-description-id-55-${service.id_servico}"
+                                        data-service-id="${service.id_servico}"
+                                        data-service-name="${service.nome}"
+                                        data-min="${minOrder}"
+                                        data-max="${maxOrder}"
+                                        data-target="#service-description-55">
+                                        Visualizar
+                                    </button>
+                                </div>
+                                <div class="d-none" id="service-description-id-55-${service.id_servico}">
+                                    ${service.descricao.replace(/\n/g, "<br>")}
+                                </div>
+                                ` : ''}
+                            </td>
+                        `;
 
                         tbody.appendChild(serviceRow);
                     });
@@ -505,12 +469,10 @@
     </script>
 
     <script type="text/javascript">
-        window.modules.layouts = { "theme_id": 23, "auth": 0, "live": true, "csrftoken": "L1tjeQBUwXhimMFOQW-mfPQhCHSYYdNSO4lVo5RDUQtYLDsvSiSoFVvqlQ8RPukxw255E7UPoz9O3SL0-iRhXQ==" };   </script>
+        window.modules.layouts = { "theme_id": 23, "auth": 0, "live": true, "csrftoken": "Wa30bNtxtr7RAJkQkuig75Dam7g51J_yzZuz9H4Yy8IX4KQ0lQDp0pxUzCekkfDC0eio-XTix6Kl0eqXO3OzuA==" };   
+    </script>
     <script type="text/javascript">
-        window.modules.siteServices = { "quickOrderAction": "\/quick-order", "quickOrderUrl": "\/" };   </script>
-    <script type="text/javascript">
-        window.modules.alerts = { "alerts": [] };   </script>
-    <script type="text/javascript">
+        window.modules.siteServices = { "quickOrderAction": "\/quick-order", "quickOrderUrl": "\/" };   
     </script>
 </body>
 
