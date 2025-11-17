@@ -26,14 +26,12 @@
   <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
   <![endif]-->
 
-
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-55XYV3KBYF"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
-
         gtag('config', 'G-55XYV3KBYF');
     </script>
 
@@ -266,27 +264,27 @@
                                     <div class="orders-history__margin-tab">
                                         <div class="component_status_tabs">
                                             <div class="">
-                                                <ul class="nav nav-pills tab">
+                                                <ul class="nav nav-pills tab" id="status-tabs">
                                                     <li class="nav-item">
-                                                        <a class="nav-link active" href="/orders">Tudo</a>
+                                                        <a class="nav-link" href="/orders">Tudo</a>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <a class="nav-link " href="/orders/pending">Pendente</a>
+                                                        <a class="nav-link" href="/orders/pending">Pendente</a>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <a class="nav-link " href="/orders/inprogress">Em progresso</a>
+                                                        <a class="nav-link" href="/orders/inprogress">Em progresso</a>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <a class="nav-link " href="/orders/completed">Concluído</a>
+                                                        <a class="nav-link" href="/orders/completed">Concluído</a>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <a class="nav-link " href="/orders/partial">Parcial</a>
+                                                        <a class="nav-link" href="/orders/partial">Parcial</a>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <a class="nav-link " href="/orders/processing">Processando</a>
+                                                        <a class="nav-link" href="/orders/processing">Processando</a>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <a class="nav-link " href="/orders/canceled">Cancelado</a>
+                                                        <a class="nav-link" href="/orders/canceled">Cancelado</a>
                                                     </li>
                                                 </ul>
                                             </div>
@@ -308,8 +306,7 @@
                                                                     <div
                                                                         class="component_form_group component_button_search">
                                                                         <div class="">
-                                                                            <form action="/orders" method="get"
-                                                                                id="history-search">
+                                                                            <form id="history-search">
                                                                                 <div class="input-group">
                                                                                     <input type="text" name="search"
                                                                                         class="form-control" value=""
@@ -348,6 +345,9 @@
                                                         </thead>
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens serão carregadas dinamicamente aqui -->
+                                                            <tr>
+                                                                <td colspan="9" class="text-center">Carregando ordens...</td>
+                                                            </tr>
                                                         </tbody>
                                                     </table>
                                                 </div>
@@ -375,8 +375,6 @@
     <!-- Notifications wrapper -->
     <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
 
-
-
     <script type="text/javascript" src="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js">
     </script>
     <script type="text/javascript" src="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js">
@@ -392,18 +390,37 @@
     <script type="text/javascript">
         window.modules.alerts = { "alerts": [] };   </script>
     <script type="text/javascript">
+        // Função para determinar o status baseado na URL
+        function getStatusFromURL() {
+            const path = window.location.pathname;
+            const statusMap = {
+                '/orders/pending': 'pending',
+                '/orders/inprogress': 'progress', 
+                '/orders/completed': 'completed',
+                '/orders/partial': 'partial',
+                '/orders/processing': 'processing',
+                '/orders/canceled': 'canceled',
+                '/orders': 'todos'
+            };
+            return statusMap[path] || 'todos';
+        }
+
         // Função para carregar as ordens da API
         async function loadOrders() {
             try {
-                // Obter o token do localStorage ou de onde estiver armazenado
                 const token = localStorage.getItem('authToken') || getTokenFromCookie();
                 
                 if (!token) {
                     console.error('Token de autenticação não encontrado');
+                    document.getElementById('orders-tbody').innerHTML = 
+                        '<tr><td colspan="9" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
                     return;
                 }
 
-                const response = await fetch('/api/orders', {
+                const status = getStatusFromURL();
+                const url = `/api/orders${status !== 'todos' ? `?status=${status}` : ''}`;
+
+                const response = await fetch(url, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -412,16 +429,20 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Token inválido ou expirado');
+                    }
                     throw new Error(`Erro na requisição: ${response.status}`);
                 }
 
                 const data = await response.json();
                 displayOrders(data.acoes);
+                updateActiveTab();
+                
             } catch (error) {
                 console.error('Erro ao carregar ordens:', error);
-                // Exibir mensagem de erro para o usuário
                 document.getElementById('orders-tbody').innerHTML = 
-                    '<tr><td colspan="9" class="text-center">Erro ao carregar ordens</td></tr>';
+                    `<tr><td colspan="9" class="text-center">${error.message}</td></tr>`;
             }
         }
 
@@ -445,50 +466,77 @@
                 
                 // Determinar o status em português
                 let statusText = '';
+                let statusClass = '';
+                
                 switch(order.status) {
                     case 'pendente':
                         statusText = 'Pendente';
+                        statusClass = 'text-warning';
                         break;
                     case 'progress':
                         statusText = 'Em progresso';
+                        statusClass = 'text-info';
                         break;
                     case 'completed':
                         statusText = 'Concluído';
+                        statusClass = 'text-success';
                         break;
                     case 'partial':
                         statusText = 'Parcial';
+                        statusClass = 'text-primary';
                         break;
                     case 'processing':
                         statusText = 'Processando';
+                        statusClass = 'text-secondary';
                         break;
                     case 'canceled':
                         statusText = 'Cancelado';
+                        statusClass = 'text-danger';
                         break;
                     default:
                         statusText = order.status;
+                        statusClass = 'text-muted';
                 }
+
+                // Formatar valor monetário
+                const valorFormatado = order.valor ? parseFloat(order.valor).toFixed(2).replace('.', ',') : '0,00';
 
                 return `
                     <tr>
-                        <td data-label="ID">${order._id || order.id}</td>
+                        <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : 'N/A'}</td>
                         <td data-label="Data">
                             <span class="nowrap">${formattedDate}</span>
                             <span class="nowrap">${formattedTime}</span>
                         </td>
                         <td data-label="Link" class="table-link">
-                            <a href="${order.link || '#'}" target="_blank">${order.link || 'N/A'}</a>
+                            <a href="${order.link || '#'}" target="_blank" title="${order.link || 'N/A'}">
+                                ${order.link ? (order.link.length > 30 ? order.link.substring(0, 30) + '...' : order.link) : 'N/A'}
+                            </a>
                         </td>
-                        <td data-label="Valor">${order.valor || '0.00'}</td>
+                        <td data-label="Valor">R$ ${valorFormatado}</td>
                         <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || 0}</td>
                         <td data-label="Quantidade">${order.quantidade || 0}</td>
                         <td data-label="Serviço" class="table-service">
                             ${order.servicoDetalhes ? order.servicoDetalhes.nome : 'Serviço não encontrado'}
                         </td>
-                        <td data-label="Status" nowrap>${statusText}</td>
+                        <td data-label="Status" nowrap class="${statusClass}">${statusText}</td>
                         <td data-label="Restam">${remaining}</td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        // Função para atualizar a aba ativa
+        function updateActiveTab() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('#status-tabs .nav-link');
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
         }
 
         // Função auxiliar para obter token do cookie (se necessário)
@@ -496,16 +544,48 @@
             const cookies = document.cookie.split(';');
             for (let cookie of cookies) {
                 const [name, value] = cookie.trim().split('=');
-                if (name === 'authToken') {
+                if (name === 'authToken' || name === 'token') {
                     return value;
                 }
             }
             return null;
         }
 
-        // Carregar ordens quando a página for carregada
+        // Prevenir comportamento padrão dos links de filtro
         document.addEventListener('DOMContentLoaded', function() {
+            // Carregar ordens iniciais
             loadOrders();
+            
+            // Adicionar event listeners para os links de filtro
+            const filterLinks = document.querySelectorAll('#status-tabs .nav-link');
+            filterLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const href = this.getAttribute('href');
+                    
+                    // Atualizar URL sem recarregar a página
+                    window.history.pushState({}, '', href);
+                    
+                    // Recarregar ordens com novo filtro
+                    loadOrders();
+                });
+            });
+
+            // Lidar com botão voltar/avancar do navegador
+            window.addEventListener('popstate', function() {
+                loadOrders();
+            });
+
+            // Lidar com busca
+            const searchForm = document.getElementById('history-search');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const searchTerm = this.querySelector('input[name="search"]').value;
+                    // Implementar busca se necessário
+                    console.log('Buscar por:', searchTerm);
+                });
+            }
         });
     </script>
 </body>
