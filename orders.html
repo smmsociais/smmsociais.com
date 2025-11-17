@@ -35,8 +35,6 @@
         gtag('config', 'G-55XYV3KBYF');
     </script>
 
-    <script src="//code.tidio.co/yxe9fxxr1wco1ostubvjbxm05slry3qx.js" async></script>
-
     <script>
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
@@ -346,7 +344,8 @@
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens serão carregadas dinamicamente aqui -->
                                                             <tr>
-                                                                <td colspan="9" class="text-center">Carregando ordens...</td>
+                                                                <td colspan="9" class="text-center">Carregando ordens...
+                                                                </td>
                                                             </tr>
                                                         </tbody>
                                                     </table>
@@ -391,40 +390,40 @@
         window.modules.alerts = { "alerts": [] };   </script>
     <script type="text/javascript">
         // Função para determinar o status baseado na URL
-function getStatusFromURL() {
-    let path = window.location.pathname.replace(/\/$/, ""); // remove barra final
+        function getStatusFromURL() {
+            let path = window.location.pathname.replace(/\/$/, ""); // remove barra final
 
-    const statusMap = {
-        '/orders/pending': 'pending',
-        '/orders/inprogress': 'progress',
-        '/orders/completed': 'completed',
-        '/orders/partial': 'partial',
-        '/orders/processing': 'processing',
-        '/orders/canceled': 'canceled',
-        '/orders': 'todos'
-    };
+            const statusMap = {
+                '/orders/pending': 'pending',
+                '/orders/inprogress': 'progress',
+                '/orders/completed': 'completed',
+                '/orders/partial': 'partial',
+                '/orders/processing': 'processing',
+                '/orders/canceled': 'canceled',
+                '/orders': 'todos'
+            };
 
-    return statusMap[path] || 'todos';
-}
+            return statusMap[path] || 'todos';
+        }
 
-function loadToken() {
-    return (
-        localStorage.getItem('authToken') ||
-        localStorage.getItem('token') ||
-        localStorage.getItem('user_token') ||
-        localStorage.getItem('auth') ||
-        getTokenFromCookie()
-    );
-}        
+        function loadToken() {
+            return (
+                localStorage.getItem('authToken') ||
+                localStorage.getItem('token') ||
+                localStorage.getItem('user_token') ||
+                localStorage.getItem('auth') ||
+                getTokenFromCookie()
+            );
+        }
 
         // Função para carregar as ordens da API
         async function loadOrders() {
             try {
                 const token = loadToken();
-                
+
                 if (!token) {
                     console.error('Token de autenticação não encontrado');
-                    document.getElementById('orders-tbody').innerHTML = 
+                    document.getElementById('orders-tbody').innerHTML =
                         '<tr><td colspan="9" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
                     return;
                 }
@@ -450,10 +449,10 @@ function loadToken() {
                 const data = await response.json();
                 displayOrders(data.acoes);
                 updateActiveTab();
-                
+
             } catch (error) {
                 console.error('Erro ao carregar ordens:', error);
-                document.getElementById('orders-tbody').innerHTML = 
+                document.getElementById('orders-tbody').innerHTML =
                     `<tr><td colspan="9" class="text-center">${error.message}</td></tr>`;
             }
         }
@@ -461,7 +460,7 @@ function loadToken() {
         // Função para exibir as ordens na tabela
         function displayOrders(orders) {
             const tbody = document.getElementById('orders-tbody');
-            
+
             if (!orders || orders.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma ordem encontrada</td></tr>';
                 return;
@@ -472,15 +471,15 @@ function loadToken() {
                 const date = new Date(order.dataCriacao);
                 const formattedDate = date.toLocaleDateString('pt-BR');
                 const formattedTime = date.toLocaleTimeString('pt-BR');
-                
+
                 // Calcular valores restantes
                 const remaining = order.quantidade - order.validadas;
-                
+
                 // Determinar o status em português
                 let statusText = '';
                 let statusClass = '';
-                
-                switch(order.status) {
+
+                switch (order.status) {
                     case 'pendente':
                         statusText = 'Pendente';
                         statusClass = 'text-warning';
@@ -542,7 +541,7 @@ function loadToken() {
         function updateActiveTab() {
             const currentPath = window.location.pathname;
             const navLinks = document.querySelectorAll('#status-tabs .nav-link');
-            
+
             navLinks.forEach(link => {
                 link.classList.remove('active');
                 if (link.getAttribute('href') === currentPath) {
@@ -552,34 +551,34 @@ function loadToken() {
         }
 
         // Prevenir comportamento padrão dos links de filtro
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Carregar ordens iniciais
             loadOrders();
-            
+
             // Adicionar event listeners para os links de filtro
             const filterLinks = document.querySelectorAll('#status-tabs .nav-link');
             filterLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
+                link.addEventListener('click', function (e) {
                     e.preventDefault();
                     const href = this.getAttribute('href');
-                    
+
                     // Atualizar URL sem recarregar a página
                     window.history.pushState({}, '', href);
-                    
+
                     // Recarregar ordens com novo filtro
                     loadOrders();
                 });
             });
 
             // Lidar com botão voltar/avancar do navegador
-            window.addEventListener('popstate', function() {
+            window.addEventListener('popstate', function () {
                 loadOrders();
             });
 
             // Lidar com busca
             const searchForm = document.getElementById('history-search');
             if (searchForm) {
-                searchForm.addEventListener('submit', function(e) {
+                searchForm.addEventListener('submit', function (e) {
                     e.preventDefault();
                     const searchTerm = this.querySelector('input[name="search"]').value;
                     // Implementar busca se necessário
