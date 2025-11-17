@@ -145,11 +145,19 @@
                                 <div class="col-lg-8">
                                     <div class="block-signin__card component_card">
                                         <div class="card">
-
-                                            <form method="post" action="/"
-                                                class="component_form_group component_checkbox_remember_me">
+                                            <!-- FORMULÁRIO DE LOGIN ATUALIZADO -->
+                                            <form id="loginForm" action="javascript:void(0);" method="POST" class="component_form_group component_checkbox_remember_me">
                                                 <div class="form-row">
                                                     <div class="custom-col">
+                                                        <div class="form-group ">
+                                                            <label>Usuário</label>
+                                                            <input class="form-control" type="text" id="username" required />
+                                                        </div>
+                                                    </div>
+                                                    <div class="custom-col">
+                                                        <div class="form-group ">
+                                                            <label>Senha</label>
+                                                            <input class="form-control" type="password" id="password" required />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -178,11 +186,8 @@
                                                 <div class="form-row">
                                                     <div class="custom-col">
                                                         <div class="form-group d-flex component_button_submit ">
-                                                            <button class="btn btn-big-primary"
-                                                                type="submit">Entrar</button>
+                                                            <button class="btn btn-big-primary" type="submit">Entrar</button>
                                                         </div>
-                                                    </div>
-                                                </div>
                                                     </div>
                                                 </div>
 
@@ -201,11 +206,12 @@
                                         </div>
                                     </div>
                                 </div>
-
                             </div>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Restante do código HTML permanece igual -->
                 <div id="block_89">
                     <div class="block-bg"></div>
                     <div class="container">
@@ -949,39 +955,39 @@
     </div>
     <!-- Notifications wrapper -->
     <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
-<form id="loginForm" action="javascript:void(0);" method="POST">
-    <input type="text" id="username" required>
-    <input type="password" id="password" required>
-    <button type="submit">Entrar</button>
-</form>
 
-<script>
-document.getElementById('loginForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
 
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
 
-    try {
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: username, senha: password })
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify({ 
+                        email: username, 
+                        senha: password 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    window.location.href = '/painel';
+                } else {
+                    alert('Erro: ' + data.error);
+                }
+            } catch (error) {
+                alert('Erro ao conectar.');
+            }
         });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            localStorage.setItem('token', data.token);
-            window.location.href = '/painel';
-        } else {
-            alert('Erro: ' + data.error);
-        }
-    } catch (error) {
-        alert('Erro ao conectar.');
-    }
-});
-</script>
+    </script>
 </body>
 
 </html>
