@@ -117,7 +117,7 @@
                                                 <li
                                                     class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
                                                     <a class="component-navbar-nav-link component-navbar-nav-link__navbar-public component-navbar-nav-link-active__navbar-public"
-                                                        href="/services"> Serviços</a>
+                                                        href="/servicos"> Serviços</a>
                                                 </li>
                                                 <li
                                                     class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
@@ -165,11 +165,13 @@
                                                                 aria-expanded="false">
                                                                 <span class="fal fa-filter"></span>
                                                                 <span class="services-filter__active-category"
-                                                                    data-filter-active-category="true">Todas as categorias</span>
+                                                                    data-filter-active-category="true">Todas as
+                                                                    categorias</span>
                                                             </a>
                                                             <div class="dropdown-menu" id="category-filter-menu">
                                                                 <a class="dropdown-item active" href="#"
-                                                                    data-filter-category-id="all">Todas as categorias</a>
+                                                                    data-filter-category-id="all">Todas as
+                                                                    categorias</a>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -311,7 +313,7 @@
             // Função para renderizar categorias no filtro
             function renderCategories(services) {
                 const categoryMenu = document.getElementById('category-filter-menu');
-                
+
                 // Limpar categorias existentes (exceto "Todas as categorias")
                 const allCategoriesItem = categoryMenu.querySelector('[data-filter-category-id="all"]');
                 categoryMenu.innerHTML = '';
@@ -319,7 +321,7 @@
 
                 // Coletar categorias únicas
                 const categories = new Map();
-                
+
                 services.forEach(service => {
                     const categoryName = service.categoria || "Outros";
                     if (!categories.has(categoryName)) {
@@ -354,10 +356,10 @@
                 // Filtrar serviços por categoria e pesquisa
                 let filteredServices = services.filter(service => {
                     const matchesCategory = currentCategory === 'all' || service.categoria === currentCategory;
-                    const matchesSearch = currentSearch === '' || 
+                    const matchesSearch = currentSearch === '' ||
                         service.nome.toLowerCase().includes(currentSearch.toLowerCase()) ||
                         (service.descricao && service.descricao.toLowerCase().includes(currentSearch.toLowerCase()));
-                    
+
                     return matchesCategory && matchesSearch;
                 });
 
@@ -485,19 +487,19 @@
                 document.querySelectorAll('#category-filter-menu .dropdown-item').forEach(item => {
                     item.addEventListener('click', function (e) {
                         e.preventDefault();
-                        
+
                         // Atualizar classe ativa
                         document.querySelectorAll('#category-filter-menu .dropdown-item').forEach(i => {
                             i.classList.remove('active');
                         });
                         this.classList.add('active');
-                        
+
                         // Atualizar texto do botão
                         const activeCategoryText = document.querySelector('.services-filter__active-category');
                         if (activeCategoryText) {
                             activeCategoryText.textContent = this.textContent;
                         }
-                        
+
                         // Filtrar serviços
                         currentCategory = this.getAttribute('data-filter-category-id');
                         renderServices(allServices);
@@ -507,7 +509,7 @@
                 // Pesquisa de serviços
                 const searchInput = document.getElementById('search-service-input');
                 const searchBtn = document.getElementById('search-service-btn');
-                
+
                 if (searchBtn) {
                     searchBtn.addEventListener('click', function () {
                         currentSearch = searchInput.value;
