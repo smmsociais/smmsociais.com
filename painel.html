@@ -336,9 +336,9 @@
                                                     <div class="form-group hidden" id="quantity_field">
                                                         <label for="orderform-quantity"
                                                             class="control-label">Quantidade</label>
-                                                        <input type="number" class="form-control" id="orderform-quantity"
-                                                            name="OrderForm[quantity]" placeholder="Digite a quantidade"
-                                                            min="0">
+                                                        <input type="number" class="form-control"
+                                                            id="orderform-quantity" name="OrderForm[quantity]"
+                                                            placeholder="Digite a quantidade" min="0">
                                                     </div>
                                                     <div id="fields"></div>
                                                     <div class="form-group">
@@ -459,11 +459,14 @@
     <!-- Script para carregar serviços da API -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            let allServices = []; // Armazenar todos os serviços
+            let currentService = null; // Serviço atual selecionado
+
             // Função para carregar serviços da API
             async function loadServices() {
                 try {
                     const response = await fetch('https://smmsociais.com/api/servico');
-                    const services = await response.json();
+                    allServices = await response.json();
 
                     // Preencher o dropdown de serviços
                     const serviceSelect = document.getElementById('orderform-service');
@@ -478,7 +481,7 @@
                     serviceSelect.appendChild(defaultOption);
 
                     // Adicionar serviços da API
-                    services.forEach(service => {
+                    allServices.forEach(service => {
                         const option = document.createElement('option');
                         option.value = service.id_servico;
                         option.textContent = service.nome;
@@ -489,13 +492,31 @@
                         serviceSelect.appendChild(option);
                     });
 
+                    // Preencher automaticamente com o primeiro serviço
+                    if (allServices.length > 0) {
+                        autoSelectFirstService();
+                    }
+
                     // Atualizar categorias com base nos serviços
-                    updateCategories(services);
+                    updateCategories(allServices);
 
                 } catch (error) {
                     console.error('Erro ao carregar serviços:', error);
                     const serviceSelect = document.getElementById('orderform-service');
                     serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+                }
+            }
+
+            // Função para preencher automaticamente o primeiro serviço
+            function autoSelectFirstService() {
+                const serviceSelect = document.getElementById('orderform-service');
+                if (serviceSelect.options.length > 1) {
+                    // Selecionar o primeiro serviço (índice 1, pois o índice 0 é a opção padrão)
+                    serviceSelect.selectedIndex = 1;
+                    
+                    // Disparar o evento change para atualizar todos os campos
+                    const event = new Event('change');
+                    serviceSelect.dispatchEvent(event);
                 }
             }
 
@@ -553,6 +574,30 @@
                     option.setAttribute('data-description', service.descricao);
                     serviceSelect.appendChild(option);
                 });
+
+                // Preencher automaticamente com o primeiro serviço após filtro
+                if (filteredServices.length > 0) {
+                    autoSelectFirstService();
+                }
+            }
+
+            // Função para calcular o valor baseado na quantidade
+            function calculateTotal(pricePer1000, quantity) {
+                if (!pricePer1000 || !quantity) return 0;
+                return (parseFloat(pricePer1000) * parseInt(quantity)) / 1000;
+            }
+
+            // Função para atualizar o campo de valor
+            function updateChargeField(pricePer1000, quantity) {
+                const chargeInput = document.getElementById('charge');
+                if (pricePer1000 && quantity) {
+                    const total = calculateTotal(pricePer1000, quantity);
+                    chargeInput.value = `R$ ${total.toFixed(2)} (R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000)`;
+                } else if (pricePer1000) {
+                    chargeInput.value = `R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000`;
+                } else {
+                    chargeInput.value = '';
+                }
             }
 
             // Adicionar funcionalidade de busca
@@ -581,13 +626,17 @@
                 const minQuantity = selectedOption.getAttribute('data-min');
                 const maxQuantity = selectedOption.getAttribute('data-max');
 
+                // Armazenar serviço atual
+                currentService = {
+                    price: price,
+                    min: minQuantity,
+                    max: maxQuantity
+                };
+
                 // Atualizar preço
-                const chargeInput = document.getElementById('charge');
-                if (price) {
-                    chargeInput.value = `R$ ${parseFloat(price).toFixed(2)} por 1000`;
-                } else {
-                    chargeInput.value = '';
-                }
+                const quantityInput = document.getElementById('orderform-quantity');
+                const currentQuantity = quantityInput.value || minQuantity || 0;
+                updateChargeField(price, currentQuantity);
 
                 // Atualizar descrição
                 const descriptionPanel = document.querySelector('.panel-description');
@@ -602,21 +651,37 @@
                 // Mostrar/ocultar campos de link e quantidade
                 const linkField = document.getElementById('link_field');
                 const quantityField = document.getElementById('quantity_field');
-                
+
                 if (selectedOption.value) {
                     linkField.classList.remove('hidden');
                     quantityField.classList.remove('hidden');
-                    
+
                     // Configurar limites da quantidade
                     if (minQuantity) {
-                        quantityField.querySelector('input').min = minQuantity;
+                        quantityInput.min = minQuantity;
+                        quantityInput.placeholder = `Mínimo: ${minQuantity}`;
                     }
                     if (maxQuantity) {
-                        quantityField.querySelector('input').max = maxQuantity;
+                        quantityInput.max = maxQuantity;
+                        quantityInput.placeholder = `Mínimo: ${minQuantity || 0}, Máximo: ${maxQuantity}`;
+                    }
+
+                    // Preencher quantidade mínima automaticamente
+                    if (minQuantity && !quantityInput.value) {
+                        quantityInput.value = minQuantity;
+                        updateChargeField(price, minQuantity);
                     }
                 } else {
                     linkField.classList.add('hidden');
                     quantityField.classList.add('hidden');
+                }
+            });
+
+            // Adicionar evento para atualizar valor quando a quantidade mudar
+            const quantityInput = document.getElementById('orderform-quantity');
+            quantityInput.addEventListener('input', function () {
+                if (currentService && currentService.price) {
+                    updateChargeField(currentService.price, this.value);
                 }
             });
 
