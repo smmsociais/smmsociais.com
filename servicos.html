@@ -39,6 +39,11 @@
 
     <script src="//code.tidio.co/yxe9fxxr1wco1ostubvjbxm05slry3qx.js" async></script>
 
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+
     <script>
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
@@ -98,17 +103,15 @@
                                                 <h1>✅<span style="color: var(--color-id-117)">erified</span></h1>
                                             </a>
                                         </div>
-                                        <button class="navbar-toggler" type="button" data-toggle="collapse"
-                                            data-target="#navbar-collapse-49" aria-controls="navbar-collapse-49"
+                                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#navbar-collapse-49" aria-controls="navbar-collapse-49"
                                             aria-expanded="false" aria-label="Toggle navigation">
-                                            <span class="navbar-burger">
-                                                <span class="navbar-burger-line"></span>
-                                            </span>
+                                            <span class="navbar-toggler-icon"></span>
                                         </button>
                                     </div>
                                     <div class="collapse navbar-collapse" id="navbar-collapse-49">
                                         <div class="d-flex flex-wrap component-navbar-collapse">
-                                            <ul class="navbar-nav">
+                                            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                                                 <li
                                                     class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
                                                     <a class="component-navbar-nav-link component-navbar-nav-link__navbar-public "
@@ -117,7 +120,7 @@
                                                 <li
                                                     class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
                                                     <a class="component-navbar-nav-link component-navbar-nav-link__navbar-public component-navbar-nav-link-active__navbar-public"
-                                                        href="/servicos"> Serviços</a>
+                                                        href="/services"> Serviços</a>
                                                 </li>
                                                 <li
                                                     class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
@@ -161,17 +164,15 @@
                                                         <div class="dropdown">
                                                             <a class="btn btn-big-primary w-sm-auto w-100 dropdown-toggle"
                                                                 href="#" role="button" id="dropdown-category-filter-53"
-                                                                data-toggle="dropdown" aria-haspopup="true"
+                                                                data-bs-toggle="dropdown" aria-haspopup="true"
                                                                 aria-expanded="false">
                                                                 <span class="fal fa-filter"></span>
                                                                 <span class="services-filter__active-category"
-                                                                    data-filter-active-category="true">Todas as
-                                                                    categorias</span>
+                                                                    data-filter-active-category="true">Todas as categorias</span>
                                                             </a>
                                                             <div class="dropdown-menu" id="category-filter-menu">
                                                                 <a class="dropdown-item active" href="#"
-                                                                    data-filter-category-id="all">Todas as
-                                                                    categorias</a>
+                                                                    data-filter-category-id="all">Todas as categorias</a>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -210,7 +211,7 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <span>Tempo médio</span>
                                                                     <span class="ml-1 mr-1 fa fa-exclamation-circle"
-                                                                        data-toggle="tooltip" data-placement="top"
+                                                                        data-bs-toggle="tooltip" data-bs-placement="top"
                                                                         title="The average completion time is calculated based on the completion times of the latest orders."></span>
                                                                 </div>
                                                             </th>
@@ -236,11 +237,11 @@
                             </div>
                         </div>
 
-                        <div class="modal fade " tabindex="-1" role="dialog" id="service-description-53">
+                        <div class="modal fade" tabindex="-1" role="dialog" id="service-description-53">
                             <div class="modal-dialog" role="document">
                                 <div class="modal-content">
                                     <div class="modal-body">
-                                        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                                        <button class="close" type="button" data-bs-dismiss="modal" aria-label="Close">
                                             <i class="fas fa-times"></i>
                                         </button>
                                         <div class="service-description-content"></div>
@@ -282,11 +283,20 @@
     <!-- Notifications wrapper -->
     <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
 
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             let allServices = [];
             let currentCategory = 'all';
             let currentSearch = '';
+
+            // Inicializar tooltips do Bootstrap
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
 
             // Função para carregar serviços da API
             function loadServices() {
@@ -313,7 +323,7 @@
             // Função para renderizar categorias no filtro
             function renderCategories(services) {
                 const categoryMenu = document.getElementById('category-filter-menu');
-
+                
                 // Limpar categorias existentes (exceto "Todas as categorias")
                 const allCategoriesItem = categoryMenu.querySelector('[data-filter-category-id="all"]');
                 categoryMenu.innerHTML = '';
@@ -321,7 +331,7 @@
 
                 // Coletar categorias únicas
                 const categories = new Map();
-
+                
                 services.forEach(service => {
                     const categoryName = service.categoria || "Outros";
                     if (!categories.has(categoryName)) {
@@ -356,10 +366,10 @@
                 // Filtrar serviços por categoria e pesquisa
                 let filteredServices = services.filter(service => {
                     const matchesCategory = currentCategory === 'all' || service.categoria === currentCategory;
-                    const matchesSearch = currentSearch === '' ||
+                    const matchesSearch = currentSearch === '' || 
                         service.nome.toLowerCase().includes(currentSearch.toLowerCase()) ||
                         (service.descricao && service.descricao.toLowerCase().includes(currentSearch.toLowerCase()));
-
+                    
                     return matchesCategory && matchesSearch;
                 });
 
@@ -419,13 +429,13 @@
                                 ${service.descricao ? `
                                 <div class="component_button_view">
                                     <button class="btn btn-actions btn-view-service-description"
-                                        data-toggle="modal"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#service-description-53"
                                         data-content-id="#service-description-id-53-${service.id_servico}"
                                         data-service-id="${service.id_servico}"
                                         data-service-name="${service.nome}"
                                         data-min="${minOrder}"
-                                        data-max="${maxOrder}"
-                                        data-target="#service-description-53">
+                                        data-max="${maxOrder}">
                                         Visualizar
                                     </button>
                                 </div>
@@ -487,19 +497,19 @@
                 document.querySelectorAll('#category-filter-menu .dropdown-item').forEach(item => {
                     item.addEventListener('click', function (e) {
                         e.preventDefault();
-
+                        
                         // Atualizar classe ativa
                         document.querySelectorAll('#category-filter-menu .dropdown-item').forEach(i => {
                             i.classList.remove('active');
                         });
                         this.classList.add('active');
-
+                        
                         // Atualizar texto do botão
                         const activeCategoryText = document.querySelector('.services-filter__active-category');
                         if (activeCategoryText) {
                             activeCategoryText.textContent = this.textContent;
                         }
-
+                        
                         // Filtrar serviços
                         currentCategory = this.getAttribute('data-filter-category-id');
                         renderServices(allServices);
@@ -509,7 +519,7 @@
                 // Pesquisa de serviços
                 const searchInput = document.getElementById('search-service-input');
                 const searchBtn = document.getElementById('search-service-btn');
-
+                
                 if (searchBtn) {
                     searchBtn.addEventListener('click', function () {
                         currentSearch = searchInput.value;
