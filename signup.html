@@ -87,11 +87,13 @@
             font-size: 0.875rem;
             margin-top: 0.25rem;
         }
+
         .success-message {
             color: #28a745;
             font-size: 0.875rem;
             margin-top: 0.25rem;
         }
+
         .loading {
             opacity: 0.7;
             pointer-events: none;
@@ -190,8 +192,7 @@
                                                                 <label for="password"
                                                                     class="control-label">Senha</label>
                                                                 <input type="password" class="form-control"
-                                                                    id="password" value=""
-                                                                    name="senha" required>
+                                                                    id="password" value="" name="senha" required>
                                                                 <div id="password-error" class="error-message"></div>
                                                             </div>
                                                         </div>
@@ -202,9 +203,10 @@
                                                                 <label for="password_again"
                                                                     class="control-label">Confirmar senha</label>
                                                                 <input type="password" class="form-control"
-                                                                    id="password_again" value=""
-                                                                    name="password_again" required>
-                                                                <div id="password-again-error" class="error-message"></div>
+                                                                    id="password_again" value="" name="password_again"
+                                                                    required>
+                                                                <div id="password-again-error" class="error-message">
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -277,11 +279,11 @@
         window.modules.signup = [];   </script>
     <script type="text/javascript">
         // Script para processar o formulário de cadastro
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const signupForm = document.getElementById('signup-form');
             const submitButton = document.getElementById('submit-button');
             const notificationArea = document.getElementById('notification-area');
-            
+
             // Função para exibir notificação
             function showNotification(message, type) {
                 notificationArea.innerHTML = `
@@ -293,60 +295,60 @@
                     </div>
                 `;
             }
-            
+
             // Função para limpar erros
             function clearErrors() {
                 document.querySelectorAll('.error-message').forEach(el => {
                     el.textContent = '';
                 });
             }
-            
+
             // Função para validar formulário
             function validateForm(email, password, passwordAgain) {
                 let isValid = true;
                 clearErrors();
-                
+
                 // Validação de email
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(email)) {
                     document.getElementById('email-error').textContent = 'Por favor, insira um e-mail válido.';
                     isValid = false;
                 }
-                
+
                 // Validação de senha
                 if (password.length < 6) {
                     document.getElementById('password-error').textContent = 'A senha deve ter pelo menos 6 caracteres.';
                     isValid = false;
                 }
-                
+
                 // Validação de confirmação de senha
                 if (password !== passwordAgain) {
                     document.getElementById('password-again-error').textContent = 'As senhas não coincidem.';
                     isValid = false;
                 }
-                
+
                 return isValid;
             }
-            
+
             // Evento de envio do formulário
-            signupForm.addEventListener('submit', async function(e) {
+            signupForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
-                
+
                 // Obter valores dos campos
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const passwordAgain = document.getElementById('password_again').value;
-                
+
                 // Validar formulário
                 if (!validateForm(email, password, passwordAgain)) {
                     return;
                 }
-                
+
                 // Desabilitar botão e mostrar estado de carregamento
                 submitButton.disabled = true;
                 submitButton.textContent = 'Cadastrando...';
                 signupForm.classList.add('loading');
-                
+
                 try {
                     // Enviar dados para a API
                     const response = await fetch('https://smmsociais.com/api/signup', {
@@ -359,17 +361,17 @@
                             senha: password
                         })
                     });
-                    
+
                     const data = await response.json();
-                    
+
                     if (response.ok) {
                         // Sucesso
                         showNotification(data.message || 'Cadastro realizado com sucesso!', 'success');
                         signupForm.reset();
-                        
+
                         // Redirecionar após 2 segundos
                         setTimeout(() => {
-                            window.location.href = '/';
+                            window.location.href = '/painel';
                         }, 2000);
                     } else {
                         // Erro
