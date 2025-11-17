@@ -86,7 +86,7 @@
     <div class="wrapper  wrapper-sidebar-navbar ">
         <div id="block_52" class="component_private_navbar">
             <span class="component_private_navbar ">
-                <div class="component-navbar-private__wrapper component_private_sidebar ">
+                <div class="component_private_navbar__wrapper component_private_sidebar ">
                     <div
                         class="sidebar-block__top component-navbar component-navbar__navbar-private editor__component-wrapper ">
                         <div>
@@ -332,7 +332,7 @@
                                                     </thead>
                                                 </table>
                                                 <div class="table-responsive table-responsive__search ">
-                                                    <table class="table">
+                                                    <table class="table" id="orders-table">
                                                         <thead>
                                                             <tr>
                                                                 <th>ID</th>
@@ -346,26 +346,8 @@
                                                                 <th>Restam</th>
                                                             </tr>
                                                         </thead>
-                                                        <tbody>
-                                                            <tr>
-                                                                <td data-label="ID">9211368</td>
-                                                                <td data-label="Data">
-                                                                    <span class="nowrap">2025-05-30</span>
-                                                                    <span class="nowrap">20:52:59</span>
-                                                                </td>
-                                                                <td data-label="Link " class="table-link">
-                                                                    <a href="/anon.ws?r=https%3A%2F%2Fwww.tiktok.com%2F%40smmsociais"
-                                                                        target="_blank">https://www.tiktok.com/@smmsociais</a>
-                                                                </td>
-                                                                <td data-label="Valor">0,99216</td>
-                                                                <td data-label="Contagem inicial" class="nowrap">0</td>
-                                                                <td data-label="Quantidade">78</td>
-                                                                <td data-label="Serviço" class="table-service">🙎‍♂️
-                                                                    Seguidores no Tiktok (Novo e Rápido) ⭐⭐</td>
-                                                                <td data-label="Status" nowrap>
-                                                                    Concluído </td>
-                                                                <td data-label="Restam">0</td>
-                                                            </tr>
+                                                        <tbody id="orders-tbody">
+                                                            <!-- As ordens serão carregadas dinamicamente aqui -->
                                                         </tbody>
                                                     </table>
                                                 </div>
@@ -410,6 +392,121 @@
     <script type="text/javascript">
         window.modules.alerts = { "alerts": [] };   </script>
     <script type="text/javascript">
+        // Função para carregar as ordens da API
+        async function loadOrders() {
+            try {
+                // Obter o token do localStorage ou de onde estiver armazenado
+                const token = localStorage.getItem('authToken') || getTokenFromCookie();
+                
+                if (!token) {
+                    console.error('Token de autenticação não encontrado');
+                    return;
+                }
+
+                const response = await fetch('/api/orders', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro na requisição: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayOrders(data.acoes);
+            } catch (error) {
+                console.error('Erro ao carregar ordens:', error);
+                // Exibir mensagem de erro para o usuário
+                document.getElementById('orders-tbody').innerHTML = 
+                    '<tr><td colspan="9" class="text-center">Erro ao carregar ordens</td></tr>';
+            }
+        }
+
+        // Função para exibir as ordens na tabela
+        function displayOrders(orders) {
+            const tbody = document.getElementById('orders-tbody');
+            
+            if (!orders || orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma ordem encontrada</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = orders.map(order => {
+                // Formatar a data
+                const date = new Date(order.dataCriacao);
+                const formattedDate = date.toLocaleDateString('pt-BR');
+                const formattedTime = date.toLocaleTimeString('pt-BR');
+                
+                // Calcular valores restantes
+                const remaining = order.quantidade - order.validadas;
+                
+                // Determinar o status em português
+                let statusText = '';
+                switch(order.status) {
+                    case 'pendente':
+                        statusText = 'Pendente';
+                        break;
+                    case 'progress':
+                        statusText = 'Em progresso';
+                        break;
+                    case 'completed':
+                        statusText = 'Concluído';
+                        break;
+                    case 'partial':
+                        statusText = 'Parcial';
+                        break;
+                    case 'processing':
+                        statusText = 'Processando';
+                        break;
+                    case 'canceled':
+                        statusText = 'Cancelado';
+                        break;
+                    default:
+                        statusText = order.status;
+                }
+
+                return `
+                    <tr>
+                        <td data-label="ID">${order._id || order.id}</td>
+                        <td data-label="Data">
+                            <span class="nowrap">${formattedDate}</span>
+                            <span class="nowrap">${formattedTime}</span>
+                        </td>
+                        <td data-label="Link" class="table-link">
+                            <a href="${order.link || '#'}" target="_blank">${order.link || 'N/A'}</a>
+                        </td>
+                        <td data-label="Valor">${order.valor || '0.00'}</td>
+                        <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || 0}</td>
+                        <td data-label="Quantidade">${order.quantidade || 0}</td>
+                        <td data-label="Serviço" class="table-service">
+                            ${order.servicoDetalhes ? order.servicoDetalhes.nome : 'Serviço não encontrado'}
+                        </td>
+                        <td data-label="Status" nowrap>${statusText}</td>
+                        <td data-label="Restam">${remaining}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Função auxiliar para obter token do cookie (se necessário)
+        function getTokenFromCookie() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'authToken') {
+                    return value;
+                }
+            }
+            return null;
+        }
+
+        // Carregar ordens quando a página for carregada
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOrders();
+        });
     </script>
 </body>
 
