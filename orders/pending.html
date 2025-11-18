@@ -229,10 +229,9 @@
                                 </div>
                             </div>
 
-                            <!-- Container para estatísticas -->
-                            <div id="stats-container" class="row mb-3">
+                            <!-- Alert Informativo -->
+                            <div class="row mb-3">
                                 <div class="col">
-                                    <!-- Alert Informativo -->
                                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
                                         <i class="fas fa-clock me-2"></i>
                                         <strong>Ordens Pendentes:</strong> Estas ordens estão aguardando processamento. 
@@ -423,7 +422,6 @@
                 const orders = data.acoes || data.orders || data.data || data;
                 displayOrders(Array.isArray(orders) ? orders : []);
                 updateActiveTab();
-                displayPendingStats(orders);
 
             } catch (error) {
                 console.error('Erro ao carregar ordens:', error);
@@ -527,128 +525,6 @@
                     </tr>
                 `;
             }).join('');
-        }
-
-        // Função para exibir estatísticas das ordens pendentes (CORRIGIDA)
-        function displayPendingStats(orders) {
-            if (!orders || orders.length === 0) return;
-            
-            const totalOrders = orders.length;
-            const totalQuantity = orders.reduce((sum, order) => sum + (order.quantidade || order.quantity || 0), 0);
-            const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valor || order.value || 0), 0);
-            
-            // Calcular tempo médio de espera
-            const now = new Date();
-            const totalWaitTime = orders.reduce((sum, order) => {
-                const start = new Date(order.dataCriacao || order.createdAt);
-                return sum + (now - start);
-            }, 0);
-            const avgWaitTime = totalOrders > 0 ? Math.round(totalWaitTime / totalOrders / (1000 * 60)) : 0;
-
-            // Criar ou atualizar elemento de estatísticas
-            let statsElement = document.getElementById('pending-stats');
-            const statsContainer = document.getElementById('stats-container');
-            
-            // Verificar se o container pai existe
-            if (!statsContainer) {
-                console.error('Container de estatísticas não encontrado');
-                return;
-            }
-
-            if (!statsElement) {
-                statsElement = document.createElement('div');
-                statsElement.id = 'pending-stats';
-                statsElement.className = 'col-md-12';
-                
-                statsElement.innerHTML = `
-                    <div class="card border-warning mb-3">
-                        <div class="card-header bg-warning text-dark">
-                            <i class="fas fa-chart-bar me-2"></i>
-                            <strong>Estatísticas das Ordens Pendentes</strong>
-                        </div>
-                        <div class="card-body">
-                            <div class="row text-center">
-                                <div class="col-md-3">
-                                    <h5 class="mb-0 text-warning">${totalOrders}</h5>
-                                    <small class="text-muted">Ordens Pendentes</small>
-                                </div>
-                                <div class="col-md-3">
-                                    <h5 class="mb-0 text-primary">${totalQuantity}</h5>
-                                    <small class="text-muted">Quantidade Total</small>
-                                </div>
-                                <div class="col-md-3">
-                                    <h5 class="mb-0 text-info">R$ ${totalValue.toFixed(2).replace('.', ',')}</h5>
-                                    <small class="text-muted">Valor Total</small>
-                                </div>
-                                <div class="col-md-3">
-                                    <h5 class="mb-0 text-secondary">${avgWaitTime} min</h5>
-                                    <small class="text-muted">Tempo Médio</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                // Inserir após o alert
-                const alertElement = statsContainer.querySelector('.alert');
-                if (alertElement && alertElement.parentNode) {
-                    alertElement.parentNode.insertBefore(statsElement, alertElement.nextSibling);
-                } else {
-                    // Fallback: adicionar no início do container
-                    statsContainer.insertBefore(statsElement, statsContainer.firstChild);
-                }
-            } else {
-                // Atualizar estatísticas existentes
-                statsElement.innerHTML = `
-                    <div class="card border-warning mb-3">
-                        <div class="card-header bg-warning text-dark">
-                            <i class="fas fa-chart-bar me-2"></i>
-                            <strong>Estatísticas das Ordens Pendentes</strong>
-                        </div>
-                        <div class="card-body">
-                            <div class="row text-center">
-                                <div class="col-md-3">
-                                    <h5 class="mb-0 text-warning">${totalOrders}</h5>
-                                    <small class="text-muted">Ordens Pendentes</small>
-                                </div>
-                                <div class="col-md-3">
-                                    <h5 class="mb-0 text-primary">${totalQuantity}</h5>
-                                    <small class="text-muted">Quantidade Total</small>
-                                </div>
-                                <div class="col-md-3">
-                                    <h5 class="mb-0 text-info">R$ ${totalValue.toFixed(2).replace('.', ',')}</h5>
-                                    <small class="text-muted">Valor Total</small>
-                                </div>
-                                <div class="col-md-3">
-                                    <h5 class="mb-0 text-secondary">${avgWaitTime} min</h5>
-                                    <small class="text-muted">Tempo Médio</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // Função para atualizar o status de uma ordem específica
-        function refreshOrder(orderId) {
-            // Mostrar loading no botão
-            const button = event.currentTarget;
-            const originalHtml = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            button.disabled = true;
-
-            // Simular atualização (em produção, faria uma chamada API)
-            setTimeout(() => {
-                button.innerHTML = originalHtml;
-                button.disabled = false;
-                
-                // Recarregar todas as ordens
-                loadOrders();
-                
-                // Mostrar notificação
-                showNotification('Status da ordem atualizado com sucesso!', 'success');
-            }, 1500);
         }
 
         // Função para mostrar notificações
