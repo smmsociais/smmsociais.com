@@ -217,7 +217,8 @@
                                                         <a class="nav-link" href="/orders/partial">Parcial</a>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <a class="nav-link active" href="/orders/processing">Processando</a>
+                                                        <a class="nav-link active"
+                                                            href="/orders/processing">Processando</a>
                                                     </li>
                                                     <li class="nav-item">
                                                         <a class="nav-link" href="/orders/canceled">Cancelado</a>
@@ -234,9 +235,11 @@
                                 <div class="col">
                                     <div class="alert alert-secondary alert-dismissible fade show" role="alert">
                                         <i class="fas fa-sync-alt fa-spin me-2"></i>
-                                        <strong>Ordens em Processamento:</strong> Estas ordens estão sendo processadas pelo sistema. 
-                                        Esta etapa geralmente é rápida e precede o início da entrega. 
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <strong>Ordens em Processamento:</strong> Estas ordens estão sendo processadas
+                                        pelo sistema.
+                                        Esta etapa geralmente é rápida e precede o início da entrega.
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
@@ -282,23 +285,24 @@
                                                         <thead>
                                                             <tr>
                                                                 <th>ID</th>
-                                                                <th>Data de Criação</th>
-                                                                <th>Tempo de Processamento</th>
-                                                                <th>Link</th>
+                                                                <th>Data</th>
+                                                                <th>Link </th>
                                                                 <th>Valor</th>
+                                                                <th class="nowrap">Contagem inicial</th>
                                                                 <th>Quantidade</th>
                                                                 <th>Serviço</th>
                                                                 <th>Status</th>
-                                                                <th>Estágio</th>
-                                                                <th>Ações</th>
+                                                                <th>Restam</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens em processamento serão carregadas dinamicamente aqui -->
                                                             <tr>
                                                                 <td colspan="10" class="text-center">
-                                                                    <div class="spinner-border text-secondary me-2" role="status">
-                                                                        <span class="visually-hidden">Carregando...</span>
+                                                                    <div class="spinner-border text-secondary me-2"
+                                                                        role="status">
+                                                                        <span
+                                                                            class="visually-hidden">Carregando...</span>
                                                                     </div>
                                                                     Carregando ordens em processamento...
                                                                 </td>
@@ -366,14 +370,14 @@
             const value = `; ${document.cookie}`;
             const parts = value.split(`; authToken=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
-            
+
             // Tentar outros nomes comuns de token
             const tokenNames = ['token', 'user_token', 'auth'];
             for (const name of tokenNames) {
                 const tokenParts = value.split(`; ${name}=`);
                 if (tokenParts.length === 2) return tokenParts.pop().split(';').shift();
             }
-            
+
             return null;
         }
 
@@ -418,7 +422,7 @@
 
                 const data = await response.json();
                 console.log('Dados recebidos:', data);
-                
+
                 // Suporte para diferentes estruturas de resposta da API
                 const orders = data.acoes || data.orders || data.data || data;
                 displayOrders(Array.isArray(orders) ? orders : []);
@@ -435,16 +439,16 @@
         // Função para calcular o tempo de processamento
         function calculateProcessingTime(startDate) {
             if (!startDate) return 'N/A';
-            
+
             const start = new Date(startDate);
             const now = new Date();
             const diffMs = now - start;
-            
+
             if (diffMs <= 0) return 'Recém criada';
-            
+
             const diffMinutes = Math.floor(diffMs / (1000 * 60));
             const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            
+
             if (diffMinutes < 1) {
                 return 'Agora mesmo';
             } else if (diffMinutes < 60) {
@@ -460,11 +464,11 @@
         // Função para determinar o estágio do processamento
         function getProcessingStage(startDate, serviceType) {
             if (!startDate) return 'Iniciando';
-            
+
             const start = new Date(startDate);
             const now = new Date();
             const diffMinutes = Math.floor((now - start) / (1000 * 60));
-            
+
             if (diffMinutes < 2) return 'Validação';
             if (diffMinutes < 5) return 'Preparação';
             if (diffMinutes < 10) return 'Alocação';
@@ -508,7 +512,7 @@
 
                 // Calcular tempo de processamento
                 const processingTime = calculateProcessingTime(order.dataCriacao || order.createdAt);
-                
+
                 // Determinar estágio
                 const serviceType = order.servicoDetalhes ? order.servicoDetalhes.nome : order.serviceName || '';
                 const processingStage = getProcessingStage(order.dataCriacao || order.createdAt, serviceType);
@@ -520,12 +524,12 @@
 
                 // Tratar link
                 const link = order.link || order.url || '#';
-                const linkDisplay = link && link !== '#' ? 
+                const linkDisplay = link && link !== '#' ?
                     (link.length > 20 ? link.substring(0, 20) + '...' : link) : 'N/A';
 
                 // Tratar serviço
-                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome : 
-                                  (order.serviceName || order.service || 'Serviço não encontrado');
+                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome :
+                    (order.serviceName || order.service || 'Serviço não encontrado');
 
                 return `
                     <tr class="table-secondary">
@@ -579,11 +583,11 @@
         // Função para exibir estatísticas das ordens em processamento
         function displayProcessingStats(orders) {
             if (!orders || orders.length === 0) return;
-            
+
             const totalOrders = orders.length;
             const totalQuantity = orders.reduce((sum, order) => sum + (order.quantidade || order.quantity || 0), 0);
             const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valor || order.value || 0), 0);
-            
+
             // Calcular tempo médio de processamento
             const now = new Date();
             const totalProcessingTime = orders.reduce((sum, order) => {
@@ -598,7 +602,7 @@
                 statsElement = document.createElement('div');
                 statsElement.id = 'processing-stats';
                 statsElement.className = 'row mb-3';
-                
+
                 statsElement.innerHTML = `
                     <div class="col-md-12">
                         <div class="card border-secondary">
@@ -645,10 +649,10 @@
             setTimeout(() => {
                 button.innerHTML = originalHtml;
                 button.disabled = false;
-                
+
                 // Recarregar todas as ordens
                 loadOrders();
-                
+
                 // Mostrar notificação
                 showNotification('Status da ordem atualizado com sucesso!', 'success');
             }, 1500);
@@ -667,7 +671,7 @@
                 notifyWrapper.className = `alert alert-${type} mb-3`;
                 notifyWrapper.innerHTML = message;
                 notifyWrapper.style.display = 'block';
-                
+
                 // Auto-esconder após 3 segundos
                 setTimeout(() => {
                     notifyWrapper.style.display = 'none';
@@ -692,7 +696,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Atualizar aba ativa
             updateActiveTab();
-            
+
             // Carregar ordens em processamento
             loadOrders();
 
@@ -714,7 +718,7 @@
                 searchForm.addEventListener('submit', function (e) {
                     e.preventDefault();
                     const searchTerm = this.querySelector('input[name="search"]').value.trim();
-                    
+
                     if (searchTerm) {
                         // Implementar busca local
                         filterOrders(searchTerm);
@@ -748,7 +752,7 @@
             });
 
             if (!hasResults && searchTerm) {
-                document.getElementById('orders-tbody').innerHTML = 
+                document.getElementById('orders-tbody').innerHTML =
                     '<tr><td colspan="10" class="text-center">Nenhuma ordem em processamento encontrada para: ' + searchTerm + '</td></tr>';
             }
         }
