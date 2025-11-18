@@ -37,8 +37,6 @@
         gtag('config', 'G-55XYV3KBYF');
     </script>
 
-    <script src="//code.tidio.co/yxe9fxxr1wco1ostubvjbxm05slry3qx.js" async></script>
-
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -75,12 +73,7 @@
 
         fillAndHideInput();
     </script>
-    <link href="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js" rel="preload" as="script">
-    <link href="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js" rel="preload" as="script">
-    <link href="https://storage.perfectcdn.com/global/2t0wrbkqkg6p2yz4.js" rel="preload" as="script">
-    <link href="https://storage.perfectcdn.com/global/zfq5snh4og5je3zk.js" rel="preload" as="script">
-
-    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
+<link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <script>
         window.modules = {};
@@ -100,7 +93,7 @@
                                     <div class="navbar-public__header">
                                         <div class="sidebar-block__top-brand">
                                             <a href="/" class="component-navbar-brand component-navbar-public-brand">
-                                                <h1>✅<span style="color: var(--color-id-117)">erified</span></h1>
+                                                <h1><span style="color: var(--color-id-117)">SMM SOCIAIS</span></h1>
                                             </a>
                                         </div>
                                         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -168,11 +161,13 @@
                                                                 aria-expanded="false">
                                                                 <span class="fal fa-filter"></span>
                                                                 <span class="services-filter__active-category"
-                                                                    data-filter-active-category="true">Todas as categorias</span>
+                                                                    data-filter-active-category="true">Todas as
+                                                                    categorias</span>
                                                             </a>
                                                             <div class="dropdown-menu" id="category-filter-menu">
                                                                 <a class="dropdown-item active" href="#"
-                                                                    data-filter-category-id="all">Todas as categorias</a>
+                                                                    data-filter-category-id="all">Todas as
+                                                                    categorias</a>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -323,7 +318,7 @@
             // Função para renderizar categorias no filtro
             function renderCategories(services) {
                 const categoryMenu = document.getElementById('category-filter-menu');
-                
+
                 // Limpar categorias existentes (exceto "Todas as categorias")
                 const allCategoriesItem = categoryMenu.querySelector('[data-filter-category-id="all"]');
                 categoryMenu.innerHTML = '';
@@ -331,7 +326,7 @@
 
                 // Coletar categorias únicas
                 const categories = new Map();
-                
+
                 services.forEach(service => {
                     const categoryName = service.categoria || "Outros";
                     if (!categories.has(categoryName)) {
@@ -366,10 +361,10 @@
                 // Filtrar serviços por categoria e pesquisa
                 let filteredServices = services.filter(service => {
                     const matchesCategory = currentCategory === 'all' || service.categoria === currentCategory;
-                    const matchesSearch = currentSearch === '' || 
+                    const matchesSearch = currentSearch === '' ||
                         service.nome.toLowerCase().includes(currentSearch.toLowerCase()) ||
                         (service.descricao && service.descricao.toLowerCase().includes(currentSearch.toLowerCase()));
-                    
+
                     return matchesCategory && matchesSearch;
                 });
 
@@ -497,19 +492,19 @@
                 document.querySelectorAll('#category-filter-menu .dropdown-item').forEach(item => {
                     item.addEventListener('click', function (e) {
                         e.preventDefault();
-                        
+
                         // Atualizar classe ativa
                         document.querySelectorAll('#category-filter-menu .dropdown-item').forEach(i => {
                             i.classList.remove('active');
                         });
                         this.classList.add('active');
-                        
+
                         // Atualizar texto do botão
                         const activeCategoryText = document.querySelector('.services-filter__active-category');
                         if (activeCategoryText) {
                             activeCategoryText.textContent = this.textContent;
                         }
-                        
+
                         // Filtrar serviços
                         currentCategory = this.getAttribute('data-filter-category-id');
                         renderServices(allServices);
@@ -519,7 +514,7 @@
                 // Pesquisa de serviços
                 const searchInput = document.getElementById('search-service-input');
                 const searchBtn = document.getElementById('search-service-btn');
-                
+
                 if (searchBtn) {
                     searchBtn.addEventListener('click', function () {
                         currentSearch = searchInput.value;
