@@ -234,10 +234,11 @@
                                 <div class="col">
                                     <div class="alert alert-info alert-dismissible fade show" role="alert">
                                         <i class="fas fa-info-circle me-2"></i>
-                                        <strong>Ordens Parciais:</strong> Estas ordens foram parcialmente concluídas. 
-                                        Parte da quantidade solicitada foi entregue, mas não a totalidade. 
+                                        <strong>Ordens Parciais:</strong> Estas ordens foram parcialmente concluídas.
+                                        Parte da quantidade solicitada foi entregue, mas não a totalidade.
                                         Verifique os detalhes abaixo.
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
@@ -284,22 +285,20 @@
                                                             <tr>
                                                                 <th>ID</th>
                                                                 <th>Data</th>
-                                                                <th>Link</th>
+                                                                <th>Link </th>
                                                                 <th>Valor</th>
                                                                 <th class="nowrap">Contagem inicial</th>
-                                                                <th>Solicitado</th>
-                                                                <th>Entregue</th>
-                                                                <th>Faltante</th>
-                                                                <th>Taxa de Entrega</th>
+                                                                <th>Quantidade</th>
                                                                 <th>Serviço</th>
                                                                 <th>Status</th>
-                                                                <th>Ações</th>
+                                                                <th>Restam</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens parciais serão carregadas dinamicamente aqui -->
                                                             <tr>
-                                                                <td colspan="12" class="text-center">Carregando ordens parciais...
+                                                                <td colspan="12" class="text-center">Carregando ordens
+                                                                    parciais...
                                                                 </td>
                                                             </tr>
                                                         </tbody>
@@ -365,14 +364,14 @@
             const value = `; ${document.cookie}`;
             const parts = value.split(`; authToken=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
-            
+
             // Tentar outros nomes comuns de token
             const tokenNames = ['token', 'user_token', 'auth'];
             for (const name of tokenNames) {
                 const tokenParts = value.split(`; ${name}=`);
                 if (tokenParts.length === 2) return tokenParts.pop().split(';').shift();
             }
-            
+
             return null;
         }
 
@@ -417,7 +416,7 @@
 
                 const data = await response.json();
                 console.log('Dados recebidos:', data);
-                
+
                 // Suporte para diferentes estruturas de resposta da API
                 const orders = data.acoes || data.orders || data.data || data;
                 displayOrders(Array.isArray(orders) ? orders : []);
@@ -455,7 +454,7 @@
                 // Determinar a cor baseada na taxa de entrega
                 let rateColor = 'danger';
                 let rateIcon = 'fas fa-exclamation-triangle';
-                
+
                 if (deliveryRate >= 80) {
                     rateColor = 'success';
                     rateIcon = 'fas fa-check-circle';
@@ -474,12 +473,12 @@
 
                 // Tratar link
                 const link = order.link || order.url || '#';
-                const linkDisplay = link && link !== '#' ? 
+                const linkDisplay = link && link !== '#' ?
                     (link.length > 20 ? link.substring(0, 20) + '...' : link) : 'N/A';
 
                 // Tratar serviço
-                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome : 
-                                  (order.serviceName || order.service || 'Serviço não encontrado');
+                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome :
+                    (order.serviceName || order.service || 'Serviço não encontrado');
 
                 return `
                     <tr class="table-warning">
@@ -535,7 +534,7 @@
         // Função para exibir estatísticas das ordens parciais
         function displayPartialStats(orders) {
             if (!orders || orders.length === 0) return;
-            
+
             const totalOrders = orders.length;
             const totalRequested = orders.reduce((sum, order) => sum + (order.quantidade || order.quantity || 0), 0);
             const totalDelivered = orders.reduce((sum, order) => sum + (order.validadas || order.validated || order.completed || 0), 0);
@@ -549,7 +548,7 @@
                 statsElement = document.createElement('div');
                 statsElement.id = 'partial-stats';
                 statsElement.className = 'row mb-3';
-                
+
                 let overallColor = 'danger';
                 if (overallRate >= 80) overallColor = 'success';
                 else if (overallRate >= 50) overallColor = 'warning';
@@ -625,7 +624,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Atualizar aba ativa
             updateActiveTab();
-            
+
             // Carregar ordens parciais
             loadOrders();
 
@@ -647,7 +646,7 @@
                 searchForm.addEventListener('submit', function (e) {
                     e.preventDefault();
                     const searchTerm = this.querySelector('input[name="search"]').value.trim();
-                    
+
                     if (searchTerm) {
                         // Implementar busca local
                         filterOrders(searchTerm);
@@ -681,7 +680,7 @@
             });
 
             if (!hasResults && searchTerm) {
-                document.getElementById('orders-tbody').innerHTML = 
+                document.getElementById('orders-tbody').innerHTML =
                     '<tr><td colspan="12" class="text-center">Nenhuma ordem parcial encontrada para: ' + searchTerm + '</td></tr>';
             }
         }
