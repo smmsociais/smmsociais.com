@@ -6,12 +6,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>New order</title>
-    
+
     <!-- Adicionando Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Adicionando Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <script>
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
@@ -48,7 +48,7 @@
     <script>
         window.modules = {};
     </script>
-    
+
     <style>
         /* Estilos adicionais para melhorar a responsividade */
         @media (max-width: 991.98px) {
@@ -58,16 +58,38 @@
                 margin-top: 1rem;
                 border-radius: 0.25rem;
             }
-            
+
             .navbar-nav-sidebar-menu {
                 margin-bottom: 1rem;
             }
-            
+
             .component-navbar-collapse {
                 flex-direction: column;
             }
+            
+            /* Esconder sidebar em dispositivos móveis */
+            .component_private_sidebar {
+                display: none !important;
+            }
+            
+            /* Mostrar navbar em dispositivos móveis */
+            .component_private_navbar {
+                display: block !important;
+            }
         }
-        
+
+        @media (min-width: 992px) {
+            /* Esconder navbar em desktop */
+            .component_private_navbar {
+                display: none !important;
+            }
+            
+            /* Mostrar sidebar em desktop */
+            .component_private_sidebar {
+                display: block !important;
+            }
+        }
+
         .navbar-burger {
             display: flex;
             flex-direction: column;
@@ -77,7 +99,7 @@
             border: none;
             cursor: pointer;
         }
-        
+
         .navbar-burger-line {
             display: block;
             width: 100%;
@@ -86,19 +108,19 @@
             margin: 3px 0;
             transition: all 0.3s ease;
         }
-        
+
         .navbar-toggler[aria-expanded="true"] .navbar-burger-line:nth-child(1) {
             transform: rotate(45deg) translate(5px, 5px);
         }
-        
+
         .navbar-toggler[aria-expanded="true"] .navbar-burger-line:nth-child(2) {
             opacity: 0;
         }
-        
+
         .navbar-toggler[aria-expanded="true"] .navbar-burger-line:nth-child(3) {
             transform: rotate(-45deg) translate(7px, -6px);
         }
-        
+
         .hidden {
             display: none !important;
         }
@@ -218,64 +240,64 @@
                     </div>
                 </div>
             </span>
-            <span class="component_private_sidebar ">
-                <div class="component-sidebar_wrapper">
-                    <div
-                        class="sidebar-block__left component-sidebar component-sidebar-with-navbar component_private_navbar editor__component-wrapper">
-                        <div class="component-sidebar__menu">
-                            <div class="component-sidebar__menu-logo">
-                                <a href="/bp" class="component-navbar-brand component-sidebar__menu-brand">
-                                    <h3><strong style="font-weight: bold">✅</strong><span
-                                            style="color: var(--color-id-117)"><strong
-                                                style="font-weight: bold">erified</strong></span></h3>
-                                </a>
-                            </div>
-                            <ul class="sidebar-block__left-menu editor__component-wrapper">
-                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
-                                    <a class="component-sidebar__menu-item-link" href="/painel">
-                                        Novo pedido
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/services">
-                                        Serviços
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/orders">
-                                        Ordens
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/addfunds">
-                                        ADICIONAR SALDO (DEPOSITAR PIX)
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/como-usar">
-                                        Aprenda a colocar saldo e usar o painel clicando aqui
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/affiliates">
-                                        Meus indicados
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/massorder">
-                                        Mass order
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/suporte">
-                                        Suporte
-                                    </a>
-                                </li>
-                            </ul>
+        </div>
+        <div class="component_private_sidebar">
+            <div class="component-sidebar_wrapper">
+                <div
+                    class="sidebar-block__left component-sidebar component-sidebar-with-navbar component_private_navbar editor__component-wrapper">
+                    <div class="component-sidebar__menu">
+                        <div class="component-sidebar__menu-logo">
+                            <a href="/bp" class="component-navbar-brand component-sidebar__menu-brand">
+                                <h3><strong style="font-weight: bold">✅</strong><span
+                                        style="color: var(--color-id-117)"><strong
+                                            style="font-weight: bold">erified</strong></span></h3>
+                            </a>
                         </div>
+                        <ul class="sidebar-block__left-menu editor__component-wrapper">
+                            <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
+                                <a class="component-sidebar__menu-item-link" href="/painel">
+                                    Novo pedido
+                                </a>
+                            </li>
+                            <li class="component-sidebar__menu-item ">
+                                <a class="component-sidebar__menu-item-link" href="/services">
+                                    Serviços
+                                </a>
+                            </li>
+                            <li class="component-sidebar__menu-item ">
+                                <a class="component-sidebar__menu-item-link" href="/orders">
+                                    Ordens
+                                </a>
+                            </li>
+                            <li class="component-sidebar__menu-item ">
+                                <a class="component-sidebar__menu-item-link" href="/addfunds">
+                                    ADICIONAR SALDO (DEPOSITAR PIX)
+                                </a>
+                            </li>
+                            <li class="component-sidebar__menu-item ">
+                                <a class="component-sidebar__menu-item-link" href="/como-usar">
+                                    Aprenda a colocar saldo e usar o painel clicando aqui
+                                </a>
+                            </li>
+                            <li class="component-sidebar__menu-item ">
+                                <a class="component-sidebar__menu-item-link" href="/affiliates">
+                                    Meus indicados
+                                </a>
+                            </li>
+                            <li class="component-sidebar__menu-item ">
+                                <a class="component-sidebar__menu-item-link" href="/massorder">
+                                    Mass order
+                                </a>
+                            </li>
+                            <li class="component-sidebar__menu-item ">
+                                <a class="component-sidebar__menu-item-link" href="/suporte">
+                                    Suporte
+                                </a>
+                            </li>
+                        </ul>
                     </div>
                 </div>
-            </span>
+            </div>
         </div>
         <div class="wrapper-content">
             <div class="wrapper-content__header">
