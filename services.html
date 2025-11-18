@@ -6,16 +6,39 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Services</title>
+    <style>
+        /* Initial Load */
+        body {
+            visibility: hidden;
+        }
+
+        body.loaded {
+            visibility: visible;
+        }
+    </style>
     <script>
+        // Função para marcar quando todas as APIs foram carregadas
+        let apisLoaded = 0;
+        const totalApis = 2; // Token + Serviços
+
+        function markApiAsLoaded() {
+            apisLoaded++;
+            if (apisLoaded === totalApis) {
+                document.body.classList.add('loaded');
+            }
+        }
+
         // Função para obter o token do localStorage
         function loadToken() {
-            return (
-                localStorage.getItem('authToken') ||
+            const token = localStorage.getItem('authToken') ||
                 localStorage.getItem('token') ||
                 localStorage.getItem('user_token') ||
                 localStorage.getItem('auth') ||
-                getToken()
-            );
+                getToken();
+
+            // Marcar token como carregado
+            setTimeout(() => markApiAsLoaded(), 0);
+            return token;
         }
 
         // Função para carregar saldo do usuário
@@ -24,7 +47,13 @@
 
             if (!token) {
                 console.error("Token não encontrado.");
-                return;
+                // Definir saldo como R$ 0,00 em caso de erro
+                const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
+                if (balanceElement) {
+                    balanceElement.textContent = 'R$ 0,00';
+                }
+                markApiAsLoaded();
+                return 0;
             }
 
             try {
@@ -41,7 +70,7 @@
                 }
 
                 const balanceData = await response.json();
-                
+
                 // Formatar o saldo como moeda brasileira
                 const formattedBalance = new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
@@ -64,6 +93,8 @@
                     balanceElement.textContent = 'R$ 0,00';
                 }
                 return 0;
+            } finally {
+                markApiAsLoaded();
             }
         }
 
@@ -95,7 +126,11 @@
             }
         }
 
-        fillAndHideInput();
+        // Inicializar funções quando o DOM estiver carregado
+        document.addEventListener('DOMContentLoaded', function () {
+            fillAndHideInput();
+            loadUserBalance();
+        });
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
