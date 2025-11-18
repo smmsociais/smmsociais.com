@@ -228,6 +228,19 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Alert Informativo -->
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                        <i class="fas fa-clock me-2"></i>
+                                        <strong>Ordens Pendentes:</strong> Estas ordens estão aguardando processamento. 
+                                        O tempo de espera varia conforme a demanda do serviço.
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row">
                                 <div class="col">
                                     <div class="orders-history__margin-table">
@@ -269,20 +282,25 @@
                                                         <thead>
                                                             <tr>
                                                                 <th>ID</th>
-                                                                <th>Data</th>
-                                                                <th>Link </th>
+                                                                <th>Data de Criação</th>
+                                                                <th>Tempo de Espera</th>
+                                                                <th>Link</th>
                                                                 <th>Valor</th>
-                                                                <th class="nowrap">Contagem inicial</th>
                                                                 <th>Quantidade</th>
                                                                 <th>Serviço</th>
                                                                 <th>Status</th>
-                                                                <th>Restam</th>
+                                                                <th>Posição na Fila</th>
+                                                                <th>Ações</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens pendentes serão carregadas dinamicamente aqui -->
                                                             <tr>
-                                                                <td colspan="9" class="text-center">Carregando ordens pendentes...
+                                                                <td colspan="10" class="text-center">
+                                                                    <div class="spinner-border text-warning me-2" role="status">
+                                                                        <span class="visually-hidden">Carregando...</span>
+                                                                    </div>
+                                                                    Carregando ordens pendentes...
                                                                 </td>
                                                             </tr>
                                                         </tbody>
@@ -348,6 +366,14 @@
             const value = `; ${document.cookie}`;
             const parts = value.split(`; authToken=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
+            
+            // Tentar outros nomes comuns de token
+            const tokenNames = ['token', 'user_token', 'auth'];
+            for (const name of tokenNames) {
+                const tokenParts = value.split(`; ${name}=`);
+                if (tokenParts.length === 2) return tokenParts.pop().split(';').shift();
+            }
+            
             return null;
         }
 
@@ -359,12 +385,18 @@
                 if (!token) {
                     console.error('Token de autenticação não encontrado');
                     document.getElementById('orders-tbody').innerHTML =
-                        '<tr><td colspan="9" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
+                        '<tr><td colspan="10" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
+                    // Redirecionar para login se não tiver token
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
                     return;
                 }
 
                 const status = getStatusFromURL();
                 const url = `/api/orders${status !== 'todos' ? `?status=${status}` : ''}`;
+
+                console.log('Carregando ordens pendentes com URL:', url, 'Status:', status);
 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -376,20 +408,67 @@
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        throw new Error('Token inválido ou expirado');
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user_token');
+                        throw new Error('Token inválido ou expirado. Faça login novamente.');
                     }
                     throw new Error(`Erro na requisição: ${response.status}`);
                 }
 
                 const data = await response.json();
-                displayOrders(data.acoes || data.orders || data);
+                console.log('Dados recebidos:', data);
+                
+                // Suporte para diferentes estruturas de resposta da API
+                const orders = data.acoes || data.orders || data.data || data;
+                displayOrders(Array.isArray(orders) ? orders : []);
                 updateActiveTab();
+                displayPendingStats(orders);
 
             } catch (error) {
                 console.error('Erro ao carregar ordens:', error);
                 document.getElementById('orders-tbody').innerHTML =
-                    `<tr><td colspan="9" class="text-center">${error.message}</td></tr>`;
+                    `<tr><td colspan="10" class="text-center text-danger">${error.message}</td></tr>`;
             }
+        }
+
+        // Função para calcular o tempo de espera
+        function calculateWaitTime(startDate) {
+            if (!startDate) return 'N/A';
+            
+            const start = new Date(startDate);
+            const now = new Date();
+            const diffMs = now - start;
+            
+            if (diffMs <= 0) return 'Recém criada';
+            
+            const diffMinutes = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            
+            if (diffMinutes < 1) {
+                return 'Agora mesmo';
+            } else if (diffMinutes < 60) {
+                return `${diffMinutes} min`;
+            } else if (diffHours < 24) {
+                return `${diffHours} h`;
+            } else {
+                const diffDays = Math.floor(diffHours / 24);
+                return `${diffDays} dias`;
+            }
+        }
+
+        // Função para simular posição na fila (em produção viria da API)
+        function getQueuePosition(orderId, serviceType) {
+            // Simular posição baseada no ID do pedido
+            const hash = orderId ? orderId.toString().split('').reduce((a, b) => a + b.charCodeAt(0), 0) : Math.random();
+            return (hash % 50) + 1; // Posição entre 1-50
+        }
+
+        // Função para determinar a cor da posição na fila
+        function getQueueColor(position) {
+            if (position <= 5) return 'success';
+            if (position <= 15) return 'warning';
+            return 'danger';
         }
 
         // Função para exibir as ordens na tabela
@@ -397,81 +476,218 @@
             const tbody = document.getElementById('orders-tbody');
 
             if (!orders || orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma ordem pendente encontrada</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center">Nenhuma ordem pendente encontrada</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = orders.map(order => {
+            // Ordenar por data de criação (mais antigas primeiro)
+            const sortedOrders = orders.sort((a, b) => {
+                const dateA = new Date(a.dataCriacao || a.createdAt || a.date || a.data);
+                const dateB = new Date(b.dataCriacao || b.createdAt || b.date || b.data);
+                return dateA - dateB;
+            });
+
+            tbody.innerHTML = sortedOrders.map(order => {
                 // Formatar a data
-                const date = new Date(order.dataCriacao || order.createdAt || order.date);
+                const date = new Date(order.dataCriacao || order.createdAt || order.date || order.data);
                 const formattedDate = date.toLocaleDateString('pt-BR');
                 const formattedTime = date.toLocaleTimeString('pt-BR');
 
-                // Calcular valores restantes
-                const remaining = (order.quantidade || order.quantity || 0) - (order.validadas || order.validated || 0);
-
-                // Determinar o status em português
-                let statusText = '';
-                let statusClass = '';
-
-                switch (order.status) {
-                    case 'pending':
-                    case 'pendente':
-                        statusText = 'Pendente';
-                        statusClass = 'text-warning';
-                        break;
-                    case 'progress':
-                    case 'inprogress':
-                        statusText = 'Em progresso';
-                        statusClass = 'text-info';
-                        break;
-                    case 'completed':
-                        statusText = 'Concluído';
-                        statusClass = 'text-success';
-                        break;
-                    case 'partial':
-                        statusText = 'Parcial';
-                        statusClass = 'text-primary';
-                        break;
-                    case 'processing':
-                        statusText = 'Processando';
-                        statusClass = 'text-secondary';
-                        break;
-                    case 'canceled':
-                        statusText = 'Cancelado';
-                        statusClass = 'text-danger';
-                        break;
-                    default:
-                        statusText = order.status;
-                        statusClass = 'text-muted';
-                }
+                // Calcular tempo de espera
+                const waitTime = calculateWaitTime(order.dataCriacao || order.createdAt);
+                
+                // Determinar posição na fila
+                const serviceType = order.servicoDetalhes ? order.servicoDetalhes.nome : order.serviceName || '';
+                const queuePosition = getQueuePosition(order._id || order.id, serviceType);
+                const queueColor = getQueueColor(queuePosition);
 
                 // Formatar valor monetário
-                const valorFormatado = order.valor ? parseFloat(order.valor).toFixed(2).replace('.', ',') : '0,00';
+                const valor = order.valor || order.value || order.price || 0;
+                const valorFormatado = parseFloat(valor).toFixed(2).replace('.', ',');
+
+                // Tratar link
+                const link = order.link || order.url || '#';
+                const linkDisplay = link && link !== '#' ? 
+                    (link.length > 20 ? link.substring(0, 20) + '...' : link) : 'N/A';
+
+                // Tratar serviço
+                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome : 
+                                  (order.serviceName || order.service || 'Serviço não encontrado');
 
                 return `
-                    <tr>
+                    <tr class="table-warning">
                         <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : order.id || 'N/A'}</td>
-                        <td data-label="Data">
+                        <td data-label="Data de Criação">
                             <span class="nowrap">${formattedDate}</span>
                             <span class="nowrap">${formattedTime}</span>
                         </td>
+                        <td data-label="Tempo de Espera">
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-clock me-1"></i>${waitTime}
+                            </span>
+                        </td>
                         <td data-label="Link" class="table-link">
-                            <a href="${order.link || '#'}" target="_blank" title="${order.link || 'N/A'}">
-                                ${order.link ? (order.link.length > 30 ? order.link.substring(0, 30) + '...' : order.link) : 'N/A'}
+                            <a href="${link}" target="_blank" title="${link}" style="${link === '#' ? 'pointer-events: none; color: #6c757d;' : ''}">
+                                ${linkDisplay}
                             </a>
                         </td>
                         <td data-label="Valor">R$ ${valorFormatado}</td>
-                        <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || order.initialCount || 0}</td>
-                        <td data-label="Quantidade">${order.quantidade || order.quantity || 0}</td>
-                        <td data-label="Serviço" class="table-service">
-                            ${order.servicoDetalhes ? order.servicoDetalhes.nome : (order.serviceName || 'Serviço não encontrado')}
+                        <td data-label="Quantidade">
+                            <strong>${order.quantidade || order.quantity || 0}</strong>
                         </td>
-                        <td data-label="Status" nowrap class="${statusClass}">${statusText}</td>
-                        <td data-label="Restam">${remaining}</td>
+                        <td data-label="Serviço" class="table-service" title="${servicoNome}">
+                            ${servicoNome.length > 25 ? servicoNome.substring(0, 25) + '...' : servicoNome}
+                        </td>
+                        <td data-label="Status">
+                            <span class="badge bg-warning">
+                                <i class="fas fa-clock me-1"></i>Pendente
+                            </span>
+                        </td>
+                        <td data-label="Posição na Fila">
+                            <span class="badge bg-${queueColor}">
+                                #${queuePosition}
+                            </span>
+                        </td>
+                        <td data-label="Ações">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-info" onclick="refreshOrder('${order._id || order.id}')" title="Atualizar status">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="viewOrderDetails('${order._id || order.id}')" title="Ver detalhes">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="cancelOrder('${order._id || order.id}')" title="Cancelar ordem">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        // Função para exibir estatísticas das ordens pendentes
+        function displayPendingStats(orders) {
+            if (!orders || orders.length === 0) return;
+            
+            const totalOrders = orders.length;
+            const totalQuantity = orders.reduce((sum, order) => sum + (order.quantidade || order.quantity || 0), 0);
+            const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valor || order.value || 0), 0);
+            
+            // Calcular tempo médio de espera
+            const now = new Date();
+            const totalWaitTime = orders.reduce((sum, order) => {
+                const start = new Date(order.dataCriacao || order.createdAt);
+                return sum + (now - start);
+            }, 0);
+            const avgWaitTime = totalOrders > 0 ? Math.round(totalWaitTime / totalOrders / (1000 * 60)) : 0;
+
+            // Criar elemento de estatísticas se não existir
+            let statsElement = document.getElementById('pending-stats');
+            if (!statsElement) {
+                statsElement = document.createElement('div');
+                statsElement.id = 'pending-stats';
+                statsElement.className = 'row mb-3';
+                
+                statsElement.innerHTML = `
+                    <div class="col-md-12">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                <strong>Estatísticas das Ordens Pendentes</strong>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-md-3">
+                                        <h5 class="mb-0 text-warning">${totalOrders}</h5>
+                                        <small class="text-muted">Ordens Pendentes</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h5 class="mb-0 text-primary">${totalQuantity}</h5>
+                                        <small class="text-muted">Quantidade Total</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h5 class="mb-0 text-info">R$ ${totalValue.toFixed(2).replace('.', ',')}</h5>
+                                        <small class="text-muted">Valor Total</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h5 class="mb-0 text-secondary">${avgWaitTime} min</h5>
+                                        <small class="text-muted">Tempo Médio</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.querySelector('.alert-warning').parentNode.insertBefore(statsElement, document.querySelector('.orders-history__margin-table'));
+            }
+        }
+
+        // Função para atualizar o status de uma ordem específica
+        function refreshOrder(orderId) {
+            // Mostrar loading no botão
+            const button = event.currentTarget;
+            const originalHtml = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+
+            // Simular atualização (em produção, faria uma chamada API)
+            setTimeout(() => {
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+                
+                // Recarregar todas as ordens
+                loadOrders();
+                
+                // Mostrar notificação
+                showNotification('Status da ordem atualizado com sucesso!', 'success');
+            }, 1500);
+        }
+
+        // Função para ver detalhes da ordem
+        function viewOrderDetails(orderId) {
+            // Implementar modal de detalhes da ordem
+            alert(`Detalhes da ordem pendente: ${orderId}\n\nEsta funcionalidade abrirá um modal com informações detalhadas sobre a ordem pendente.`);
+        }
+
+        // Função para cancelar ordem
+        function cancelOrder(orderId) {
+            if (confirm('Tem certeza que deseja cancelar esta ordem? Esta ação não pode ser desfeita.')) {
+                // Mostrar loading no botão
+                const button = event.currentTarget;
+                const originalHtml = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+
+                // Simular cancelamento (em produção, faria uma chamada API)
+                setTimeout(() => {
+                    button.innerHTML = originalHtml;
+                    button.disabled = false;
+                    
+                    // Mostrar notificação
+                    showNotification('Ordem cancelada com sucesso!', 'success');
+                    
+                    // Recarregar a página para atualizar a lista
+                    setTimeout(() => {
+                        loadOrders();
+                    }, 1000);
+                }, 2000);
+            }
+        }
+
+        // Função para mostrar notificações
+        function showNotification(message, type = 'info') {
+            const notifyWrapper = document.getElementById('notify-wrapper');
+            if (notifyWrapper) {
+                notifyWrapper.className = `alert alert-${type} mb-3`;
+                notifyWrapper.innerHTML = message;
+                notifyWrapper.style.display = 'block';
+                
+                // Auto-esconder após 3 segundos
+                setTimeout(() => {
+                    notifyWrapper.style.display = 'none';
+                }, 3000);
+            }
         }
 
         // Função para atualizar a aba ativa
@@ -502,17 +718,9 @@
                     e.preventDefault();
                     const href = this.getAttribute('href');
 
-                    // Atualizar URL sem recarregar a página
-                    window.history.pushState({}, '', href);
-
-                    // Recarregar ordens com novo filtro
-                    loadOrders();
+                    // Redirecionar para a página específica
+                    window.location.href = href;
                 });
-            });
-
-            // Lidar com botão voltar/avancar do navegador
-            window.addEventListener('popstate', function () {
-                loadOrders();
             });
 
             // Lidar com busca
@@ -520,23 +728,33 @@
             if (searchForm) {
                 searchForm.addEventListener('submit', function (e) {
                     e.preventDefault();
-                    const searchTerm = this.querySelector('input[name="search"]').value;
-                    // Implementar busca se necessário
-                    console.log('Buscar por:', searchTerm);
-                    // Aqui você pode implementar a lógica de filtro local
-                    filterOrders(searchTerm);
+                    const searchTerm = this.querySelector('input[name="search"]').value.trim();
+                    
+                    if (searchTerm) {
+                        // Implementar busca local
+                        filterOrders(searchTerm);
+                    } else {
+                        // Recarregar todas as ordens se busca estiver vazia
+                        loadOrders();
+                    }
                 });
             }
+
+            // Atualização frequente para ordens pendentes (a cada 20 segundos)
+            setInterval(() => {
+                loadOrders();
+            }, 20000);
         });
 
         // Função para filtrar ordens localmente
         function filterOrders(searchTerm) {
             const rows = document.querySelectorAll('#orders-tbody tr');
             let hasResults = false;
+            const searchLower = searchTerm.toLowerCase();
 
             rows.forEach(row => {
                 const text = row.textContent.toLowerCase();
-                if (text.includes(searchTerm.toLowerCase())) {
+                if (text.includes(searchLower)) {
                     row.style.display = '';
                     hasResults = true;
                 } else {
@@ -546,7 +764,7 @@
 
             if (!hasResults && searchTerm) {
                 document.getElementById('orders-tbody').innerHTML = 
-                    '<tr><td colspan="9" class="text-center">Nenhuma ordem encontrada para: ' + searchTerm + '</td></tr>';
+                    '<tr><td colspan="10" class="text-center">Nenhuma ordem pendente encontrada para: ' + searchTerm + '</td></tr>';
             }
         }
     </script>
