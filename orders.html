@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Orders - Pendentes</title>
+    <title>Orders</title>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <!-- Adicionando Bootstrap CSS adicional para garantir funcionamento -->
@@ -205,7 +205,7 @@
                                                         <a class="nav-link" href="/orders">Tudo</a>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <a class="nav-link active" href="/orders/pending">Pendente</a>
+                                                        <a class="nav-link" href="/orders/pending">Pendente</a>
                                                     </li>
                                                     <li class="nav-item">
                                                         <a class="nav-link" href="/orders/inprogress">Em progresso</a>
@@ -280,9 +280,9 @@
                                                             </tr>
                                                         </thead>
                                                         <tbody id="orders-tbody">
-                                                            <!-- As ordens pendentes serão carregadas dinamicamente aqui -->
+                                                            <!-- As ordens serão carregadas dinamicamente aqui -->
                                                             <tr>
-                                                                <td colspan="9" class="text-center">Carregando ordens pendentes...
+                                                                <td colspan="9" class="text-center">Carregando ordens...
                                                                 </td>
                                                             </tr>
                                                         </tbody>
@@ -330,7 +330,7 @@
                 '/orders': 'todos'
             };
 
-            return statusMap[path] || 'pending'; // Default para pending nesta página
+            return statusMap[path] || 'todos';
         }
 
         function loadToken() {
@@ -341,14 +341,6 @@
                 localStorage.getItem('auth') ||
                 getTokenFromCookie()
             );
-        }
-
-        // Função auxiliar para buscar token nos cookies
-        function getTokenFromCookie() {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; authToken=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
         }
 
         // Função para carregar as ordens da API
@@ -382,7 +374,7 @@
                 }
 
                 const data = await response.json();
-                displayOrders(data.acoes || data.orders || data);
+                displayOrders(data.acoes);
                 updateActiveTab();
 
             } catch (error) {
@@ -397,31 +389,29 @@
             const tbody = document.getElementById('orders-tbody');
 
             if (!orders || orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma ordem pendente encontrada</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma ordem encontrada</td></tr>';
                 return;
             }
 
             tbody.innerHTML = orders.map(order => {
                 // Formatar a data
-                const date = new Date(order.dataCriacao || order.createdAt || order.date);
+                const date = new Date(order.dataCriacao);
                 const formattedDate = date.toLocaleDateString('pt-BR');
                 const formattedTime = date.toLocaleTimeString('pt-BR');
 
                 // Calcular valores restantes
-                const remaining = (order.quantidade || order.quantity || 0) - (order.validadas || order.validated || 0);
+                const remaining = order.quantidade - order.validadas;
 
                 // Determinar o status em português
                 let statusText = '';
                 let statusClass = '';
 
                 switch (order.status) {
-                    case 'pending':
                     case 'pendente':
                         statusText = 'Pendente';
                         statusClass = 'text-warning';
                         break;
                     case 'progress':
-                    case 'inprogress':
                         statusText = 'Em progresso';
                         statusClass = 'text-info';
                         break;
@@ -451,7 +441,7 @@
 
                 return `
                     <tr>
-                        <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : order.id || 'N/A'}</td>
+                        <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : 'N/A'}</td>
                         <td data-label="Data">
                             <span class="nowrap">${formattedDate}</span>
                             <span class="nowrap">${formattedTime}</span>
@@ -462,10 +452,10 @@
                             </a>
                         </td>
                         <td data-label="Valor">R$ ${valorFormatado}</td>
-                        <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || order.initialCount || 0}</td>
-                        <td data-label="Quantidade">${order.quantidade || order.quantity || 0}</td>
+                        <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || 0}</td>
+                        <td data-label="Quantidade">${order.quantidade || 0}</td>
                         <td data-label="Serviço" class="table-service">
-                            ${order.servicoDetalhes ? order.servicoDetalhes.nome : (order.serviceName || 'Serviço não encontrado')}
+                            ${order.servicoDetalhes ? order.servicoDetalhes.nome : 'Serviço não encontrado'}
                         </td>
                         <td data-label="Status" nowrap class="${statusClass}">${statusText}</td>
                         <td data-label="Restam">${remaining}</td>
@@ -489,10 +479,7 @@
 
         // Prevenir comportamento padrão dos links de filtro
         document.addEventListener('DOMContentLoaded', function () {
-            // Atualizar aba ativa
-            updateActiveTab();
-            
-            // Carregar ordens pendentes
+            // Carregar ordens iniciais
             loadOrders();
 
             // Adicionar event listeners para os links de filtro
@@ -523,32 +510,9 @@
                     const searchTerm = this.querySelector('input[name="search"]').value;
                     // Implementar busca se necessário
                     console.log('Buscar por:', searchTerm);
-                    // Aqui você pode implementar a lógica de filtro local
-                    filterOrders(searchTerm);
                 });
             }
         });
-
-        // Função para filtrar ordens localmente
-        function filterOrders(searchTerm) {
-            const rows = document.querySelectorAll('#orders-tbody tr');
-            let hasResults = false;
-
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(searchTerm.toLowerCase())) {
-                    row.style.display = '';
-                    hasResults = true;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-
-            if (!hasResults && searchTerm) {
-                document.getElementById('orders-tbody').innerHTML = 
-                    '<tr><td colspan="9" class="text-center">Nenhuma ordem encontrada para: ' + searchTerm + '</td></tr>';
-            }
-        }
     </script>
 </body>
 
