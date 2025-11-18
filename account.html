@@ -8,19 +8,19 @@
     <title>Account</title>
     <script>
         // Função para obter o token do localStorage
-        function getToken() {
-            return localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+        function loadToken() {
+            return (
+                localStorage.getItem('authToken') ||
+                localStorage.getItem('token') ||
+                localStorage.getItem('user_token') ||
+                localStorage.getItem('auth') ||
+                getToken()
+            );
         }
 
         // Função para carregar dados da conta
         async function loadAccountData() {
             const token = getToken();
-            
-            if (!token) {
-                console.error('Token não encontrado');
-                window.location.href = '/login';
-                return;
-            }
 
             try {
                 const response = await fetch('https://smmsociais.com/api/account', {
@@ -36,11 +36,11 @@
                 }
 
                 const accountData = await response.json();
-                
+
                 // Preencher os campos com os dados da API
                 document.getElementById('username').value = accountData.nome_usuario || '';
                 document.getElementById('email').value = accountData.email || '';
-                
+
             } catch (error) {
                 console.error('Erro:', error);
                 alert('Erro ao carregar dados da conta');
@@ -50,7 +50,7 @@
         // Função para atualizar dados da conta
         async function updateAccountData(updateData) {
             const token = getToken();
-            
+
             if (!token) {
                 console.error('Token não encontrado');
                 return false;
@@ -73,7 +73,7 @@
                 const result = await response.json();
                 alert(result.message || 'Dados atualizados com sucesso!');
                 return true;
-                
+
             } catch (error) {
                 console.error('Erro:', error);
                 alert('Erro ao atualizar dados da conta');
@@ -102,16 +102,16 @@
         }
 
         // Event listeners quando o DOM estiver carregado
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Carregar dados da conta
             loadAccountData();
 
             // Configurar formulário de alteração de senha
             const passwordForm = document.querySelector('form[action*="password"]');
             if (passwordForm) {
-                passwordForm.addEventListener('submit', async function(e) {
+                passwordForm.addEventListener('submit', async function (e) {
                     e.preventDefault();
-                    
+
                     const currentPassword = document.getElementById('current').value;
                     const newPassword = document.getElementById('new').value;
                     const confirmPassword = document.getElementById('confirm').value;
@@ -125,15 +125,15 @@
             // Configurar modal de alteração de email
             const changeEmailLink = document.getElementById('changeEmailLink');
             const changeEmailForm = document.getElementById('changeEmailForm');
-            
+
             if (changeEmailLink && changeEmailForm) {
-                changeEmailLink.addEventListener('click', function() {
+                changeEmailLink.addEventListener('click', function () {
                     $('#changeEmailModal').modal('show');
                 });
 
-                changeEmailForm.addEventListener('submit', async function(e) {
+                changeEmailForm.addEventListener('submit', async function (e) {
                     e.preventDefault();
-                    
+
                     const newEmail = document.getElementById('new-email').value;
                     const currentPassword = document.getElementById('current-password').value;
 
@@ -149,7 +149,7 @@
             // Configurar formulário de idioma
             const languageForm = document.querySelector('form[action*="lang"]');
             if (languageForm) {
-                languageForm.addEventListener('submit', function(e) {
+                languageForm.addEventListener('submit', function (e) {
                     e.preventDefault();
                     alert('Configuração de idioma salva!');
                     // Aqui você pode adicionar a lógica para salvar o idioma se necessário
@@ -159,7 +159,7 @@
             // Configurar formulário de fuso horário
             const timezoneForm = document.querySelector('form[action*="timezone"]');
             if (timezoneForm) {
-                timezoneForm.addEventListener('submit', function(e) {
+                timezoneForm.addEventListener('submit', function (e) {
                     e.preventDefault();
                     alert('Fuso horário salvo!');
                     // Aqui você pode adicionar a lógica para salvar o fuso horário se necessário
