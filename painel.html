@@ -6,85 +6,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>New order</title>
-
-    <!-- Incluir Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Incluir Font Awesome para ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
-    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
-
-    <style>
-        /* Estilos para melhorar a responsividade do menu */
-        .navbar-toggler {
-            border: none;
-            padding: 0;
-            background: transparent !important;
-        }
-
-        .navbar-burger {
-            display: flex;
-            flex-direction: column;
-            width: 24px;
-            height: 24px;
-            justify-content: space-between;
-        }
-
-        .navbar-burger-line {
-            display: block;
-            height: 2px;
-            width: 100%;
-            background-color: #333;
-            transition: all 0.3s ease;
-        }
-
-        .navbar-toggler[aria-expanded="true"] .navbar-burger-line:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
-        }
-
-        .navbar-toggler[aria-expanded="true"] .navbar-burger-line:nth-child(2) {
-            opacity: 0;
-        }
-
-        .navbar-toggler[aria-expanded="true"] .navbar-burger-line:nth-child(3) {
-            transform: rotate(-45deg) translate(7px, -6px);
-        }
-
-        /* Garantir que o menu colapsado funcione corretamente */
-        @media (max-width: 991.98px) {
-            .navbar-collapse {
-                background-color: #fff;
-                padding: 15px;
-                border-radius: 5px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                margin-top: 10px;
-            }
-
-            .component-navbar-collapse {
-                flex-direction: column;
-            }
-
-            .navbar-nav {
-                margin-bottom: 10px;
-            }
-        }
-
-        /* Esconder a sidebar em dispositivos móveis */
-        @media (max-width: 991.98px) {
-            .component_private_sidebar {
-                display: none;
-            }
-        }
-
-        /* Mostrar apenas a navbar em dispositivos móveis */
-        @media (min-width: 992px) {
-            .component_private_navbar>span:first-child {
-                display: none;
-            }
-        }
-    </style>
-
     <script>
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
@@ -116,6 +37,8 @@
 
         fillAndHideInput();
     </script>
+    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
+    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <script>
         window.modules = {};
     </script>
@@ -124,7 +47,6 @@
 <body class="body  body-internal">
     <div class="wrapper  wrapper-sidebar-navbar ">
         <div id="block_52" class="component_private_navbar">
-            <!-- Navbar para dispositivos móveis -->
             <span class="component_private_navbar ">
                 <div class="component_private_navbar__wrapper component_private_sidebar ">
                     <div
@@ -139,12 +61,10 @@
                                                         style="font-weight: bold">erified</strong></span></h3>
                                         </a>
                                     </div>
-                                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
+                                    <button class="navbar-toggler" type="button" data-toggle="collapse"
+                                        data-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
                                         aria-expanded="false" aria-label="Toggle navigation">
                                         <span class="navbar-burger">
-                                            <span class="navbar-burger-line"></span>
-                                            <span class="navbar-burger-line"></span>
                                             <span class="navbar-burger-line"></span>
                                         </span>
                                     </button>
@@ -235,8 +155,6 @@
                     </div>
                 </div>
             </span>
-
-            <!-- Sidebar para desktop -->
             <span class="component_private_sidebar ">
                 <div class="component-sidebar_wrapper">
                     <div
@@ -296,8 +214,6 @@
                 </div>
             </span>
         </div>
-
-        <!-- Resto do conteúdo permanece igual -->
         <div class="wrapper-content">
             <div class="wrapper-content__header">
             </div>
@@ -487,11 +403,6 @@
     </div>
     </div>
     </div>
-
-    </a>
-    </div>
-    </div>
-    </div>
     </div>
     </div>
     </div>
@@ -501,9 +412,6 @@
     </div>
     <!-- Notifications wrapper -->
     <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
-
-    <!-- Incluir Bootstrap JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Script para carregar serviços da API -->
     <script>
@@ -737,6 +645,83 @@
             // Carregar serviços ao inicializar
             loadServices();
         });
+    </script>
+
+    <!-- ======= Navbar toggle fallback (vanilla JS) - torna o "hamburger" funcional em dispositivos móveis ======= -->
+    <script>
+        (function () {
+            // Função utilitária para encontrar o alvo do botão (data-target ou aria-controls)
+            function resolveTarget(button) {
+                const targetSelector = button.getAttribute('data-target') || button.getAttribute('data-bs-target') || ('#' + (button.getAttribute('aria-controls') || ''));
+                if (!targetSelector) return null;
+                try {
+                    return document.querySelector(targetSelector);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            // Inicializa todos os togglers de navbar existentes
+            function initNavTogglers() {
+                const togglers = document.querySelectorAll('.navbar-toggler');
+                togglers.forEach(btn => {
+                    const target = resolveTarget(btn);
+                    if (!target) return;
+
+                    // Garantir que o botão tenha type="button" para evitar submit acidental
+                    if (!btn.hasAttribute('type')) btn.setAttribute('type', 'button');
+
+                    // Evitar duplicar event listeners
+                    if (btn.__nav_init) return;
+                    btn.__nav_init = true;
+
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const isShown = target.classList.contains('show');
+                        if (isShown) {
+                            target.classList.remove('show');
+                            btn.classList.remove('collapsed');
+                            btn.setAttribute('aria-expanded', 'false');
+                        } else {
+                            target.classList.add('show');
+                            btn.classList.add('collapsed');
+                            btn.setAttribute('aria-expanded', 'true');
+                        }
+                    });
+
+                    // Fechar ao clicar fora (somente se estiver aberto)
+                    document.addEventListener('click', function (ev) {
+                        if (!target.classList.contains('show')) return;
+                        if (btn.contains(ev.target) || target.contains(ev.target)) return;
+                        target.classList.remove('show');
+                        btn.setAttribute('aria-expanded', 'false');
+                    });
+
+                    // Fechar ao pressionar ESC
+                    document.addEventListener('keydown', function (ev) {
+                        if (ev.key === 'Escape' && target.classList.contains('show')) {
+                            target.classList.remove('show');
+                            btn.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+
+                    // Ao redimensionar para telas grandes, garantir menu fechado
+                    window.addEventListener('resize', function () {
+                        if (window.innerWidth >= 992 && target.classList.contains('show')) {
+                            target.classList.remove('show');
+                            btn.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                });
+            }
+
+            // Inicializar no DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initNavTogglers);
+            } else {
+                initNavTogglers();
+            }
+        })();
     </script>
 </body>
 
