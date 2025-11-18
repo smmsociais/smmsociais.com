@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Orders</title>
+    <title>Orders - Todas as Ordens</title>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <!-- Adicionando Bootstrap CSS adicional para garantir funcionamento -->
@@ -202,7 +202,7 @@
                                             <div class="">
                                                 <ul class="nav nav-pills tab" id="status-tabs">
                                                     <li class="nav-item">
-                                                        <a class="nav-link" href="/orders">Tudo</a>
+                                                        <a class="nav-link active" href="/orders">Tudo</a>
                                                     </li>
                                                     <li class="nav-item">
                                                         <a class="nav-link" href="/orders/pending">Pendente</a>
@@ -282,7 +282,7 @@
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens serão carregadas dinamicamente aqui -->
                                                             <tr>
-                                                                <td colspan="9" class="text-center">Carregando ordens...
+                                                                <td colspan="9" class="text-center">Carregando todas as ordens...
                                                                 </td>
                                                             </tr>
                                                         </tbody>
@@ -343,6 +343,22 @@
             );
         }
 
+        // Função auxiliar para buscar token nos cookies
+        function getTokenFromCookie() {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; authToken=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            
+            // Tentar outros nomes comuns de token
+            const tokenNames = ['token', 'user_token', 'auth'];
+            for (const name of tokenNames) {
+                const tokenParts = value.split(`; ${name}=`);
+                if (tokenParts.length === 2) return tokenParts.pop().split(';').shift();
+            }
+            
+            return null;
+        }
+
         // Função para carregar as ordens da API
         async function loadOrders() {
             try {
@@ -352,11 +368,17 @@
                     console.error('Token de autenticação não encontrado');
                     document.getElementById('orders-tbody').innerHTML =
                         '<tr><td colspan="9" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
+                    // Redirecionar para login se não tiver token
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
                     return;
                 }
 
                 const status = getStatusFromURL();
                 const url = `/api/orders${status !== 'todos' ? `?status=${status}` : ''}`;
+
+                console.log('Carregando ordens com URL:', url, 'Status:', status);
 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -368,19 +390,26 @@
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        throw new Error('Token inválido ou expirado');
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user_token');
+                        throw new Error('Token inválido ou expirado. Faça login novamente.');
                     }
                     throw new Error(`Erro na requisição: ${response.status}`);
                 }
 
                 const data = await response.json();
-                displayOrders(data.acoes);
+                console.log('Dados recebidos:', data);
+                
+                // Suporte para diferentes estruturas de resposta da API
+                const orders = data.acoes || data.orders || data.data || data;
+                displayOrders(Array.isArray(orders) ? orders : []);
                 updateActiveTab();
 
             } catch (error) {
                 console.error('Erro ao carregar ordens:', error);
                 document.getElementById('orders-tbody').innerHTML =
-                    `<tr><td colspan="9" class="text-center">${error.message}</td></tr>`;
+                    `<tr><td colspan="9" class="text-center text-danger">${error.message}</td></tr>`;
             }
         }
 
@@ -395,73 +424,128 @@
 
             tbody.innerHTML = orders.map(order => {
                 // Formatar a data
-                const date = new Date(order.dataCriacao);
+                const date = new Date(order.dataCriacao || order.createdAt || order.date || order.data);
                 const formattedDate = date.toLocaleDateString('pt-BR');
                 const formattedTime = date.toLocaleTimeString('pt-BR');
 
                 // Calcular valores restantes
-                const remaining = order.quantidade - order.validadas;
+                const quantidade = order.quantidade || order.quantity || 0;
+                const validadas = order.validadas || order.validated || order.completed || 0;
+                const remaining = Math.max(0, quantidade - validadas);
 
                 // Determinar o status em português
                 let statusText = '';
                 let statusClass = '';
 
-                switch (order.status) {
+                const status = order.status ? order.status.toLowerCase() : '';
+                
+                switch (status) {
+                    case 'pending':
                     case 'pendente':
                         statusText = 'Pendente';
                         statusClass = 'text-warning';
                         break;
                     case 'progress':
+                    case 'inprogress':
+                    case 'em progresso':
                         statusText = 'Em progresso';
                         statusClass = 'text-info';
                         break;
                     case 'completed':
+                    case 'concluído':
+                    case 'concluido':
                         statusText = 'Concluído';
                         statusClass = 'text-success';
                         break;
                     case 'partial':
+                    case 'parcial':
                         statusText = 'Parcial';
                         statusClass = 'text-primary';
                         break;
                     case 'processing':
+                    case 'processando':
                         statusText = 'Processando';
                         statusClass = 'text-secondary';
                         break;
                     case 'canceled':
+                    case 'cancelado':
+                    case 'cancelled':
                         statusText = 'Cancelado';
                         statusClass = 'text-danger';
                         break;
                     default:
-                        statusText = order.status;
+                        statusText = order.status || 'Desconhecido';
                         statusClass = 'text-muted';
                 }
 
                 // Formatar valor monetário
-                const valorFormatado = order.valor ? parseFloat(order.valor).toFixed(2).replace('.', ',') : '0,00';
+                const valor = order.valor || order.value || order.price || 0;
+                const valorFormatado = parseFloat(valor).toFixed(2).replace('.', ',');
+
+                // Tratar link
+                const link = order.link || order.url || '#';
+                const linkDisplay = link && link !== '#' ? 
+                    (link.length > 30 ? link.substring(0, 30) + '...' : link) : 'N/A';
+
+                // Tratar serviço
+                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome : 
+                                  (order.serviceName || order.service || 'Serviço não encontrado');
 
                 return `
                     <tr>
-                        <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : 'N/A'}</td>
+                        <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : order.id || 'N/A'}</td>
                         <td data-label="Data">
                             <span class="nowrap">${formattedDate}</span>
                             <span class="nowrap">${formattedTime}</span>
                         </td>
                         <td data-label="Link" class="table-link">
-                            <a href="${order.link || '#'}" target="_blank" title="${order.link || 'N/A'}">
-                                ${order.link ? (order.link.length > 30 ? order.link.substring(0, 30) + '...' : order.link) : 'N/A'}
+                            <a href="${link}" target="_blank" title="${link}" style="${link === '#' ? 'pointer-events: none; color: #6c757d;' : ''}">
+                                ${linkDisplay}
                             </a>
                         </td>
                         <td data-label="Valor">R$ ${valorFormatado}</td>
-                        <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || 0}</td>
-                        <td data-label="Quantidade">${order.quantidade || 0}</td>
-                        <td data-label="Serviço" class="table-service">
-                            ${order.servicoDetalhes ? order.servicoDetalhes.nome : 'Serviço não encontrado'}
+                        <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || order.initialCount || 0}</td>
+                        <td data-label="Quantidade">${quantidade}</td>
+                        <td data-label="Serviço" class="table-service" title="${servicoNome}">
+                            ${servicoNome.length > 40 ? servicoNome.substring(0, 40) + '...' : servicoNome}
                         </td>
-                        <td data-label="Status" nowrap class="${statusClass}">${statusText}</td>
+                        <td data-label="Status" nowrap class="${statusClass}">
+                            <span class="badge bg-${getStatusBadgeColor(status)}">${statusText}</span>
+                        </td>
                         <td data-label="Restam">${remaining}</td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        // Função para determinar a cor do badge baseado no status
+        function getStatusBadgeColor(status) {
+            const statusLower = status.toLowerCase();
+            switch (statusLower) {
+                case 'pending':
+                case 'pendente':
+                    return 'warning';
+                case 'progress':
+                case 'inprogress':
+                case 'em progresso':
+                    return 'info';
+                case 'completed':
+                case 'concluído':
+                case 'concluido':
+                    return 'success';
+                case 'partial':
+                case 'parcial':
+                    return 'primary';
+                case 'processing':
+                case 'processando':
+                    return 'secondary';
+                case 'canceled':
+                case 'cancelado':
+                case 'cancelled':
+                    return 'danger';
+                default:
+                    return 'light';
+            }
         }
 
         // Função para atualizar a aba ativa
@@ -479,6 +563,9 @@
 
         // Prevenir comportamento padrão dos links de filtro
         document.addEventListener('DOMContentLoaded', function () {
+            // Atualizar aba ativa
+            updateActiveTab();
+            
             // Carregar ordens iniciais
             loadOrders();
 
@@ -489,11 +576,8 @@
                     e.preventDefault();
                     const href = this.getAttribute('href');
 
-                    // Atualizar URL sem recarregar a página
-                    window.history.pushState({}, '', href);
-
-                    // Recarregar ordens com novo filtro
-                    loadOrders();
+                    // Redirecionar para a página específica em vez de usar SPA
+                    window.location.href = href;
                 });
             });
 
@@ -507,12 +591,45 @@
             if (searchForm) {
                 searchForm.addEventListener('submit', function (e) {
                     e.preventDefault();
-                    const searchTerm = this.querySelector('input[name="search"]').value;
-                    // Implementar busca se necessário
-                    console.log('Buscar por:', searchTerm);
+                    const searchTerm = this.querySelector('input[name="search"]').value.trim();
+                    
+                    if (searchTerm) {
+                        // Implementar busca local
+                        filterOrders(searchTerm);
+                    } else {
+                        // Recarregar todas as ordens se busca estiver vazia
+                        loadOrders();
+                    }
                 });
             }
+
+            // Adicionar funcionalidade de atualização automática a cada 30 segundos
+            setInterval(() => {
+                loadOrders();
+            }, 30000);
         });
+
+        // Função para filtrar ordens localmente
+        function filterOrders(searchTerm) {
+            const rows = document.querySelectorAll('#orders-tbody tr');
+            let hasResults = false;
+            const searchLower = searchTerm.toLowerCase();
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchLower)) {
+                    row.style.display = '';
+                    hasResults = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (!hasResults && searchTerm) {
+                document.getElementById('orders-tbody').innerHTML = 
+                    '<tr><td colspan="9" class="text-center">Nenhuma ordem encontrada para: ' + searchTerm + '</td></tr>';
+            }
+        }
     </script>
 </body>
 
