@@ -10,6 +10,8 @@
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <!-- Adicionando Bootstrap CSS adicional para garantir funcionamento -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Adicionando Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         window.modules = {};
     </script>
@@ -229,6 +231,11 @@
                                 </div>
                             </div>
 
+                            <!-- Container para estatísticas -->
+                            <div id="stats-container" class="row mb-3">
+                                <!-- As estatísticas serão inseridas aqui dinamicamente -->
+                            </div>
+
                             <!-- Alert Informativo -->
                             <div class="row mb-3">
                                 <div class="col">
@@ -284,13 +291,14 @@
                                                             <tr>
                                                                 <th>ID</th>
                                                                 <th>Data</th>
-                                                                <th>Link </th>
+                                                                <th>Tempo de Espera</th>
+                                                                <th>Link</th>
                                                                 <th>Valor</th>
-                                                                <th class="nowrap">Contagem inicial</th>
                                                                 <th>Quantidade</th>
                                                                 <th>Serviço</th>
                                                                 <th>Status</th>
-                                                                <th>Restam</th>
+                                                                <th>Posição na Fila</th>
+                                                                <th>Ações</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody id="orders-tbody">
@@ -570,7 +578,12 @@
 
         // Função para exibir estatísticas das ordens pendentes
         function displayPendingStats(orders) {
-            if (!orders || orders.length === 0) return;
+            const statsContainer = document.getElementById('stats-container');
+            
+            if (!orders || orders.length === 0) {
+                statsContainer.innerHTML = '';
+                return;
+            }
 
             const totalOrders = orders.length;
             const totalQuantity = orders.reduce((sum, order) => sum + (order.quantidade || order.quantity || 0), 0);
@@ -584,45 +597,36 @@
             }, 0);
             const avgWaitTime = totalOrders > 0 ? Math.round(totalWaitTime / totalOrders / (1000 * 60)) : 0;
 
-            // Criar elemento de estatísticas se não existir
-            let statsElement = document.getElementById('pending-stats');
-            if (!statsElement) {
-                statsElement = document.createElement('div');
-                statsElement.id = 'pending-stats';
-                statsElement.className = 'row mb-3';
-
-                statsElement.innerHTML = `
-                    <div class="col-md-12">
-                        <div class="card border-warning">
-                            <div class="card-header bg-warning text-dark">
-                                <i class="fas fa-chart-bar me-2"></i>
-                                <strong>Estatísticas das Ordens Pendentes</strong>
-                            </div>
-                            <div class="card-body">
-                                <div class="row text-center">
-                                    <div class="col-md-3">
-                                        <h5 class="mb-0 text-warning">${totalOrders}</h5>
-                                        <small class="text-muted">Ordens Pendentes</small>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <h5 class="mb-0 text-primary">${totalQuantity}</h5>
-                                        <small class="text-muted">Quantidade Total</small>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <h5 class="mb-0 text-info">R$ ${totalValue.toFixed(2).replace('.', ',')}</h5>
-                                        <small class="text-muted">Valor Total</small>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <h5 class="mb-0 text-secondary">${avgWaitTime} min</h5>
-                                        <small class="text-muted">Tempo Médio</small>
-                                    </div>
+            statsContainer.innerHTML = `
+                <div class="col-md-12">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            <strong>Estatísticas das Ordens Pendentes</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <h5 class="mb-0 text-warning">${totalOrders}</h5>
+                                    <small class="text-muted">Ordens Pendentes</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h5 class="mb-0 text-primary">${totalQuantity}</h5>
+                                    <small class="text-muted">Quantidade Total</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h5 class="mb-0 text-info">R$ ${totalValue.toFixed(2).replace('.', ',')}</h5>
+                                    <small class="text-muted">Valor Total</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h5 class="mb-0 text-secondary">${avgWaitTime} min</h5>
+                                    <small class="text-muted">Tempo Médio</small>
                                 </div>
                             </div>
                         </div>
                     </div>
-                `;
-                document.querySelector('.alert-warning').parentNode.insertBefore(statsElement, document.querySelector('.orders-history__margin-table'));
-            }
+                </div>
+            `;
         }
 
         // Função para atualizar o status de uma ordem específica
