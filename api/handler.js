@@ -156,7 +156,7 @@ if (url.startsWith("/api/signup")) {
 };
 
 // Rota: /api/profile (GET ou PUT)
-if (url.startsWith("/api/profile")) {
+if (url.startsWith("/api/account")) {
   if (method !== "GET" && method !== "PUT") {
     return res.status(405).json({ error: "Método não permitido." });
   }
@@ -214,7 +214,7 @@ if (url.startsWith("/api/profile")) {
       return res.status(200).json({ message: "Perfil atualizado com sucesso!" });
     }
   } catch (error) {
-    console.error("💥 Erro ao processar /profile:", error);
+    console.error("💥 Erro ao processar /account:", error);
     return res.status(500).json({ error: "Erro ao processar perfil." });
   }
 }
