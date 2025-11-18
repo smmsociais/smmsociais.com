@@ -271,7 +271,7 @@
                                                             <tr>
                                                                 <th>ID</th>
                                                                 <th>Data</th>
-                                                                <th>Link </th>
+                                                                <th>Link</th>
                                                                 <th>Valor</th>
                                                                 <th class="nowrap">Contagem inicial</th>
                                                                 <th>Quantidade</th>
@@ -283,7 +283,7 @@
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens concluídas serão carregadas dinamicamente aqui -->
                                                             <tr>
-                                                                <td colspan="11" class="text-center">Carregando ordens
+                                                                <td colspan="9" class="text-center">Carregando ordens
                                                                     concluídas...
                                                                 </td>
                                                             </tr>
@@ -369,7 +369,7 @@
                 if (!token) {
                     console.error('Token de autenticação não encontrado');
                     document.getElementById('orders-tbody').innerHTML =
-                        '<tr><td colspan="11" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
+                        '<tr><td colspan="9" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
                     // Redirecionar para login se não tiver token
                     setTimeout(() => {
                         window.location.href = '/login';
@@ -411,30 +411,7 @@
             } catch (error) {
                 console.error('Erro ao carregar ordens:', error);
                 document.getElementById('orders-tbody').innerHTML =
-                    `<tr><td colspan="11" class="text-center text-danger">${error.message}</td></tr>`;
-            }
-        }
-
-        // Função para calcular o tempo total entre criação e conclusão
-        function calculateTotalTime(startDate, endDate) {
-            if (!startDate || !endDate) return 'N/A';
-
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-            const diffMs = end - start;
-
-            if (diffMs <= 0) return 'N/A';
-
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-            if (diffDays > 0) {
-                return `${diffDays}d ${diffHours}h ${diffMinutes}m`;
-            } else if (diffHours > 0) {
-                return `${diffHours}h ${diffMinutes}m`;
-            } else {
-                return `${diffMinutes}m`;
+                    `<tr><td colspan="9" class="text-center text-danger">${error.message}</td></tr>`;
             }
         }
 
@@ -443,7 +420,7 @@
             const tbody = document.getElementById('orders-tbody');
 
             if (!orders || orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" class="text-center">Nenhuma ordem concluída encontrada</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma ordem concluída encontrada</td></tr>';
                 return;
             }
 
@@ -455,25 +432,15 @@
             });
 
             tbody.innerHTML = sortedOrders.map(order => {
-                // Formatar as datas
-                const startDate = new Date(order.dataCriacao || order.createdAt || order.date || order.data);
-                const endDate = new Date(order.dataConclusao || order.completedAt || order.updatedAt || order.dataCriacao);
-
-                const formattedStartDate = startDate.toLocaleDateString('pt-BR');
-                const formattedStartTime = startDate.toLocaleTimeString('pt-BR');
-                const formattedEndDate = endDate.toLocaleDateString('pt-BR');
-                const formattedEndTime = endDate.toLocaleTimeString('pt-BR');
+                // Formatar data
+                const date = new Date(order.dataCriacao || order.createdAt || order.date || order.data);
+                const formattedDate = date.toLocaleDateString('pt-BR');
+                const formattedTime = date.toLocaleTimeString('pt-BR');
 
                 // Calcular valores
                 const quantidade = order.quantidade || order.quantity || 0;
                 const validadas = order.validadas || order.validated || order.completed || quantidade;
-                const completedPercentage = quantidade > 0 ? Math.round((validadas / quantidade) * 100) : 100;
-
-                // Calcular tempo total
-                const totalTime = calculateTotalTime(
-                    order.dataCriacao || order.createdAt,
-                    order.dataConclusao || order.completedAt || order.updatedAt
-                );
+                const restam = Math.max(0, quantidade - validadas);
 
                 // Formatar valor monetário
                 const valor = order.valor || order.value || order.price || 0;
@@ -491,13 +458,9 @@
                 return `
                     <tr class="table-success">
                         <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : order.id || 'N/A'}</td>
-                        <td data-label="Data de Criação">
-                            <span class="nowrap">${formattedStartDate}</span>
-                            <span class="nowrap">${formattedStartTime}</span>
-                        </td>
-                        <td data-label="Data de Conclusão">
-                            <span class="nowrap">${formattedEndDate}</span>
-                            <span class="nowrap">${formattedEndTime}</span>
+                        <td data-label="Data">
+                            <span class="nowrap">${formattedDate}</span>
+                            <span class="nowrap">${formattedTime}</span>
                         </td>
                         <td data-label="Link" class="table-link">
                             <a href="${link}" target="_blank" title="${link}" style="${link === '#' ? 'pointer-events: none; color: #6c757d;' : ''}">
@@ -507,10 +470,6 @@
                         <td data-label="Valor">R$ ${valorFormatado}</td>
                         <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || order.initialCount || 0}</td>
                         <td data-label="Quantidade">${quantidade}</td>
-                        <td data-label="Concluídas">
-                            <span class="badge bg-success">${validadas}/${quantidade}</span>
-                            <small class="text-muted d-block">(${completedPercentage}%)</small>
-                        </td>
                         <td data-label="Serviço" class="table-service" title="${servicoNome}">
                             ${servicoNome.length > 35 ? servicoNome.substring(0, 35) + '...' : servicoNome}
                         </td>
@@ -519,9 +478,7 @@
                                 <i class="fas fa-check-circle me-1"></i>Concluído
                             </span>
                         </td>
-                        <td data-label="Tempo Total" class="nowrap">
-                            <small>${totalTime}</small>
-                        </td>
+                        <td data-label="Restam">${restam}</td>
                     </tr>
                 `;
             }).join('');
@@ -601,51 +558,7 @@
 
             if (!hasResults && searchTerm) {
                 document.getElementById('orders-tbody').innerHTML =
-                    '<tr><td colspan="11" class="text-center">Nenhuma ordem concluída encontrada para: ' + searchTerm + '</td></tr>';
-            }
-        }
-
-        // Adicionar estatísticas resumidas
-        function displaySummaryStats(orders) {
-            if (!orders || orders.length === 0) return;
-
-            const totalOrders = orders.length;
-            const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valor || order.value || 0), 0);
-            const totalQuantity = orders.reduce((sum, order) => sum + (order.quantidade || order.quantity || 0), 0);
-
-            // Criar elemento de estatísticas se não existir
-            let statsElement = document.getElementById('orders-stats');
-            if (!statsElement) {
-                statsElement = document.createElement('div');
-                statsElement.id = 'orders-stats';
-                statsElement.className = 'row mb-3';
-                statsElement.innerHTML = `
-                    <div class="col-md-12">
-                        <div class="card bg-light">
-                            <div class="card-body py-2">
-                                <div class="row text-center">
-                                    <div class="col-md-3">
-                                        <h5 class="mb-0 text-success">${totalOrders}</h5>
-                                        <small class="text-muted">Total de Ordens</small>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <h5 class="mb-0 text-success">R$ ${totalValue.toFixed(2).replace('.', ',')}</h5>
-                                        <small class="text-muted">Valor Total</small>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <h5 class="mb-0 text-success">${totalQuantity}</h5>
-                                        <small class="text-muted">Quantidade Total</small>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <h5 class="mb-0 text-success">100%</h5>
-                                        <small class="text-muted">Taxa de Conclusão</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.querySelector('.orders-history__margin-tab').parentNode.insertBefore(statsElement, document.querySelector('.orders-history__margin-table'));
+                    '<tr><td colspan="9" class="text-center">Nenhuma ordem concluída encontrada para: ' + searchTerm + '</td></tr>';
             }
         }
     </script>
