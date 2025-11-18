@@ -283,7 +283,7 @@
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens em progresso serão carregadas dinamicamente aqui -->
                                                             <tr>
-                                                                <td colspan="10" class="text-center">Carregando ordens
+                                                                <td colspan="9" class="text-center">Carregando ordens
                                                                     em progresso...
                                                                 </td>
                                                             </tr>
@@ -369,7 +369,7 @@
                 if (!token) {
                     console.error('Token de autenticação não encontrado');
                     document.getElementById('orders-tbody').innerHTML =
-                        '<tr><td colspan="10" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
+                        '<tr><td colspan="9" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
                     // Redirecionar para login se não tiver token
                     setTimeout(() => {
                         window.location.href = '/login';
@@ -411,7 +411,7 @@
             } catch (error) {
                 console.error('Erro ao carregar ordens:', error);
                 document.getElementById('orders-tbody').innerHTML =
-                    `<tr><td colspan="10" class="text-center text-danger">${error.message}</td></tr>`;
+                    `<tr><td colspan="9" class="text-center text-danger">${error.message}</td></tr>`;
             }
         }
 
@@ -420,7 +420,7 @@
             const tbody = document.getElementById('orders-tbody');
 
             if (!orders || orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center">Nenhuma ordem em progresso encontrada</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma ordem em progresso encontrada</td></tr>';
                 return;
             }
 
@@ -434,12 +434,6 @@
                 const quantidade = order.quantidade || order.quantity || 0;
                 const validadas = order.validadas || order.validated || order.completed || 0;
                 const remaining = Math.max(0, quantidade - validadas);
-
-                // Calcular porcentagem de progresso
-                let progressPercentage = 0;
-                if (quantidade > 0) {
-                    progressPercentage = Math.round((validadas / quantidade) * 100);
-                }
 
                 // Determinar o status em português
                 let statusText = '';
@@ -521,18 +515,6 @@
                             <span class="badge bg-${getStatusBadgeColor(status)}">${statusText}</span>
                         </td>
                         <td data-label="Restam">${remaining}</td>
-                        <td data-label="Progresso">
-                            <div class="progress" style="height: 20px; min-width: 100px;">
-                                <div class="progress-bar bg-info progress-bar-striped progress-bar-animated" 
-                                     role="progressbar" 
-                                     style="width: ${progressPercentage}%"
-                                     aria-valuenow="${progressPercentage}" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100">
-                                    ${progressPercentage}%
-                                </div>
-                            </div>
-                        </td>
                     </tr>
                 `;
             }).join('');
@@ -647,7 +629,7 @@
 
             if (!hasResults && searchTerm) {
                 document.getElementById('orders-tbody').innerHTML =
-                    '<tr><td colspan="10" class="text-center">Nenhuma ordem em progresso encontrada para: ' + searchTerm + '</td></tr>';
+                    '<tr><td colspan="9" class="text-center">Nenhuma ordem em progresso encontrada para: ' + searchTerm + '</td></tr>';
             }
         }
     </script>
