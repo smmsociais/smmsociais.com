@@ -234,9 +234,11 @@
                                 <div class="col">
                                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                         <i class="fas fa-times-circle me-2"></i>
-                                        <strong>Ordens Canceladas:</strong> Estas ordens foram canceladas por diversos motivos. 
+                                        <strong>Ordens Canceladas:</strong> Estas ordens foram canceladas por diversos
+                                        motivos.
                                         Em caso de dúvidas sobre o cancelamento, entre em contato com o suporte.
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
                                     </div>
                                 </div>
                             </div>
@@ -282,22 +284,21 @@
                                                         <thead>
                                                             <tr>
                                                                 <th>ID</th>
-                                                                <th>Data de Criação</th>
-                                                                <th>Data de Cancelamento</th>
-                                                                <th>Link</th>
+                                                                <th>Data</th>
+                                                                <th>Link </th>
                                                                 <th>Valor</th>
+                                                                <th class="nowrap">Contagem inicial</th>
                                                                 <th>Quantidade</th>
                                                                 <th>Serviço</th>
-                                                                <th>Motivo</th>
                                                                 <th>Status</th>
-                                                                <th>Reembolso</th>
-                                                                <th>Ações</th>
+                                                                <th>Restam</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens canceladas serão carregadas dinamicamente aqui -->
                                                             <tr>
-                                                                <td colspan="11" class="text-center">Carregando ordens canceladas...
+                                                                <td colspan="11" class="text-center">Carregando ordens
+                                                                    canceladas...
                                                                 </td>
                                                             </tr>
                                                         </tbody>
@@ -363,14 +364,14 @@
             const value = `; ${document.cookie}`;
             const parts = value.split(`; authToken=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
-            
+
             // Tentar outros nomes comuns de token
             const tokenNames = ['token', 'user_token', 'auth'];
             for (const name of tokenNames) {
                 const tokenParts = value.split(`; ${name}=`);
                 if (tokenParts.length === 2) return tokenParts.pop().split(';').shift();
             }
-            
+
             return null;
         }
 
@@ -415,7 +416,7 @@
 
                 const data = await response.json();
                 console.log('Dados recebidos:', data);
-                
+
                 // Suporte para diferentes estruturas de resposta da API
                 const orders = data.acoes || data.orders || data.data || data;
                 displayOrders(Array.isArray(orders) ? orders : []);
@@ -441,7 +442,7 @@
                 'timeout': 'Tempo Esgotado',
                 'fraud_detected': 'Fraude Detectada'
             };
-            
+
             // Simular motivo baseado em dados da ordem
             if (order.link && order.link.includes('invalid')) {
                 return reasons.invalid_link;
@@ -452,7 +453,7 @@
             if (order.dataCriacao && (new Date() - new Date(order.dataCriacao)) > 24 * 60 * 60 * 1000) {
                 return reasons.timeout;
             }
-            
+
             // Motivo padrão
             const reasonKeys = Object.keys(reasons);
             const randomReason = reasonKeys[Math.floor(Math.random() * reasonKeys.length)];
@@ -468,7 +469,7 @@
                 'not_eligible': { text: 'Não Elegível', class: 'secondary' },
                 'failed': { text: 'Falhou', class: 'danger' }
             };
-            
+
             // Simular status baseado em dados da ordem
             if (order.valor < 5) {
                 return statuses.not_eligible;
@@ -476,7 +477,7 @@
             if (order.dataCriacao && (new Date() - new Date(order.dataCriacao)) < 2 * 60 * 60 * 1000) {
                 return statuses.pending;
             }
-            
+
             const statusKeys = Object.keys(statuses);
             const randomStatus = statusKeys[Math.floor(Math.random() * statusKeys.length)];
             return statuses[randomStatus];
@@ -502,7 +503,7 @@
                 // Formatar as datas
                 const startDate = new Date(order.dataCriacao || order.createdAt || order.date || order.data);
                 const cancelDate = new Date(order.dataCancelamento || order.canceledAt || order.updatedAt || order.dataCriacao);
-                
+
                 const formattedStartDate = startDate.toLocaleDateString('pt-BR');
                 const formattedStartTime = startDate.toLocaleTimeString('pt-BR');
                 const formattedCancelDate = cancelDate.toLocaleDateString('pt-BR');
@@ -518,12 +519,12 @@
 
                 // Tratar link
                 const link = order.link || order.url || '#';
-                const linkDisplay = link && link !== '#' ? 
+                const linkDisplay = link && link !== '#' ?
                     (link.length > 20 ? link.substring(0, 20) + '...' : link) : 'N/A';
 
                 // Tratar serviço
-                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome : 
-                                  (order.serviceName || order.service || 'Serviço não encontrado');
+                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome :
+                    (order.serviceName || order.service || 'Serviço não encontrado');
 
                 return `
                     <tr class="table-danger">
@@ -589,11 +590,11 @@
         // Função para exibir estatísticas das ordens canceladas
         function displayCanceledStats(orders) {
             if (!orders || orders.length === 0) return;
-            
+
             const totalOrders = orders.length;
             const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valor || order.value || 0), 0);
             const totalQuantity = orders.reduce((sum, order) => sum + (order.quantidade || order.quantity || 0), 0);
-            
+
             // Calcular estatísticas de reembolso (simulado)
             const refundStats = {
                 pending: Math.floor(totalOrders * 0.3),
@@ -608,7 +609,7 @@
                 statsElement = document.createElement('div');
                 statsElement.id = 'canceled-stats';
                 statsElement.className = 'row mb-3';
-                
+
                 statsElement.innerHTML = `
                     <div class="col-md-12">
                         <div class="card border-danger">
@@ -674,10 +675,10 @@
                 setTimeout(() => {
                     button.innerHTML = originalHtml;
                     button.disabled = false;
-                    
+
                     // Mostrar notificação
                     showNotification('Solicitação de reembolso enviada com sucesso!', 'success');
-                    
+
                     // Recarregar a página para atualizar status
                     setTimeout(() => {
                         loadOrders();
@@ -693,7 +694,7 @@
                 notifyWrapper.className = `alert alert-${type} mb-3`;
                 notifyWrapper.innerHTML = message;
                 notifyWrapper.style.display = 'block';
-                
+
                 // Auto-esconder após 5 segundos
                 setTimeout(() => {
                     notifyWrapper.style.display = 'none';
@@ -718,7 +719,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Atualizar aba ativa
             updateActiveTab();
-            
+
             // Carregar ordens canceladas
             loadOrders();
 
@@ -740,7 +741,7 @@
                 searchForm.addEventListener('submit', function (e) {
                     e.preventDefault();
                     const searchTerm = this.querySelector('input[name="search"]').value.trim();
-                    
+
                     if (searchTerm) {
                         // Implementar busca local
                         filterOrders(searchTerm);
@@ -774,7 +775,7 @@
             });
 
             if (!hasResults && searchTerm) {
-                document.getElementById('orders-tbody').innerHTML = 
+                document.getElementById('orders-tbody').innerHTML =
                     '<tr><td colspan="11" class="text-center">Nenhuma ordem cancelada encontrada para: ' + searchTerm + '</td></tr>';
             }
         }
