@@ -11,6 +11,7 @@
       { "source": "/orders/inprogress", "destination": "/orders/inprogress.html" },
       { "source": "/orders/completed", "destination": "/orders/completed.html" },
       { "source": "/orders/partial", "destination": "/orders/partial.html" },
+      { "source": "/orders/processing", "destination": "/orders/processing.html" },
       { "source": "/services", "destination": "/services.html" },
       { "source": "/servicos", "destination": "/servicos.html" },
       { "source": "/affiliates", "destination": "/affiliates.html" },
