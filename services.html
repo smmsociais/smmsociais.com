@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Services</title>
     <script>
-
         // Função para obter o token do localStorage
         function loadToken() {
             return (
@@ -42,7 +41,7 @@
                 }
 
                 const balanceData = await response.json();
-
+                
                 // Formatar o saldo como moeda brasileira
                 const formattedBalance = new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
@@ -67,7 +66,7 @@
                 return 0;
             }
         }
-                
+
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
         }
@@ -418,6 +417,9 @@
     <!-- Script para carregar serviços da API -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Carregar saldo do usuário
+            loadUserBalance();
+
             // Função para carregar serviços da API
             function loadServices() {
                 fetch('https://smmsociais.com/api/servico')
