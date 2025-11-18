@@ -18,42 +18,92 @@
             );
         }
 
-        // Função para carregar dados da conta
-async function loadAccountData() {
-    const token = loadToken();
+        // Função para carregar saldo do usuário
+        async function loadUserBalance() {
+            const token = loadToken();
 
-    if (!token) {
-        console.error("Token não encontrado.");
-        alert("Sessão expirada, faça login novamente.");
-        window.location.href = "/login";
-        return;
-    }
-
-    try {
-        const response = await fetch('https://smmsociais.com/api/account', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+            if (!token) {
+                console.error("Token não encontrado.");
+                return;
             }
-        });
 
-        if (!response.ok) throw new Error('Erro ao carregar dados');
+            try {
+                const response = await fetch('https://smmsociais.com/api/get_saldo', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
 
-        const accountData = await response.json();
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar saldo');
+                }
 
-        document.getElementById('username').value = accountData.nome_usuario || '';
-        document.getElementById('email').value = accountData.email || '';
+                const balanceData = await response.json();
+                
+                // Formatar o saldo como moeda brasileira
+                const formattedBalance = new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                }).format(balanceData.saldo || 0);
 
-    } catch (error) {
-        console.error('Erro:', error);
-        alert('Erro ao carregar dados da conta');
-    }
-}
+                // Atualizar o saldo na navbar
+                const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
+                if (balanceElement) {
+                    balanceElement.textContent = formattedBalance;
+                }
+
+                return balanceData.saldo;
+
+            } catch (error) {
+                console.error('Erro ao carregar saldo:', error);
+                // Definir saldo como R$ 0,00 em caso de erro
+                const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
+                if (balanceElement) {
+                    balanceElement.textContent = 'R$ 0,00';
+                }
+                return 0;
+            }
+        }
+
+        // Função para carregar dados da conta
+        async function loadAccountData() {
+            const token = loadToken();
+
+            if (!token) {
+                console.error("Token não encontrado.");
+                alert("Sessão expirada, faça login novamente.");
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                const response = await fetch('https://smmsociais.com/api/account', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Erro ao carregar dados');
+
+                const accountData = await response.json();
+
+                document.getElementById('username').value = accountData.nome_usuario || '';
+                document.getElementById('email').value = accountData.email || '';
+                document.getElementById('current-email').value = accountData.email || '';
+
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao carregar dados da conta');
+            }
+        }
 
         // Função para atualizar dados da conta
-async function updateAccountData(updateData) {
-    const token = loadToken();
+        async function updateAccountData(updateData) {
+            const token = loadToken();
 
             if (!token) {
                 console.error('Token não encontrado');
@@ -109,6 +159,9 @@ async function updateAccountData(updateData) {
         document.addEventListener('DOMContentLoaded', function () {
             // Carregar dados da conta
             loadAccountData();
+            
+            // Carregar saldo do usuário
+            loadUserBalance();
 
             // Configurar formulário de alteração de senha
             const passwordForm = document.querySelector('form[action*="password"]');
