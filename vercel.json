@@ -10,6 +10,7 @@
       { "source": "/orders/pending", "destination": "/orders/pending.html" },
       { "source": "/orders/inprogress", "destination": "/orders/inprogress.html" },
       { "source": "/orders/completed", "destination": "/orders/completed.html" },
+      { "source": "/orders/partial", "destination": "/orders/partial.html" },
       { "source": "/services", "destination": "/services.html" },
       { "source": "/servicos", "destination": "/servicos.html" },
       { "source": "/affiliates", "destination": "/affiliates.html" },
