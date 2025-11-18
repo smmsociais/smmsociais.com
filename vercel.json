@@ -32,7 +32,7 @@
       { "source": "/api/change-password", "destination": "/api/handler.js" },
       { "source": "/api/recover-password", "destination": "/api/handler.js" },
       { "source": "/api/validate-reset-token", "destination": "/api/handler.js" },
-      { "source": "/api/profile", "destination": "/api/handler.js" },
+      { "source": "/api/account", "destination": "/api/handler.js" },
       { "source": "/api/confirmar-pagamento", "destination": "/api/handler.js" },
       { "source": "/api/incrementar-validadas", "destination": "/api/handler.js" },
       { "source": "/api/orders", "destination": "/api/handler.js" },
