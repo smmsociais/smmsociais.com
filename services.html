@@ -35,7 +35,7 @@
                 localStorage.getItem('user_token') ||
                 localStorage.getItem('auth') ||
                 getToken();
-
+            
             // Marcar token como carregado
             setTimeout(() => markApiAsLoaded(), 0);
             return token;
@@ -70,7 +70,7 @@
                 }
 
                 const balanceData = await response.json();
-
+                
                 // Formatar o saldo como moeda brasileira
                 const formattedBalance = new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
@@ -127,7 +127,7 @@
         }
 
         // Inicializar funções quando o DOM estiver carregado
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             fillAndHideInput();
             loadUserBalance();
         });
@@ -472,6 +472,10 @@
                         console.error('Erro:', error);
                         document.getElementById('service-tbody').innerHTML =
                             '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                    })
+                    .finally(() => {
+                        // Marcar serviços como carregados
+                        markApiAsLoaded();
                     });
             }
 
