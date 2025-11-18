@@ -208,7 +208,8 @@
                                                         <a class="nav-link" href="/orders/pending">Pendente</a>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <a class="nav-link active" href="/orders/inprogress">Em progresso</a>
+                                                        <a class="nav-link active" href="/orders/inprogress">Em
+                                                            progresso</a>
                                                     </li>
                                                     <li class="nav-item">
                                                         <a class="nav-link" href="/orders/completed">Concluído</a>
@@ -277,13 +278,13 @@
                                                                 <th>Serviço</th>
                                                                 <th>Status</th>
                                                                 <th>Restam</th>
-                                                                <th>Progresso</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens em progresso serão carregadas dinamicamente aqui -->
                                                             <tr>
-                                                                <td colspan="10" class="text-center">Carregando ordens em progresso...
+                                                                <td colspan="10" class="text-center">Carregando ordens
+                                                                    em progresso...
                                                                 </td>
                                                             </tr>
                                                         </tbody>
@@ -349,14 +350,14 @@
             const value = `; ${document.cookie}`;
             const parts = value.split(`; authToken=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
-            
+
             // Tentar outros nomes comuns de token
             const tokenNames = ['token', 'user_token', 'auth'];
             for (const name of tokenNames) {
                 const tokenParts = value.split(`; ${name}=`);
                 if (tokenParts.length === 2) return tokenParts.pop().split(';').shift();
             }
-            
+
             return null;
         }
 
@@ -401,7 +402,7 @@
 
                 const data = await response.json();
                 console.log('Dados recebidos:', data);
-                
+
                 // Suporte para diferentes estruturas de resposta da API
                 const orders = data.acoes || data.orders || data.data || data;
                 displayOrders(Array.isArray(orders) ? orders : []);
@@ -433,7 +434,7 @@
                 const quantidade = order.quantidade || order.quantity || 0;
                 const validadas = order.validadas || order.validated || order.completed || 0;
                 const remaining = Math.max(0, quantidade - validadas);
-                
+
                 // Calcular porcentagem de progresso
                 let progressPercentage = 0;
                 if (quantidade > 0) {
@@ -445,7 +446,7 @@
                 let statusClass = '';
 
                 const status = order.status ? order.status.toLowerCase() : '';
-                
+
                 switch (status) {
                     case 'pending':
                     case 'pendente':
@@ -491,12 +492,12 @@
 
                 // Tratar link
                 const link = order.link || order.url || '#';
-                const linkDisplay = link && link !== '#' ? 
+                const linkDisplay = link && link !== '#' ?
                     (link.length > 30 ? link.substring(0, 30) + '...' : link) : 'N/A';
 
                 // Tratar serviço
-                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome : 
-                                  (order.serviceName || order.service || 'Serviço não encontrado');
+                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome :
+                    (order.serviceName || order.service || 'Serviço não encontrado');
 
                 return `
                     <tr>
@@ -584,7 +585,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Atualizar aba ativa
             updateActiveTab();
-            
+
             // Carregar ordens em progresso
             loadOrders();
 
@@ -611,7 +612,7 @@
                 searchForm.addEventListener('submit', function (e) {
                     e.preventDefault();
                     const searchTerm = this.querySelector('input[name="search"]').value.trim();
-                    
+
                     if (searchTerm) {
                         // Implementar busca local
                         filterOrders(searchTerm);
@@ -645,7 +646,7 @@
             });
 
             if (!hasResults && searchTerm) {
-                document.getElementById('orders-tbody').innerHTML = 
+                document.getElementById('orders-tbody').innerHTML =
                     '<tr><td colspan="10" class="text-center">Nenhuma ordem em progresso encontrada para: ' + searchTerm + '</td></tr>';
             }
         }
