@@ -211,7 +211,8 @@
                                                         <a class="nav-link" href="/orders/inprogress">Em progresso</a>
                                                     </li>
                                                     <li class="nav-item">
-                                                        <a class="nav-link active" href="/orders/completed">Concluído</a>
+                                                        <a class="nav-link active"
+                                                            href="/orders/completed">Concluído</a>
                                                     </li>
                                                     <li class="nav-item">
                                                         <a class="nav-link" href="/orders/partial">Parcial</a>
@@ -269,22 +270,21 @@
                                                         <thead>
                                                             <tr>
                                                                 <th>ID</th>
-                                                                <th>Data de Criação</th>
-                                                                <th>Data de Conclusão</th>
-                                                                <th>Link</th>
+                                                                <th>Data</th>
+                                                                <th>Link </th>
                                                                 <th>Valor</th>
                                                                 <th class="nowrap">Contagem inicial</th>
                                                                 <th>Quantidade</th>
-                                                                <th>Concluídas</th>
                                                                 <th>Serviço</th>
                                                                 <th>Status</th>
-                                                                <th>Tempo Total</th>
+                                                                <th>Restam</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody id="orders-tbody">
                                                             <!-- As ordens concluídas serão carregadas dinamicamente aqui -->
                                                             <tr>
-                                                                <td colspan="11" class="text-center">Carregando ordens concluídas...
+                                                                <td colspan="11" class="text-center">Carregando ordens
+                                                                    concluídas...
                                                                 </td>
                                                             </tr>
                                                         </tbody>
@@ -350,14 +350,14 @@
             const value = `; ${document.cookie}`;
             const parts = value.split(`; authToken=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
-            
+
             // Tentar outros nomes comuns de token
             const tokenNames = ['token', 'user_token', 'auth'];
             for (const name of tokenNames) {
                 const tokenParts = value.split(`; ${name}=`);
                 if (tokenParts.length === 2) return tokenParts.pop().split(';').shift();
             }
-            
+
             return null;
         }
 
@@ -402,7 +402,7 @@
 
                 const data = await response.json();
                 console.log('Dados recebidos:', data);
-                
+
                 // Suporte para diferentes estruturas de resposta da API
                 const orders = data.acoes || data.orders || data.data || data;
                 displayOrders(Array.isArray(orders) ? orders : []);
@@ -418,17 +418,17 @@
         // Função para calcular o tempo total entre criação e conclusão
         function calculateTotalTime(startDate, endDate) {
             if (!startDate || !endDate) return 'N/A';
-            
+
             const start = new Date(startDate);
             const end = new Date(endDate);
             const diffMs = end - start;
-            
+
             if (diffMs <= 0) return 'N/A';
-            
+
             const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
             const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            
+
             if (diffDays > 0) {
                 return `${diffDays}d ${diffHours}h ${diffMinutes}m`;
             } else if (diffHours > 0) {
@@ -458,7 +458,7 @@
                 // Formatar as datas
                 const startDate = new Date(order.dataCriacao || order.createdAt || order.date || order.data);
                 const endDate = new Date(order.dataConclusao || order.completedAt || order.updatedAt || order.dataCriacao);
-                
+
                 const formattedStartDate = startDate.toLocaleDateString('pt-BR');
                 const formattedStartTime = startDate.toLocaleTimeString('pt-BR');
                 const formattedEndDate = endDate.toLocaleDateString('pt-BR');
@@ -481,12 +481,12 @@
 
                 // Tratar link
                 const link = order.link || order.url || '#';
-                const linkDisplay = link && link !== '#' ? 
+                const linkDisplay = link && link !== '#' ?
                     (link.length > 25 ? link.substring(0, 25) + '...' : link) : 'N/A';
 
                 // Tratar serviço
-                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome : 
-                                  (order.serviceName || order.service || 'Serviço não encontrado');
+                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome :
+                    (order.serviceName || order.service || 'Serviço não encontrado');
 
                 return `
                     <tr class="table-success">
@@ -544,7 +544,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Atualizar aba ativa
             updateActiveTab();
-            
+
             // Carregar ordens concluídas
             loadOrders();
 
@@ -566,7 +566,7 @@
                 searchForm.addEventListener('submit', function (e) {
                     e.preventDefault();
                     const searchTerm = this.querySelector('input[name="search"]').value.trim();
-                    
+
                     if (searchTerm) {
                         // Implementar busca local
                         filterOrders(searchTerm);
@@ -600,7 +600,7 @@
             });
 
             if (!hasResults && searchTerm) {
-                document.getElementById('orders-tbody').innerHTML = 
+                document.getElementById('orders-tbody').innerHTML =
                     '<tr><td colspan="11" class="text-center">Nenhuma ordem concluída encontrada para: ' + searchTerm + '</td></tr>';
             }
         }
@@ -608,11 +608,11 @@
         // Adicionar estatísticas resumidas
         function displaySummaryStats(orders) {
             if (!orders || orders.length === 0) return;
-            
+
             const totalOrders = orders.length;
             const totalValue = orders.reduce((sum, order) => sum + parseFloat(order.valor || order.value || 0), 0);
             const totalQuantity = orders.reduce((sum, order) => sum + (order.quantidade || order.quantity || 0), 0);
-            
+
             // Criar elemento de estatísticas se não existir
             let statsElement = document.getElementById('orders-stats');
             if (!statsElement) {
