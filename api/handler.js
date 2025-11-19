@@ -610,7 +610,7 @@ if (url.startsWith("/api/gerar-pagamento")) {
 const response = await fetch("https://api.mercadopago.com/v1/payments", {
   method: "POST",
   headers: {
-    Authorization: "Bearer APP_USR-4392638487978504-053020-58385d412bdf3a5b9de74579fd791060-650613572",
+    Authorization: "Bearer APP_USR-6408647281310844-111910-2b9ac05357a51450c4d1b20822c223ca-3002778257",
     "Content-Type": "application/json",
     "X-Idempotency-Key": randomUUID()
   },
