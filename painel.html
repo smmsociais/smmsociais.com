@@ -10,24 +10,26 @@
         /* Initial Load */
         body {
             visibility: hidden;
+            opacity: 0;
+            transition: opacity 240ms ease;
         }
 
         body.loaded {
             visibility: visible;
+            opacity: 1;
+        }
+
+        #page-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
         }
     </style>
     <script>
-        // Função para marcar quando todas as APIs foram carregadas
-        let apisLoaded = 0;
-        const totalApis = 2; // Token + Serviços
-
-        function markApiAsLoaded() {
-            apisLoaded++;
-            if (apisLoaded === totalApis) {
-                document.body.classList.add('loaded');
-            }
-        }
-
         // Função para obter o token do localStorage
         function loadToken() {
             const token = localStorage.getItem('authToken') ||
@@ -35,9 +37,6 @@
                 localStorage.getItem('user_token') ||
                 localStorage.getItem('auth') ||
                 getToken();
-            
-            // Marcar token como carregado
-            setTimeout(() => markApiAsLoaded(), 0);
             return token;
         }
 
@@ -52,7 +51,6 @@
                 if (balanceElement) {
                     balanceElement.textContent = 'R$ 0,00';
                 }
-                markApiAsLoaded();
                 return 0;
             }
 
@@ -93,8 +91,6 @@
                     balanceElement.textContent = 'R$ 0,00';
                 }
                 return 0;
-            } finally {
-                markApiAsLoaded();
             }
         }
 
@@ -126,11 +122,271 @@
             }
         }
 
-        // Inicializar funções quando o DOM estiver carregado
-        document.addEventListener('DOMContentLoaded', function() {
-            fillAndHideInput();
-            loadUserBalance();
-        });
+        // Função para carregar serviços da API
+        function loadServices() {
+            return fetch('https://smmsociais.com/api/servico')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar serviços da API');
+                    }
+                    return response.json();
+                })
+                .then(services => {
+                    renderServices(services);
+                    return services;
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar serviços:', error);
+                    const serviceSelect = document.getElementById('orderform-service');
+                    if (serviceSelect) {
+                        serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+                    }
+                    return [];
+                });
+        }
+
+        // Função para renderizar serviços no formulário
+        function renderServices(services) {
+            const serviceSelect = document.getElementById('orderform-service');
+            if (!serviceSelect) return;
+
+            // Limpar opções existentes
+            serviceSelect.innerHTML = '';
+
+            // Adicionar opção padrão
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Selecione um serviço';
+            serviceSelect.appendChild(defaultOption);
+
+            // Adicionar serviços da API
+            services.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service.id_servico;
+                option.textContent = service.nome;
+                option.setAttribute('data-price', service.preco_1000);
+                option.setAttribute('data-min', service.minimo);
+                option.setAttribute('data-max', service.maximo);
+                option.setAttribute('data-description', service.descricao);
+                serviceSelect.appendChild(option);
+            });
+
+            // Preencher automaticamente com o primeiro serviço
+            if (services.length > 0) {
+                autoSelectFirstService(services);
+            }
+
+            // Atualizar categorias com base nos serviços
+            updateCategories(services);
+
+            // Configurar event listeners
+            setupServiceEventListeners(services);
+        }
+
+        // Função para preencher automaticamente o primeiro serviço
+        function autoSelectFirstService(services) {
+            const serviceSelect = document.getElementById('orderform-service');
+            if (serviceSelect && serviceSelect.options.length > 1) {
+                // Selecionar o primeiro serviço (índice 1, pois o índice 0 é a opção padrão)
+                serviceSelect.selectedIndex = 1;
+
+                // Disparar o evento change para atualizar todos os campos
+                const event = new Event('change');
+                serviceSelect.dispatchEvent(event);
+            }
+        }
+
+        // Função para atualizar categorias com base nos serviços
+        function updateCategories(services) {
+            const categorySelect = document.getElementById('orderform-category');
+            if (!categorySelect) return;
+
+            const categories = new Set();
+
+            // Coletar categorias únicas
+            services.forEach(service => {
+                if (service.categoria) {
+                    categories.add(service.categoria);
+                }
+            });
+
+            // Adicionar categorias ao dropdown
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categorySelect.appendChild(option);
+            });
+        }
+
+        // Função para configurar event listeners dos serviços
+        function setupServiceEventListeners(services) {
+            const categorySelect = document.getElementById('orderform-category');
+            const serviceSelect = document.getElementById('orderform-service');
+            const searchInput = document.getElementById('template-input');
+            const quantityInput = document.getElementById('orderform-quantity');
+
+            if (categorySelect) {
+                categorySelect.addEventListener('change', function () {
+                    filterServicesByCategory(this.value, services);
+                });
+            }
+
+            if (serviceSelect) {
+                serviceSelect.addEventListener('change', handleServiceChange);
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    const searchTerm = this.value.toLowerCase();
+                    const serviceSelect = document.getElementById('orderform-service');
+                    const options = serviceSelect.querySelectorAll('option');
+
+                    options.forEach(option => {
+                        const text = option.textContent.toLowerCase();
+                        if (text.includes(searchTerm) || option.value === '') {
+                            option.style.display = '';
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    });
+                });
+            }
+
+            if (quantityInput) {
+                quantityInput.addEventListener('input', handleQuantityChange);
+            }
+        }
+
+        // Função para filtrar serviços por categoria
+        function filterServicesByCategory(category, services) {
+            const serviceSelect = document.getElementById('orderform-service');
+            if (!serviceSelect) return;
+
+            // Limpar opções existentes
+            serviceSelect.innerHTML = '';
+
+            // Adicionar opção padrão
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = category === '-1' ? 'Todos os serviços' : 'Selecione um serviço';
+            serviceSelect.appendChild(defaultOption);
+
+            // Filtrar e adicionar serviços
+            const filteredServices = category === '-1'
+                ? services
+                : services.filter(service => service.categoria === category);
+
+            filteredServices.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service.id_servico;
+                option.textContent = service.nome;
+                option.setAttribute('data-price', service.preco_1000);
+                option.setAttribute('data-min', service.minimo);
+                option.setAttribute('data-max', service.maximo);
+                option.setAttribute('data-description', service.descricao);
+                serviceSelect.appendChild(option);
+            });
+
+            // Preencher automaticamente com o primeiro serviço após filtro
+            if (filteredServices.length > 0) {
+                autoSelectFirstService(filteredServices);
+            }
+        }
+
+        // Função para lidar com mudança de serviço
+        function handleServiceChange() {
+            const selectedOption = this.options[this.selectedIndex];
+            const price = selectedOption.getAttribute('data-price');
+            const description = selectedOption.getAttribute('data-description');
+            const minQuantity = selectedOption.getAttribute('data-min');
+            const maxQuantity = selectedOption.getAttribute('data-max');
+
+            // Atualizar preço
+            const quantityInput = document.getElementById('orderform-quantity');
+            const currentQuantity = quantityInput ? quantityInput.value || minQuantity || 0 : 0;
+            updateChargeField(price, currentQuantity);
+
+            // Atualizar descrição
+            const descriptionPanel = document.querySelector('.panel-description');
+            if (description && descriptionPanel) {
+                descriptionPanel.innerHTML = description.replace(/\n/g, '<br>');
+                const serviceDescription = document.getElementById('service_description');
+                if (serviceDescription) {
+                    serviceDescription.classList.remove('hidden');
+                }
+            } else if (descriptionPanel) {
+                descriptionPanel.innerHTML = '';
+                const serviceDescription = document.getElementById('service_description');
+                if (serviceDescription) {
+                    serviceDescription.classList.add('hidden');
+                }
+            }
+
+            // Mostrar/ocultar campos de link e quantidade
+            const linkField = document.getElementById('link_field');
+            const quantityField = document.getElementById('quantity_field');
+
+            if (selectedOption.value) {
+                if (linkField) linkField.classList.remove('hidden');
+                if (quantityField) quantityField.classList.remove('hidden');
+
+                // Configurar limites da quantidade
+                if (quantityInput) {
+                    if (minQuantity) {
+                        quantityInput.min = minQuantity;
+                        quantityInput.placeholder = `Mínimo: ${minQuantity}`;
+                    }
+                    if (maxQuantity) {
+                        quantityInput.max = maxQuantity;
+                        quantityInput.placeholder = `Mínimo: ${minQuantity || 0}, Máximo: ${maxQuantity}`;
+                    }
+
+                    // Preencher quantidade mínima automaticamente
+                    if (minQuantity && !quantityInput.value) {
+                        quantityInput.value = minQuantity;
+                        updateChargeField(price, minQuantity);
+                    }
+                }
+            } else {
+                if (linkField) linkField.classList.add('hidden');
+                if (quantityField) quantityField.classList.add('hidden');
+            }
+        }
+
+        // Função para lidar com mudança de quantidade
+        function handleQuantityChange() {
+            const serviceSelect = document.getElementById('orderform-service');
+            if (!serviceSelect) return;
+
+            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+            const price = selectedOption ? selectedOption.getAttribute('data-price') : null;
+
+            if (price) {
+                updateChargeField(price, this.value);
+            }
+        }
+
+        // Função para calcular o valor baseado na quantidade
+        function calculateTotal(pricePer1000, quantity) {
+            if (!pricePer1000 || !quantity) return 0;
+            return (parseFloat(pricePer1000) * parseInt(quantity)) / 1000;
+        }
+
+        // Função para atualizar o campo de valor
+        function updateChargeField(pricePer1000, quantity) {
+            const chargeInput = document.getElementById('charge');
+            if (!chargeInput) return;
+
+            if (pricePer1000 && quantity) {
+                const total = calculateTotal(pricePer1000, quantity);
+                chargeInput.value = `R$ ${total.toFixed(2)} (R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000)`;
+            } else if (pricePer1000) {
+                chargeInput.value = `R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000`;
+            } else {
+                chargeInput.value = '';
+            }
+        }
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -507,243 +763,6 @@
     <!-- Notifications wrapper -->
     <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
 
-    <!-- Script para carregar serviços da API -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            let allServices = []; // Armazenar todos os serviços
-            let currentService = null; // Serviço atual selecionado
-
-            // Função para carregar serviços da API
-            async function loadServices() {
-                try {
-                    const response = await fetch('https://smmsociais.com/api/servico');
-                    allServices = await response.json();
-
-                    // Preencher o dropdown de serviços
-                    const serviceSelect = document.getElementById('orderform-service');
-
-                    // Limpar opções existentes
-                    serviceSelect.innerHTML = '';
-
-                    // Adicionar opção padrão
-                    const defaultOption = document.createElement('option');
-                    defaultOption.value = '';
-                    defaultOption.textContent = 'Selecione um serviço';
-                    serviceSelect.appendChild(defaultOption);
-
-                    // Adicionar serviços da API
-                    allServices.forEach(service => {
-                        const option = document.createElement('option');
-                        option.value = service.id_servico;
-                        option.textContent = service.nome;
-                        option.setAttribute('data-price', service.preco_1000);
-                        option.setAttribute('data-min', service.minimo);
-                        option.setAttribute('data-max', service.maximo);
-                        option.setAttribute('data-description', service.descricao);
-                        serviceSelect.appendChild(option);
-                    });
-
-                    // Preencher automaticamente com o primeiro serviço
-                    if (allServices.length > 0) {
-                        autoSelectFirstService();
-                    }
-
-                    // Atualizar categorias com base nos serviços
-                    updateCategories(allServices);
-
-                } catch (error) {
-                    console.error('Erro ao carregar serviços:', error);
-                    const serviceSelect = document.getElementById('orderform-service');
-                    serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
-                } finally {
-                    // Marcar serviços como carregados
-                    markApiAsLoaded();
-                }
-            }
-
-            // Função para preencher automaticamente o primeiro serviço
-            function autoSelectFirstService() {
-                const serviceSelect = document.getElementById('orderform-service');
-                if (serviceSelect.options.length > 1) {
-                    // Selecionar o primeiro serviço (índice 1, pois o índice 0 é a opção padrão)
-                    serviceSelect.selectedIndex = 1;
-
-                    // Disparar o evento change para atualizar todos os campos
-                    const event = new Event('change');
-                    serviceSelect.dispatchEvent(event);
-                }
-            }
-
-            // Função para atualizar categorias com base nos serviços
-            function updateCategories(services) {
-                const categorySelect = document.getElementById('orderform-category');
-                const categories = new Set();
-
-                // Coletar categorias únicas
-                services.forEach(service => {
-                    if (service.categoria) {
-                        categories.add(service.categoria);
-                    }
-                });
-
-                // Adicionar categorias ao dropdown
-                categories.forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category;
-                    option.textContent = category;
-                    categorySelect.appendChild(option);
-                });
-
-                // Adicionar funcionalidade de filtro por categoria
-                categorySelect.addEventListener('change', function () {
-                    filterServicesByCategory(this.value, services);
-                });
-            }
-
-            // Função para filtrar serviços por categoria
-            function filterServicesByCategory(category, services) {
-                const serviceSelect = document.getElementById('orderform-service');
-
-                // Limpar opções existentes
-                serviceSelect.innerHTML = '';
-
-                // Adicionar opção padrão
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = category === '-1' ? 'Todos os serviços' : 'Selecione um serviço';
-                serviceSelect.appendChild(defaultOption);
-
-                // Filtrar e adicionar serviços
-                const filteredServices = category === '-1'
-                    ? services
-                    : services.filter(service => service.categoria === category);
-
-                filteredServices.forEach(service => {
-                    const option = document.createElement('option');
-                    option.value = service.id_servico;
-                    option.textContent = service.nome;
-                    option.setAttribute('data-price', service.preco_1000);
-                    option.setAttribute('data-min', service.minimo);
-                    option.setAttribute('data-max', service.maximo);
-                    option.setAttribute('data-description', service.descricao);
-                    serviceSelect.appendChild(option);
-                });
-
-                // Preencher automaticamente com o primeiro serviço após filtro
-                if (filteredServices.length > 0) {
-                    autoSelectFirstService();
-                }
-            }
-
-            // Função para calcular o valor baseado na quantidade
-            function calculateTotal(pricePer1000, quantity) {
-                if (!pricePer1000 || !quantity) return 0;
-                return (parseFloat(pricePer1000) * parseInt(quantity)) / 1000;
-            }
-
-            // Função para atualizar o campo de valor
-            function updateChargeField(pricePer1000, quantity) {
-                const chargeInput = document.getElementById('charge');
-                if (pricePer1000 && quantity) {
-                    const total = calculateTotal(pricePer1000, quantity);
-                    chargeInput.value = `R$ ${total.toFixed(2)} (R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000)`;
-                } else if (pricePer1000) {
-                    chargeInput.value = `R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000`;
-                } else {
-                    chargeInput.value = '';
-                }
-            }
-
-            // Adicionar funcionalidade de busca
-            const searchInput = document.getElementById('template-input');
-            searchInput.addEventListener('input', function () {
-                const searchTerm = this.value.toLowerCase();
-                const serviceSelect = document.getElementById('orderform-service');
-                const options = serviceSelect.querySelectorAll('option');
-
-                options.forEach(option => {
-                    const text = option.textContent.toLowerCase();
-                    if (text.includes(searchTerm) || option.value === '') {
-                        option.style.display = '';
-                    } else {
-                        option.style.display = 'none';
-                    }
-                });
-            });
-
-            // Adicionar funcionalidade para exibir detalhes do serviço selecionado
-            const serviceSelect = document.getElementById('orderform-service');
-            serviceSelect.addEventListener('change', function () {
-                const selectedOption = this.options[this.selectedIndex];
-                const price = selectedOption.getAttribute('data-price');
-                const description = selectedOption.getAttribute('data-description');
-                const minQuantity = selectedOption.getAttribute('data-min');
-                const maxQuantity = selectedOption.getAttribute('data-max');
-
-                // Armazenar serviço atual
-                currentService = {
-                    price: price,
-                    min: minQuantity,
-                    max: maxQuantity
-                };
-
-                // Atualizar preço
-                const quantityInput = document.getElementById('orderform-quantity');
-                const currentQuantity = quantityInput.value || minQuantity || 0;
-                updateChargeField(price, currentQuantity);
-
-                // Atualizar descrição
-                const descriptionPanel = document.querySelector('.panel-description');
-                if (description) {
-                    descriptionPanel.innerHTML = description.replace(/\n/g, '<br>');
-                    document.getElementById('service_description').classList.remove('hidden');
-                } else {
-                    descriptionPanel.innerHTML = '';
-                    document.getElementById('service_description').classList.add('hidden');
-                }
-
-                // Mostrar/ocultar campos de link e quantidade
-                const linkField = document.getElementById('link_field');
-                const quantityField = document.getElementById('quantity_field');
-
-                if (selectedOption.value) {
-                    linkField.classList.remove('hidden');
-                    quantityField.classList.remove('hidden');
-
-                    // Configurar limites da quantidade
-                    if (minQuantity) {
-                        quantityInput.min = minQuantity;
-                        quantityInput.placeholder = `Mínimo: ${minQuantity}`;
-                    }
-                    if (maxQuantity) {
-                        quantityInput.max = maxQuantity;
-                        quantityInput.placeholder = `Mínimo: ${minQuantity || 0}, Máximo: ${maxQuantity}`;
-                    }
-
-                    // Preencher quantidade mínima automaticamente
-                    if (minQuantity && !quantityInput.value) {
-                        quantityInput.value = minQuantity;
-                        updateChargeField(price, minQuantity);
-                    }
-                } else {
-                    linkField.classList.add('hidden');
-                    quantityField.classList.add('hidden');
-                }
-            });
-
-            // Adicionar evento para atualizar valor quando a quantidade mudar
-            const quantityInput = document.getElementById('orderform-quantity');
-            quantityInput.addEventListener('input', function () {
-                if (currentService && currentService.price) {
-                    updateChargeField(currentService.price, this.value);
-                }
-            });
-
-            // Carregar serviços ao inicializar
-            loadServices();
-        });
-    </script>
-
     <!-- ======= Navbar toggle fallback (vanilla JS) - torna o "hamburger" funcional em dispositivos móveis ======= -->
     <script>
         (function () {
@@ -818,6 +837,62 @@
             } else {
                 initNavTogglers();
             }
+        })();
+    </script>
+
+    <!-- Script para garantir que a página apareça apenas após todas as APIs terminarem -->
+    <script>
+        (function () {
+            // mostra um overlay loader enquanto aguarda
+            const loader = document.createElement('div');
+            loader.id = 'page-loader';
+            loader.innerHTML = `
+                <div style="text-align:center">
+                    <div class="spinner-border" role="status" aria-hidden="true"></div>
+                    <div style="margin-top:8px">Carregando dados...</div>
+                </div>`;
+            document.body.appendChild(loader);
+
+            // --- opcional: esperar window.load para garantir recursos externos carregados ---
+            const windowLoadPromise = new Promise(resolve => {
+                if (document.readyState === 'complete') return resolve();
+                window.addEventListener('load', resolve);
+            });
+
+            // Executar fillAndHideInput imediatamente (não depende de APIs)
+            fillAndHideInput();
+
+            // --- Promise principal: saldo + serviços (+ window.load) ---
+            const saldoPromise = loadUserBalance();
+            const servicesPromise = loadServices();
+
+            Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
+                .then(() => {
+                    // tudo OK (ou tratamos falhas individualmente): mostrar a página
+                    document.body.classList.add('loaded');
+                })
+                .catch(err => {
+                    // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
+                    console.error('Erro ao carregar dados principais:', err);
+                    document.body.classList.add('loaded');
+                    const serviceSelect = document.getElementById('orderform-service');
+                    if (serviceSelect && serviceSelect.innerHTML.includes('Carregando serviços')) {
+                        serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+                    }
+                })
+                .finally(() => {
+                    // remover loader visual
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                });
+
+            // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
+            setTimeout(() => {
+                if (!document.body.classList.contains('loaded')) {
+                    console.warn('Fallback: exibindo página após timeout.');
+                    document.body.classList.add('loaded');
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                }
+            }, 15000); // 15s — opcional, ajuste conforme necessidade
         })();
     </script>
 </body>
