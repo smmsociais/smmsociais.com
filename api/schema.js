@@ -87,11 +87,29 @@ const ServicoSchema = new mongoose.Schema({
 
 /* 🔹 Depósitos via PIX (Mercado Pago) */
 const depositoSchema = new mongoose.Schema({
-  userEmail: String,
-  payment_id: String,
-  amount: Number,
-  status: String
-}, { timestamps: true });
+  userEmail: { type: String, required: true, index: true },
+
+  payment_id: { 
+    type: String, 
+    required: true, 
+    unique: true // evita duplicações vindas do Mercado Pago
+  },
+
+  amount: { 
+    type: Number, 
+    required: true, 
+    min: 0.10 // previne valores inválidos ou zerados
+  },
+
+  status: { 
+    type: String, 
+    required: true,
+    enum: ["pending", "completed", "expired"],
+    default: "pending"
+  }
+}, { 
+  timestamps: true // necessário para limpar pendentes com mais de 30 min
+});
 
 const messageSchema = new mongoose.Schema({
   session_id: String,
