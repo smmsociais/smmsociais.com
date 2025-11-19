@@ -10,24 +10,26 @@
         /* Initial Load */
         body {
             visibility: hidden;
+            opacity: 0;
+            transition: opacity 240ms ease;
         }
 
         body.loaded {
             visibility: visible;
+            opacity: 1;
+        }
+
+        #page-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
         }
     </style>
     <script>
-        // Função para marcar quando todas as APIs foram carregadas
-        let apisLoaded = 0;
-        const totalApis = 2; // Token + Serviços
-
-        function markApiAsLoaded() {
-            apisLoaded++;
-            if (apisLoaded === totalApis) {
-                document.body.classList.add('loaded');
-            }
-        }
-
         // Função para obter o token do localStorage
         function loadToken() {
             const token = localStorage.getItem('authToken') ||
@@ -35,9 +37,6 @@
                 localStorage.getItem('user_token') ||
                 localStorage.getItem('auth') ||
                 getToken();
-            
-            // Marcar token como carregado
-            setTimeout(() => markApiAsLoaded(), 0);
             return token;
         }
 
@@ -52,7 +51,6 @@
                 if (balanceElement) {
                     balanceElement.textContent = 'R$ 0,00';
                 }
-                markApiAsLoaded();
                 return 0;
             }
 
@@ -93,8 +91,6 @@
                     balanceElement.textContent = 'R$ 0,00';
                 }
                 return 0;
-            } finally {
-                markApiAsLoaded();
             }
         }
 
@@ -126,11 +122,192 @@
             }
         }
 
-        // Inicializar funções quando o DOM estiver carregado
-        document.addEventListener('DOMContentLoaded', function() {
-            fillAndHideInput();
-            loadUserBalance();
-        });
+        // Função para carregar serviços da API
+        function loadServices() {
+            return fetch('https://smmsociais.com/api/servico')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar serviços da API');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    renderServices(data);
+                    renderCategories(data);
+                    return data;
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    const tbody = document.getElementById('service-tbody');
+                    if (tbody) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                    }
+                    return [];
+                });
+        }
+
+        // Função para renderizar os serviços na tabela
+        function renderServices(services) {
+            const tbody = document.getElementById('service-tbody');
+            const loadingRow = document.getElementById('loading-row');
+
+            if (loadingRow) loadingRow.remove();
+            tbody.innerHTML = '';
+
+            if (!services || services.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
+                return;
+            }
+
+            // AGRUPAR POR CATEGORIA REAL DA API
+            const servicesByCategory = {};
+            services.forEach(service => {
+                const categoryName = service.categoria || "Outros";
+
+                if (!servicesByCategory[categoryName]) {
+                    servicesByCategory[categoryName] = [];
+                }
+                servicesByCategory[categoryName].push(service);
+            });
+
+            // RENDERIZAR POR CATEGORIA
+            Object.keys(servicesByCategory).forEach(categoryName => {
+                const categoryServices = servicesByCategory[categoryName];
+
+                // Linha de título da categoria
+                const categoryRow = document.createElement('tr');
+                categoryRow.className = 'services-list-category-title';
+                categoryRow.innerHTML = `
+                    <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
+                        <div class="w-100">
+                            <h4>${categoryName}</h4>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(categoryRow);
+
+                // Serviços da categoria
+                categoryServices.forEach(service => {
+                    const pricePer1000 = service.preco_1000 ? `R$ ${parseFloat(service.preco_1000).toFixed(2)}` : '-';
+                    const minOrder = service.minimo || '-';
+                    const maxOrder = service.maximo || '-';
+                    const avgTime = service.tempo_medio || '-';
+
+                    const serviceRow = document.createElement('tr');
+
+                    serviceRow.innerHTML = `
+                        <td data-label="Favorite services">
+                            <a href="#" data-favorite-service-id="${service.id_servico}">
+                                <span data-favorite-icon class="far fa-star"></span>
+                            </a>
+                        </td>
+
+                        <td data-label="ID">${service.id_servico}</td>
+
+                        <td data-label="Serviço" class="table-service">
+                            ${service.nome}
+                        </td>
+
+                        <td data-label="Preço por 1000">${pricePer1000}</td>
+
+                        <td data-label="Pedido mínimo">${minOrder}</td>
+
+                        <td data-label="Pedido máximo">${maxOrder}</td>
+
+                        <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
+
+                        <td data-label="" class="services-list__description">
+                            ${service.descricao ? `
+                            <div class="component_button_view">
+                                <button class="btn btn-actions btn-view-service-description"
+                                    data-toggle="modal"
+                                    data-content-id="#service-description-id-55-${service.id_servico}"
+                                    data-service-id="${service.id_servico}"
+                                    data-service-name="${service.nome}"
+                                    data-min="${minOrder}"
+                                    data-max="${maxOrder}"
+                                    data-target="#service-description-55">
+                                    Visualizar
+                                </button>
+                            </div>
+                            <div class="d-none" id="service-description-id-55-${service.id_servico}">
+                                ${service.descricao.replace(/\n/g, "<br>")}
+                            </div>
+                            ` : ''}
+                        </td>
+                    `;
+
+                    tbody.appendChild(serviceRow);
+                });
+            });
+
+            initializeServiceDescriptionButtons();
+        }
+
+        // Função para renderizar categorias no filtro
+        function renderCategories(services) {
+            const categoryMenu = document.getElementById('category-filter-menu');
+            const existingCategories = new Set();
+
+            // Coletar categorias únicas
+            services.forEach(service => {
+                if (service.category_id && service.category_name && !existingCategories.has(service.category_id)) {
+                    existingCategories.add(service.category_id);
+
+                    const categoryItem = document.createElement('a');
+                    categoryItem.className = 'dropdown-item d-flex align-items-center text-decoration-none';
+                    categoryItem.href = '#';
+                    categoryItem.setAttribute('data-filter-category-id', service.category_id);
+                    categoryItem.setAttribute('data-filter-category-name', service.category_name);
+
+                    categoryItem.innerHTML = `
+                        ${service.category_icon ? `<span class="align-middle mr-1">${service.category_icon}</span>` : ''}
+                        <div>${service.category_name}</div>
+                    `;
+
+                    // Inserir antes do item de favoritos
+                    const favoritesItem = categoryMenu.querySelector('[data-filter-category-id="favorites"]');
+                    categoryMenu.insertBefore(categoryItem, favoritesItem);
+                }
+            });
+        }
+
+        // Função para inicializar event listeners dos botões de descrição
+        function initializeServiceDescriptionButtons() {
+            const viewButtons = document.querySelectorAll('.btn-view-service-description');
+            viewButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const contentId = this.getAttribute('data-content-id');
+                    const serviceId = this.getAttribute('data-service-id');
+                    const serviceName = this.getAttribute('data-service-name');
+                    const min = this.getAttribute('data-min');
+                    const max = this.getAttribute('data-max');
+
+                    const contentElement = document.querySelector(contentId);
+                    if (contentElement) {
+                        document.querySelector('.service-description-content').innerHTML = contentElement.innerHTML;
+
+                        // Atualizar o botão de criar pedido rápido
+                        const quickOrderBtn = document.getElementById('createQuickOrder');
+                        quickOrderBtn.setAttribute('data-service-id', serviceId);
+                        quickOrderBtn.setAttribute('data-service-name', serviceName);
+                        quickOrderBtn.setAttribute('data-min', min);
+                        quickOrderBtn.setAttribute('data-max', max);
+                    }
+                });
+            });
+
+            // Event listener para o botão de criar pedido rápido
+            document.getElementById('createQuickOrder').addEventListener('click', function () {
+                const serviceId = this.getAttribute('data-service-id');
+                const serviceName = this.getAttribute('data-service-name');
+                const min = this.getAttribute('data-min');
+                const max = this.getAttribute('data-max');
+
+                // Redirecionar para a página de novo pedido com os parâmetros do serviço
+                window.location.href = `/?service=${serviceId}`;
+            });
+        }
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -449,204 +626,6 @@
     <script type="text/javascript" src="https://storage.perfectcdn.com/global/zfq5snh4og5je3zk.js">
     </script>
 
-    <!-- Script para carregar serviços da API -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Carregar saldo do usuário
-            loadUserBalance();
-
-            // Função para carregar serviços da API
-            function loadServices() {
-                fetch('https://smmsociais.com/api/servico')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Erro ao carregar serviços da API');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        renderServices(data);
-                        renderCategories(data);
-                    })
-                    .catch(error => {
-                        console.error('Erro:', error);
-                        document.getElementById('service-tbody').innerHTML =
-                            '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
-                    })
-                    .finally(() => {
-                        // Marcar serviços como carregados
-                        markApiAsLoaded();
-                    });
-            }
-
-            // Função para renderizar os serviços na tabela
-            function renderServices(services) {
-                const tbody = document.getElementById('service-tbody');
-                const loadingRow = document.getElementById('loading-row');
-
-                if (loadingRow) loadingRow.remove();
-                tbody.innerHTML = '';
-
-                if (!services || services.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
-                    return;
-                }
-
-                // AGRUPAR POR CATEGORIA REAL DA API
-                const servicesByCategory = {};
-                services.forEach(service => {
-                    const categoryName = service.categoria || "Outros";
-
-                    if (!servicesByCategory[categoryName]) {
-                        servicesByCategory[categoryName] = [];
-                    }
-                    servicesByCategory[categoryName].push(service);
-                });
-
-                // RENDERIZAR POR CATEGORIA
-                Object.keys(servicesByCategory).forEach(categoryName => {
-                    const categoryServices = servicesByCategory[categoryName];
-
-                    // Linha de título da categoria
-                    const categoryRow = document.createElement('tr');
-                    categoryRow.className = 'services-list-category-title';
-                    categoryRow.innerHTML = `
-            <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
-                <div class="w-100">
-                    <h4>${categoryName}</h4>
-                </div>
-            </td>
-        `;
-                    tbody.appendChild(categoryRow);
-
-                    // Serviços da categoria
-                    categoryServices.forEach(service => {
-                        const pricePer1000 = service.preco_1000 ? `R$ ${parseFloat(service.preco_1000).toFixed(2)}` : '-';
-                        const minOrder = service.minimo || '-';
-                        const maxOrder = service.maximo || '-';
-                        const avgTime = service.tempo_medio || '-';
-
-                        const serviceRow = document.createElement('tr');
-
-                        serviceRow.innerHTML = `
-                <td data-label="Favorite services">
-                    <a href="#" data-favorite-service-id="${service.id_servico}">
-                        <span data-favorite-icon class="far fa-star"></span>
-                    </a>
-                </td>
-
-                <td data-label="ID">${service.id_servico}</td>
-
-                <td data-label="Serviço" class="table-service">
-                    ${service.nome}
-                </td>
-
-                <td data-label="Preço por 1000">${pricePer1000}</td>
-
-                <td data-label="Pedido mínimo">${minOrder}</td>
-
-                <td data-label="Pedido máximo">${maxOrder}</td>
-
-                <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
-
-                <td data-label="" class="services-list__description">
-                    ${service.descricao ? `
-                    <div class="component_button_view">
-                        <button class="btn btn-actions btn-view-service-description"
-                            data-toggle="modal"
-                            data-content-id="#service-description-id-55-${service.id_servico}"
-                            data-service-id="${service.id_servico}"
-                            data-service-name="${service.nome}"
-                            data-min="${minOrder}"
-                            data-max="${maxOrder}"
-                            data-target="#service-description-55">
-                            Visualizar
-                        </button>
-                    </div>
-                    <div class="d-none" id="service-description-id-55-${service.id_servico}">
-                        ${service.descricao.replace(/\n/g, "<br>")}
-                    </div>
-                    ` : ''}
-                </td>
-            `;
-
-                        tbody.appendChild(serviceRow);
-                    });
-                });
-
-                initializeServiceDescriptionButtons();
-            }
-
-            // Função para renderizar categorias no filtro
-            function renderCategories(services) {
-                const categoryMenu = document.getElementById('category-filter-menu');
-                const existingCategories = new Set();
-
-                // Coletar categorias únicas
-                services.forEach(service => {
-                    if (service.category_id && service.category_name && !existingCategories.has(service.category_id)) {
-                        existingCategories.add(service.category_id);
-
-                        const categoryItem = document.createElement('a');
-                        categoryItem.className = 'dropdown-item d-flex align-items-center text-decoration-none';
-                        categoryItem.href = '#';
-                        categoryItem.setAttribute('data-filter-category-id', service.category_id);
-                        categoryItem.setAttribute('data-filter-category-name', service.category_name);
-
-                        categoryItem.innerHTML = `
-                            ${service.category_icon ? `<span class="align-middle mr-1">${service.category_icon}</span>` : ''}
-                            <div>${service.category_name}</div>
-                        `;
-
-                        // Inserir antes do item de favoritos
-                        const favoritesItem = categoryMenu.querySelector('[data-filter-category-id="favorites"]');
-                        categoryMenu.insertBefore(categoryItem, favoritesItem);
-                    }
-                });
-            }
-
-            // Função para inicializar event listeners dos botões de descrição
-            function initializeServiceDescriptionButtons() {
-                const viewButtons = document.querySelectorAll('.btn-view-service-description');
-                viewButtons.forEach(button => {
-                    button.addEventListener('click', function () {
-                        const contentId = this.getAttribute('data-content-id');
-                        const serviceId = this.getAttribute('data-service-id');
-                        const serviceName = this.getAttribute('data-service-name');
-                        const min = this.getAttribute('data-min');
-                        const max = this.getAttribute('data-max');
-
-                        const contentElement = document.querySelector(contentId);
-                        if (contentElement) {
-                            document.querySelector('.service-description-content').innerHTML = contentElement.innerHTML;
-
-                            // Atualizar o botão de criar pedido rápido
-                            const quickOrderBtn = document.getElementById('createQuickOrder');
-                            quickOrderBtn.setAttribute('data-service-id', serviceId);
-                            quickOrderBtn.setAttribute('data-service-name', serviceName);
-                            quickOrderBtn.setAttribute('data-min', min);
-                            quickOrderBtn.setAttribute('data-max', max);
-                        }
-                    });
-                });
-
-                // Event listener para o botão de criar pedido rápido
-                document.getElementById('createQuickOrder').addEventListener('click', function () {
-                    const serviceId = this.getAttribute('data-service-id');
-                    const serviceName = this.getAttribute('data-service-name');
-                    const min = this.getAttribute('data-min');
-                    const max = this.getAttribute('data-max');
-
-                    // Redirecionar para a página de novo pedido com os parâmetros do serviço
-                    window.location.href = `/?service=${serviceId}`;
-                });
-            }
-
-            // Inicializar carregamento dos serviços
-            loadServices();
-        });
-    </script>
-
     <script type="text/javascript">
         window.modules.layouts = { "theme_id": 23, "auth": 1, "live": true, "csrftoken": "L1tjeQBUwXhimMFOQW-mfPQhCHSYYdNSO4lVo5RDUQtYLDsvSiSoFVvqlQ8RPukxw255E7UPoz9O3SL0-iRhXQ==" };   </script>
     <script type="text/javascript">
@@ -654,6 +633,62 @@
     <script type="text/javascript">
         window.modules.alerts = { "alerts": [] };   </script>
     <script type="text/javascript">
+    </script>
+
+    <!-- Script para garantir que a página apareça apenas após todas as APIs terminarem -->
+    <script>
+        (function () {
+            // mostra um overlay loader enquanto aguarda
+            const loader = document.createElement('div');
+            loader.id = 'page-loader';
+            loader.innerHTML = `
+                <div style="text-align:center">
+                    <div class="spinner-border" role="status" aria-hidden="true"></div>
+                    <div style="margin-top:8px">Carregando dados...</div>
+                </div>`;
+            document.body.appendChild(loader);
+
+            // --- opcional: esperar window.load para garantir recursos externos carregados ---
+            const windowLoadPromise = new Promise(resolve => {
+                if (document.readyState === 'complete') return resolve();
+                window.addEventListener('load', resolve);
+            });
+
+            // Executar fillAndHideInput imediatamente (não depende de APIs)
+            fillAndHideInput();
+
+            // --- Promise principal: saldo + serviços (+ window.load) ---
+            const saldoPromise = loadUserBalance();
+            const servicesPromise = loadServices();
+
+            Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
+                .then(() => {
+                    // tudo OK (ou tratamos falhas individualmente): mostrar a página
+                    document.body.classList.add('loaded');
+                })
+                .catch(err => {
+                    // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
+                    console.error('Erro ao carregar dados principais:', err);
+                    document.body.classList.add('loaded');
+                    const tbody = document.getElementById('service-tbody');
+                    if (tbody && tbody.innerHTML.trim() === '') {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                    }
+                })
+                .finally(() => {
+                    // remover loader visual
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                });
+
+            // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
+            setTimeout(() => {
+                if (!document.body.classList.contains('loaded')) {
+                    console.warn('Fallback: exibindo página após timeout.');
+                    document.body.classList.add('loaded');
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                }
+            }, 15000); // 15s — opcional, ajuste conforme necessidade
+        })();
     </script>
 </body>
 
