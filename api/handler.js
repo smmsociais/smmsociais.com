@@ -445,8 +445,6 @@ if (url.startsWith("/api/orders")) {
   }
 };
 
-
-
 // Rota: /api/listar-depositos
 if (url.startsWith("/api/listar-depositos")) {
   if (req.method !== "GET") {
@@ -468,7 +466,17 @@ if (url.startsWith("/api/listar-depositos")) {
       return res.status(401).json({ error: "Usuário não encontrado" });
     }
 
-    // ✅ Busca apenas depósitos com status "completed"
+    // 🕒 Tempo limite: 30 minutos
+    const limiteTempo = new Date(Date.now() - 30 * 60 * 1000);
+
+    // 🧹 DELETE: remove pagamentos pendentes com mais de 30 min
+    await Deposito.deleteMany({
+      userEmail: usuario.email,
+      status: "pending",
+      createdAt: { $lte: limiteTempo }
+    });
+
+    // ✅ Lista somente pagamentos já confirmados (completed)
     const depositos = await Deposito.find({
       userEmail: usuario.email,
       status: "completed"
@@ -477,6 +485,7 @@ if (url.startsWith("/api/listar-depositos")) {
     .limit(10);
 
     return res.status(200).json(depositos);
+
   } catch (error) {
     console.error("Erro ao listar depósitos:", error);
     return res.status(500).json({ error: "Erro interno do servidor" });
