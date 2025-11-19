@@ -329,22 +329,21 @@
     <div class="wrapper  wrapper-sidebar-navbar ">
         <div id="block_52" class="component_private_navbar">
             <span class="component_private_navbar ">
-                <div class="component_private_navbar__wrapper component_private_sidebar ">
+                <div class="component-navbar-private__wrapper component_private_sidebar ">
                     <div
                         class="sidebar-block__top component-navbar component-navbar__navbar-private editor__component-wrapper ">
                         <div>
                             <nav class="navbar navbar-expand-lg navbar-light">
                                 <div class="navbar-private__header">
                                     <div class="sidebar-block__top-brand">
-                                        <a href="/" class="component-navbar-brand component-navbar-public-brand">
+                                        <a href="/painel" class="component-navbar-brand component-navbar-public-brand">
                                             <h3><strong style="font-weight: bold"></strong><span
                                                     style="color: var(--color-id-117)"><strong
                                                         style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
                                         </a>
                                     </div>
-                                    <!-- Botão hamburguer corrigido -->
-                                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
+                                    <button class="navbar-toggler" type="button" data-toggle="collapse"
+                                        data-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
                                         aria-expanded="false" aria-label="Toggle navigation">
                                         <span class="navbar-burger">
                                             <span class="navbar-burger-line"></span>
@@ -364,14 +363,14 @@
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
                                                     href="/services">
                                                     Serviços
                                                 </a>
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/orders">
                                                     Ordens
                                                 </a>
@@ -380,14 +379,7 @@
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/addfunds">
-                                                    ADICIONAR SALDO (DEPOSITAR PIX)
-                                                </a>
-                                            </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/como-usar">
-                                                    Aprenda a colocar saldo e usar o painel clicando aqui
+                                                    Adicionar Saldo
                                                 </a>
                                             </li>
                                             <li
@@ -443,10 +435,9 @@
                         class="sidebar-block__left component-sidebar component-sidebar-with-navbar component_private_navbar editor__component-wrapper">
                         <div class="component-sidebar__menu">
                             <div class="component-sidebar__menu-logo">
-                                <a href="/bp" class="component-navbar-brand component-sidebar__menu-brand">
+                                <a href="/painel" class="component-navbar-brand component-sidebar__menu-brand">
                                     <h3><strong style="font-weight: bold">SMM </strong><span
-                                            style="color: var(--color-id-117)"><strong
-                                                style="font-weight: bold">SOCIAIS</strong></span></h3>
+                                            style="font-weight: bold">SOCIAIS</strong></span></h3>
                                 </a>
                             </div>
                             <ul class="sidebar-block__left-menu editor__component-wrapper">
@@ -455,24 +446,19 @@
                                         Novo pedido
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item ">
+                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
                                     <a class="component-sidebar__menu-item-link" href="/services">
                                         Serviços
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
+                                <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/orders">
                                         Ordens
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/addfunds">
-                                        ADICIONAR SALDO (DEPOSITAR PIX)
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/como-usar">
-                                        Aprenda a colocar saldo e usar o painel clicando aqui
+                                        Adicionar Saldo
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item ">
@@ -654,7 +640,7 @@
                 .then(() => {
                     // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
-                    
+
                     // Configurar event listeners após o carregamento
                     setupEventListeners();
                 })
@@ -666,7 +652,7 @@
                     if (tbody && tbody.innerHTML.includes('Carregando ordens concluídas')) {
                         tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Erro ao carregar ordens concluídas. Tente novamente mais tarde.</td></tr>';
                     }
-                    
+
                     // Configurar event listeners mesmo em caso de erro
                     setupEventListeners();
                 })
@@ -681,7 +667,7 @@
                     console.warn('Fallback: exibindo página após timeout.');
                     document.body.classList.add('loaded');
                     if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
-                    
+
                     // Configurar event listeners no fallback
                     setupEventListeners();
                 }
