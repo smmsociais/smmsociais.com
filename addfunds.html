@@ -111,6 +111,13 @@
         .text-success {
             color: #28a745 !important;
         }
+
+        .no-deposits {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
     </style>
 
     <script>
@@ -177,6 +184,74 @@
                 }
                 return 0;
             }
+        }
+
+        // Função para carregar depósitos
+        async function loadDeposits() {
+            const token = loadToken();
+
+            if (!token) {
+                console.error("Token não encontrado para carregar depósitos.");
+                return [];
+            }
+
+            try {
+                const response = await fetch('https://smmsociais.com/api/listar-depositos', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar depósitos');
+                }
+
+                const depositsData = await response.json();
+                console.log('Depósitos carregados:', depositsData);
+                return depositsData;
+            } catch (error) {
+                console.error('Erro ao carregar depósitos:', error);
+                return [];
+            }
+        }
+
+        // Função para renderizar depósitos na tabela
+        function renderDeposits(deposits) {
+            const tbody = document.querySelector('#deposits-table tbody');
+            if (!tbody) return;
+
+            if (deposits.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-deposits">Nenhum depósito encontrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = deposits.map(deposit => {
+                // Formatar data
+                const date = new Date(deposit.createdAt || deposit.dataCriacao || Date.now());
+                const formattedDate = date.toLocaleDateString('pt-BR');
+                const formattedTime = date.toLocaleTimeString('pt-BR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+
+                // Formatar valor
+                const formattedAmount = new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                }).format(deposit.amount || deposit.valor || 0);
+
+                return `
+                    <tr>
+                        <td>${deposit._id || deposit.payment_id || 'N/A'}</td>
+                        <td>${formattedDate} ${formattedTime}</td>
+                        <td>PIX</td>
+                        <td>${formattedAmount}</td>
+                        <td><span class="badge badge-success">Concluído</span></td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         // Função para carregar serviços (necessária para o Promise.all)
@@ -444,9 +519,12 @@
                 // parar monitoramento
                 pararMonitoramentoPagamento();
 
-                // forçar recarregar saldo do usuário (sua função existente)
+                // forçar recarregar saldo do usuário
                 try { 
                     await loadUserBalance(); 
+                    // Recarregar lista de depósitos após pagamento confirmado
+                    const deposits = await loadDeposits();
+                    renderDeposits(deposits);
                 } catch(e){ 
                     console.warn('Erro ao recarregar saldo após confirmação', e); 
                 }
@@ -542,6 +620,8 @@
         window.gerarPagamentoPix = gerarPagamentoPix;
         window.copiarCodigoPix = copiarCodigoPix;
         window.novoPagamento = novoPagamento;
+        window.loadDeposits = loadDeposits;
+        window.renderDeposits = renderDeposits;
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -788,6 +868,7 @@
                     </div>
                 </div>
 
+                <!-- Seção de lista de depósitos -->
                 <div id="block_37">
                     <div class="block-bg"></div>
                     <div class="container">
@@ -796,17 +877,22 @@
                                 <div class="col-lg-12">
                                     <div class="table-bg component_table ">
                                         <div class="table-wr table-responsive">
-                                            <table class="table">
+                                            <table class="table" id="deposits-table">
                                                 <thead>
                                                     <tr>
                                                         <th>ID</th>
                                                         <th>Data</th>
                                                         <th>Método de pagamento</th>
                                                         <th>Valor</th>
-                                                        <th></th>
+                                                        <th>Status</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
+                                                    <tr>
+                                                        <td colspan="5" class="no-deposits">
+                                                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                                                            Carregando depósitos...
+                                                        </td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -922,6 +1008,51 @@
                     });
             }
 
+            // --- helper para carregar depósitos e garantir Promise ---
+            function loadDepositsAndRender() {
+                // se já existe a função loadDeposits no outro script e ela retornar Promise, tente usá-la
+                if (typeof window.loadDeposits === 'function') {
+                    try {
+                        const r = window.loadDeposits();
+                        // se a função não retornar promise (undefined), faz fallback abaixo:
+                        if (r && typeof r.then === 'function') {
+                            return r.then(deposits => {
+                                if (typeof window.renderDeposits === 'function') {
+                                    window.renderDeposits(deposits);
+                                }
+                                return deposits;
+                            });
+                        }
+                    } catch (e) {
+                        // ignore e faça fallback
+                    }
+                }
+
+                // fallback/implementação direta
+                return fetch('https://smmsociais.com/api/listar-depositos', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${loadToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro ao carregar depósitos da API');
+                    return response.json();
+                })
+                .then(data => {
+                    // reutiliza a função de render se existir
+                    if (typeof window.renderDeposits === 'function') window.renderDeposits(data);
+                    return data;
+                })
+                .catch(err => {
+                    console.error('Erro ao carregar depósitos:', err);
+                    // renderiza lista vazia em caso de erro
+                    if (typeof window.renderDeposits === 'function') window.renderDeposits([]);
+                    return [];
+                });
+            }
+
             // --- helper para carregar serviços e garantir Promise ---
             function loadServicesAndRender() {
                 // se já existe a função loadServices no outro script e ela retornar Promise, tente usá-la
@@ -974,13 +1105,14 @@
                 });
             }
 
-            // --- Promise principal: saldo + serviços + inicialização + window.load ---
+            // --- Promise principal: saldo + depósitos + serviços + inicialização + window.load ---
             const saldoPromise = callOrWrapLoadUserBalance();
+            const depositsPromise = loadDepositsAndRender();
             const servicesPromise = loadServicesAndRender();
             const initPromise = initializePageFunctions();
 
             // se quiser aguardar também window.load, inclua windowLoadPromise no Promise.all (recomendo)
-            Promise.all([saldoPromise, servicesPromise, initPromise, windowLoadPromise])
+            Promise.all([saldoPromise, depositsPromise, servicesPromise, initPromise, windowLoadPromise])
                 .then(() => {
                     // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
