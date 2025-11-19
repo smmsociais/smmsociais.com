@@ -219,77 +219,6 @@ if (url.startsWith("/api/account")) {
   }
 }
 
-// Rota: /api/confirmar-pagamento
-if (url.startsWith("/api/confirmar-pagamento")) {   
-if (req.method !== "GET") {
-    return res.status(405).json({ error: "Método não permitido" });
-  }
-
-  try {
-    await connectDB();
-
-    const { authorization } = req.headers;
-    if (!authorization || !authorization.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Token não fornecido" });
-    }
-
-    const token = authorization.split(" ")[1];
-    const usuario = await User.findOne({ token });
-
-    if (!usuario) {
-      return res.status(401).json({ error: "Token inválido ou usuário não encontrado!" });
-    }
-
-    // 🔄 Atualizar status automaticamente:
-    // De "pendente" para "progress" se validadas > 0
-    await Action.updateMany(
-      { status: "pendente", validadas: { $gt: 0 } },
-      { $set: { status: "progress" } }
-    );
-
-    // De "pendente" ou "progress" para "completed" se validadas === quantidade
-    await Action.updateMany(
-      { status: { $in: ["pendente", "progress"] }, $expr: { $eq: ["$validadas", "$quantidade"] } },
-      { $set: { status: "completed" } }
-    );
-
-    // 🔎 Filtro dinâmico conforme status da query
-    const status = req.query.status;
-    const filtro = { userId: usuario._id };
-
-    if (status && status !== "todos") {
-      if (status === "pending") {
-        filtro.validadas = 0;
-      } else if (status === "progress") {
-        filtro.validadas = { $gt: 0 };
-        filtro.status = "progress";
-      } else {
-        filtro.status = status;
-      }
-    }
-
-    // 🔍 Buscar ações do usuário
-    const acoes = await Action.find(filtro).sort({ dataCriacao: -1 });
-
-    // 🔗 Buscar os serviços relacionados
-    const idsServico = [...new Set(acoes.map(a => a.id_servico))];
-    const servicos = await Servico.find({ id_servico: { $in: idsServico } });
-
-    // 🧩 Anexar detalhes dos serviços a cada ação
-    const acoesComDetalhes = acoes.map(acao => {
-      const obj = acao.toObject();
-      obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
-      return obj;
-    });
-
-    return res.json({ acoes: acoesComDetalhes });
-
-  } catch (error) {
-    console.error("Erro ao buscar histórico de ações:", error);
-    return res.status(500).json({ error: "Erro ao buscar histórico de ações" });
-  }
-};
-
 // Rota: /api/massorder
 if (url.startsWith("/api/massorder")) {
   if (req.method !== "POST") {
@@ -516,35 +445,7 @@ if (url.startsWith("/api/orders")) {
   }
 };
 
-// Rota: /api/get_saldo
-if (url.startsWith("/api/get_saldo")) {
-    if (req.method !== 'GET') {
-        return res.status(405).json({ error: 'Método não permitido' });
-    }
 
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Token ausente' });
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    try {
-        await connectDB();
-
-        const user = await User.findOne({ token });
-
-        if (!user) {
-            return res.status(404).json({ error: 'Usuário não encontrado' });
-        }
-
-        return res.status(200).json({ saldo: user.saldo || 0 });
-    } catch (error) {
-        console.error('Erro ao buscar saldo:', error);
-        return res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-}
 
 // Rota: /api/listar-depositos
 if (url.startsWith("/api/listar-depositos")) {
@@ -579,78 +480,6 @@ if (url.startsWith("/api/listar-depositos")) {
   } catch (error) {
     console.error("Erro ao listar depósitos:", error);
     return res.status(500).json({ error: "Erro interno do servidor" });
-  }
-}
-
-// Rota: /api/gerar-pagamento
-if (url.startsWith("/api/gerar-pagamento")) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método não permitido" });
-  }
-
-  const { amount, token } = req.body;
-
-  if (!amount || amount < 1 || amount > 1000) {
-    return res.status(400).json({ error: "Valor inválido. Min: 1, Max: 1000" });
-  }
-
-  if (!token) {
-    return res.status(401).json({ error: "Token não fornecido" });
-  }
-
-  await connectDB();
-
-  const user = await User.findOne({ token });
-
-  if (!user) {
-    return res.status(404).json({ error: "Usuário não encontrado" });
-  }
-
-  try {
-const response = await fetch("https://api.mercadopago.com/v1/payments", {
-  method: "POST",
-  headers: {
-    Authorization: "Bearer APP_USR-6408647281310844-111910-2b9ac05357a51450c4d1b20822c223ca-3002778257",
-    "Content-Type": "application/json",
-    "X-Idempotency-Key": randomUUID()
-  },
-  body: JSON.stringify({
-    transaction_amount: Number(parseFloat(amount).toFixed(2)),
-    payment_method_id: "pix",
-    description: "Depósito via PIX",
-    payer: {
-      email: user.email
-    },
-    external_reference: user._id.toString()
-  })
-});
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error(data);
-      return res.status(500).json({ error: "Erro ao gerar pagamento", detalhes: data });
-    }
-
-    const { point_of_interaction, id } = data;
-
-    // 🔽 Salva o registro do depósito no MongoDB
-    await Deposito.create({
-      userEmail: user.email,
-      payment_id: String(id),
-      amount: parseFloat(amount),
-      status: "pending"
-    });
-
-    return res.status(200).json({
-      payment_id: id,
-      qr_code_base64: point_of_interaction.transaction_data.qr_code_base64,
-      qr_code: point_of_interaction.transaction_data.qr_code
-    });
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Erro interno ao processar pagamento" });
   }
 }
 
@@ -863,5 +692,231 @@ if (url.startsWith("/api/change-password")) {
     return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 }
+
+// Rota: /api/get_saldo
+if (url.startsWith("/api/get_saldo")) {
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Método não permitido' });
+    }
+
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token ausente' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+        await connectDB();
+
+        const user = await User.findOne({ token });
+
+        if (!user) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+
+        return res.status(200).json({ saldo: user.saldo || 0 });
+    } catch (error) {
+        console.error('Erro ao buscar saldo:', error);
+        return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+}
+
+// Rota: /api/gerar-pagamento
+if (url.startsWith("/api/gerar-pagamento")) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  const { amount, token } = req.body;
+
+  if (!amount || amount < 1 || amount > 1000) {
+    return res.status(400).json({ error: "Valor inválido. Min: 1, Max: 1000" });
+  }
+
+  if (!token) {
+    return res.status(401).json({ error: "Token não fornecido" });
+  }
+
+  await connectDB();
+
+  const user = await User.findOne({ token });
+
+  if (!user) {
+    return res.status(404).json({ error: "Usuário não encontrado" });
+  }
+
+  try {
+const response = await fetch("https://api.mercadopago.com/v1/payments", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer APP_USR-6408647281310844-111910-2b9ac05357a51450c4d1b20822c223ca-3002778257",
+    "Content-Type": "application/json",
+    "X-Idempotency-Key": randomUUID()
+  },
+  body: JSON.stringify({
+    transaction_amount: Number(parseFloat(amount).toFixed(2)),
+    payment_method_id: "pix",
+    description: "Depósito via PIX",
+    payer: {
+      email: user.email
+    },
+    external_reference: user._id.toString()
+  })
+});
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error(data);
+      return res.status(500).json({ error: "Erro ao gerar pagamento", detalhes: data });
+    }
+
+    const { point_of_interaction, id } = data;
+
+    // 🔽 Salva o registro do depósito no MongoDB
+    await Deposito.create({
+      userEmail: user.email,
+      payment_id: String(id),
+      amount: parseFloat(amount),
+      status: "pending"
+    });
+
+    return res.status(200).json({
+      payment_id: id,
+      qr_code_base64: point_of_interaction.transaction_data.qr_code_base64,
+      qr_code: point_of_interaction.transaction_data.qr_code
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Erro interno ao processar pagamento" });
+  }
+}
+
+// Rota: /api/confirmar-pagamento
+if (url.startsWith("/api/confirmar-pagamento")) {   
+if (req.method !== "GET") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  try {
+    await connectDB();
+
+    const { authorization } = req.headers;
+    if (!authorization || !authorization.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Token não fornecido" });
+    }
+
+    const token = authorization.split(" ")[1];
+    const usuario = await User.findOne({ token });
+
+    if (!usuario) {
+      return res.status(401).json({ error: "Token inválido ou usuário não encontrado!" });
+    }
+
+    // 🔄 Atualizar status automaticamente:
+    // De "pendente" para "progress" se validadas > 0
+    await Action.updateMany(
+      { status: "pendente", validadas: { $gt: 0 } },
+      { $set: { status: "progress" } }
+    );
+
+    // De "pendente" ou "progress" para "completed" se validadas === quantidade
+    await Action.updateMany(
+      { status: { $in: ["pendente", "progress"] }, $expr: { $eq: ["$validadas", "$quantidade"] } },
+      { $set: { status: "completed" } }
+    );
+
+    // 🔎 Filtro dinâmico conforme status da query
+    const status = req.query.status;
+    const filtro = { userId: usuario._id };
+
+    if (status && status !== "todos") {
+      if (status === "pending") {
+        filtro.validadas = 0;
+      } else if (status === "progress") {
+        filtro.validadas = { $gt: 0 };
+        filtro.status = "progress";
+      } else {
+        filtro.status = status;
+      }
+    }
+
+    // 🔍 Buscar ações do usuário
+    const acoes = await Action.find(filtro).sort({ dataCriacao: -1 });
+
+    // 🔗 Buscar os serviços relacionados
+    const idsServico = [...new Set(acoes.map(a => a.id_servico))];
+    const servicos = await Servico.find({ id_servico: { $in: idsServico } });
+
+    // 🧩 Anexar detalhes dos serviços a cada ação
+    const acoesComDetalhes = acoes.map(acao => {
+      const obj = acao.toObject();
+      obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
+      return obj;
+    });
+
+    return res.json({ acoes: acoesComDetalhes });
+
+  } catch (error) {
+    console.error("Erro ao buscar histórico de ações:", error);
+    return res.status(500).json({ error: "Erro ao buscar histórico de ações" });
+  }
+};
+
+if (url.startsWith("/api/check_payment")) {
+  if (req.method !== "GET")
+    return res.status(405).json({ error: "Método não permitido" });
+
+  await connectDB();
+
+  const { payment_id } = req.query;
+  if (!payment_id) {
+    return res.status(400).json({ error: "payment_id é obrigatório" });
+  }
+
+  const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${payment_id}`, {
+    headers: {
+      Authorization: "Bearer APP_USR-6408647281310844-111910-2b9ac05357a51450c4d1b20822c223ca-3002778257"
+    }
+  });
+
+  const paymentData = await paymentResponse.json();
+
+  if (!paymentResponse.ok) {
+    return res.status(500).json({ error: "Erro no Mercado Pago", detalhes: paymentData });
+  }
+
+  // Buscar depósito correspondente
+  const deposito = await Deposito.findOne({ payment_id });
+
+  if (!deposito) {
+    return res.status(404).json({ error: "Depósito não encontrado" });
+  }
+
+  // Se já confirmado, apenas retorna
+  if (deposito.status === "completed") {
+    return res.json({ status: "completed" });
+  }
+
+  // Se Mercado Pago confirmou o pagamento
+  if (paymentData.status === "approved") {
+    deposito.status = "completed";
+    await deposito.save();
+
+    // Atualizar saldo do usuário
+    await User.updateOne(
+      { email: deposito.userEmail },
+      { $inc: { saldo: deposito.amount } }
+    );
+
+    return res.json({ status: "completed" });
+  }
+
+  return res.json({ status: paymentData.status });
+}
+
     return res.status(404).json({ error: "Rota não encontrada." });
 }
