@@ -10,7 +10,18 @@
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <!-- Adicionando Bootstrap CSS adicional para garantir funcionamento -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-   <script>
+    
+    <!-- CSS para controle de visibilidade da página -->
+    <style>
+        body { visibility: hidden; opacity: 0; transition: opacity 240ms ease; }
+        body.loaded { visibility: visible; opacity: 1; }
+        #page-loader {
+          position: fixed; inset: 0; display:flex; align-items:center; justify-content:center;
+          background: rgba(255,255,255,0.9); z-index: 9999;
+        }
+    </style>
+
+    <script>
         // Função para obter o token do localStorage
         function loadToken() {
             return (
@@ -68,6 +79,46 @@
                     balanceElement.textContent = 'R$ 0,00';
                 }
                 return 0;
+            }
+        }
+
+        // Função para carregar serviços (necessária para o Promise.all)
+        async function loadServices() {
+            try {
+                const token = loadToken();
+                
+                if (!token) {
+                    console.error("Token não encontrado para carregar serviços.");
+                    return [];
+                }
+
+                const response = await fetch('https://smmsociais.com/api/servico', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar serviços');
+                }
+
+                const servicesData = await response.json();
+                console.log('Serviços carregados:', servicesData);
+                
+                // Se existirem funções de renderização, chamá-las
+                if (typeof window.renderServices === 'function') {
+                    window.renderServices(servicesData);
+                }
+                if (typeof window.renderCategories === 'function') {
+                    window.renderCategories(servicesData);
+                }
+                
+                return servicesData;
+            } catch (error) {
+                console.error('Erro ao carregar serviços:', error);
+                return [];
             }
         }
     </script>
@@ -775,14 +826,8 @@
 
         // Prevenir comportamento padrão dos links de filtro
         document.addEventListener('DOMContentLoaded', function () {
-
-                        loadUserBalance();
-                        
             // Atualizar aba ativa
             updateActiveTab();
-
-            // Carregar ordens canceladas
-            loadOrders();
 
             // Adicionar event listeners para os links de filtro
             const filterLinks = document.querySelectorAll('#status-tabs .nav-link');
@@ -840,6 +885,128 @@
                     '<tr><td colspan="11" class="text-center">Nenhuma ordem cancelada encontrada para: ' + searchTerm + '</td></tr>';
             }
         }
+    </script>
+
+    <!-- Script para controle de carregamento da página -->
+    <script>
+        /* script para garantir que a página apareça apenas após todas as APIs terminarem */
+        (function () {
+          // mostra um overlay loader enquanto aguarda
+          const loader = document.createElement('div');
+          loader.id = 'page-loader';
+          loader.innerHTML = `
+            <div style="text-align:center">
+              <div class="spinner-border" role="status" aria-hidden="true"></div>
+              <div style="margin-top:8px">Carregando dados...</div>
+            </div>`;
+          document.body.appendChild(loader);
+
+          // --- helper para garantir que loadUserBalance() retorne uma Promise ---
+          function callOrWrapLoadUserBalance() {
+            // se existe a função definida no outro script e ela é async, reaproveite
+            if (typeof window.loadUserBalance === 'function') {
+              try {
+                const r = window.loadUserBalance(); // função async retorna Promise
+                return Promise.resolve(r);
+              } catch (err) {
+                return Promise.reject(err);
+              }
+            }
+            // fallback: tentar fetch diretamente (ajuste URL se necessário)
+            return fetch('https://smmsociais.com/api/get_saldo', { method: 'GET' })
+              .then(res => res.ok ? res.json() : Promise.reject(new Error('Erro saldo')))
+              .then(json => {
+                // atualiza DOM (mesma lógica do seu script)
+                const formattedBalance = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+                  .format(json.saldo || 0);
+                const el = document.querySelector('.component-navbar-balance-item__navbar-private');
+                if (el) el.textContent = formattedBalance;
+                return json;
+              })
+              .catch(err => {
+                console.error('Erro ao carregar saldo (fallback):', err);
+                const el = document.querySelector('.component-navbar-balance-item__navbar-private');
+                if (el) el.textContent = 'R$ 0,00';
+                return { saldo: 0 };
+              });
+          }
+
+          // --- helper para carregar serviços e garantir Promise ---
+          function loadServicesAndRender() {
+            // se já existe a função loadServices no outro script e ela retornar Promise, tente usá-la
+            if (typeof window.loadServices === 'function') {
+              try {
+                const r = window.loadServices();
+                // se a função não retornar promise (undefined), faz fallback abaixo:
+                if (r && typeof r.then === 'function') return Promise.resolve(r);
+              } catch (e) {
+                // ignore e faça fallback
+              }
+            }
+
+            // fallback/implementação direta (garante que a promise será resolvida mesmo em erro)
+            return fetch('https://smmsociais.com/api/servico')
+              .then(response => {
+                if (!response.ok) throw new Error('Erro ao carregar serviços da API');
+                return response.json();
+              })
+              .then(data => {
+                // reutiliza as funções de render (se existirem) para integrar com seu layout atual
+                if (typeof window.renderServices === 'function') window.renderServices(data);
+                if (typeof window.renderCategories === 'function') window.renderCategories(data);
+                return data;
+              })
+              .catch(err => {
+                console.error('Erro ao carregar serviços:', err);
+                const tbody = document.getElementById('service-tbody');
+                if (tbody) {
+                  tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                }
+                // resolvemos com array vazio para não bloquear a exibição da página
+                return [];
+              });
+          }
+
+          // --- opcional: esperar window.load para garantir recursos externos carregados ---
+          const windowLoadPromise = new Promise(resolve => {
+            if (document.readyState === 'complete') return resolve();
+            window.addEventListener('load', resolve);
+          });
+
+          // --- Promise principal: saldo + serviços (+ window.load se desejar) ---
+          const saldoPromise = callOrWrapLoadUserBalance();
+          const servicesPromise = loadServicesAndRender();
+          const ordersPromise = loadOrders(); // Adicionando o carregamento de ordens
+
+          // se quiser aguardar também window.load, inclua windowLoadPromise no Promise.all (recomendo)
+          Promise.all([saldoPromise, servicesPromise, ordersPromise, windowLoadPromise])
+            .then(() => {
+              // tudo OK (ou tratamos falhas individualmente): mostrar a página
+              document.body.classList.add('loaded');
+            })
+            .catch(err => {
+              // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
+              console.error('Erro ao carregar dados principais:', err);
+              document.body.classList.add('loaded');
+              const tbody = document.getElementById('orders-tbody');
+              if (tbody && tbody.innerHTML.trim() === '') {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center py-4 text-danger">Erro ao carregar ordens. Tente novamente mais tarde.</td></tr>';
+              }
+            })
+            .finally(() => {
+              // remover loader visual
+              if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+            });
+
+          // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
+          setTimeout(() => {
+            if (!document.body.classList.contains('loaded')) {
+              console.warn('Fallback: exibindo página após timeout.');
+              document.body.classList.add('loaded');
+              if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+            }
+          }, 15000); // 15s — opcional, ajuste conforme necessidade
+        })();
     </script>
 </body>
 
