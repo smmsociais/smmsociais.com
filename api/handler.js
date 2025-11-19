@@ -445,53 +445,6 @@ if (url.startsWith("/api/orders")) {
   }
 };
 
-// Rota: /api/listar-depositos
-if (url.startsWith("/api/listar-depositos")) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Método não permitido" });
-  }
-
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Token não fornecido" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  try {
-    await connectDB();
-
-    const usuario = await User.findOne({ token });
-    if (!usuario) {
-      return res.status(401).json({ error: "Usuário não encontrado" });
-    }
-
-    // 🕒 Tempo limite: 30 minutos
-    const limiteTempo = new Date(Date.now() - 30 * 60 * 1000);
-
-    // 🧹 DELETE: remove pagamentos pendentes com mais de 30 min
-    await Deposito.deleteMany({
-      userEmail: usuario.email,
-      status: "pending",
-      createdAt: { $lte: limiteTempo }
-    });
-
-    // ✅ Lista somente pagamentos já confirmados (completed)
-    const depositos = await Deposito.find({
-      userEmail: usuario.email,
-      status: "completed"
-    })
-    .sort({ createdAt: -1 })
-    .limit(10);
-
-    return res.status(200).json(depositos);
-
-  } catch (error) {
-    console.error("Erro ao listar depósitos:", error);
-    return res.status(500).json({ error: "Erro interno do servidor" });
-  }
-}
-
  // Rota: /api/recover-password
 if (url.startsWith("/api/recover-password")) { 
   if (req.method !== "POST")
@@ -757,23 +710,24 @@ if (url.startsWith("/api/gerar-pagamento")) {
   }
 
   try {
-const response = await fetch("https://api.mercadopago.com/v1/payments", {
-  method: "POST",
-  headers: {
-    Authorization: "Bearer APP_USR-6408647281310844-111910-2b9ac05357a51450c4d1b20822c223ca-3002778257",
-    "Content-Type": "application/json",
-    "X-Idempotency-Key": randomUUID()
-  },
-  body: JSON.stringify({
-    transaction_amount: Number(parseFloat(amount).toFixed(2)),
-    payment_method_id: "pix",
-    description: "Depósito via PIX",
-    payer: {
-      email: user.email
-    },
-    external_reference: user._id.toString()
-  })
-});
+
+    const response = await fetch("https://api.mercadopago.com/v1/payments", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer APP_USR-6408647281310844-111910-2b9ac05357a51450c4d1b20822c223ca-3002778257",
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": crypto.randomUUID()
+      },
+      body: JSON.stringify({
+        transaction_amount: Number(parseFloat(amount).toFixed(2)),
+        payment_method_id: "pix",
+        description: "Depósito via PIX",
+        payer: {
+          email: user.email
+        },
+        external_reference: user._id.toString()
+      })
+    });
 
     const data = await response.json();
 
@@ -784,12 +738,13 @@ const response = await fetch("https://api.mercadopago.com/v1/payments", {
 
     const { point_of_interaction, id } = data;
 
-    // 🔽 Salva o registro do depósito no MongoDB
+    // 🔽 Salva o registro do depósito no MongoDB com createdAt manual
     await Deposito.create({
       userEmail: user.email,
       payment_id: String(id),
       amount: parseFloat(amount),
-      status: "pending"
+      status: "pending",
+      createdAt: new Date()  // 👈 criado agora e usado depois na limpeza (30 min)
     });
 
     return res.status(200).json({
@@ -925,6 +880,53 @@ if (url.startsWith("/api/check_payment")) {
   }
 
   return res.json({ status: paymentData.status });
+}
+
+// Rota: /api/listar-depositos
+if (url.startsWith("/api/listar-depositos")) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Token não fornecido" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    await connectDB();
+
+    const usuario = await User.findOne({ token });
+    if (!usuario) {
+      return res.status(401).json({ error: "Usuário não encontrado" });
+    }
+
+    // 🕒 Tempo limite: 30 minutos
+    const limiteTempo = new Date(Date.now() - 30 * 60 * 1000);
+
+    // 🧹 DELETE: remove pagamentos pendentes com mais de 30 min
+    await Deposito.deleteMany({
+      userEmail: usuario.email,
+      status: "pending",
+      createdAt: { $lte: limiteTempo }
+    });
+
+    // ✅ Lista somente pagamentos já confirmados (completed)
+    const depositos = await Deposito.find({
+      userEmail: usuario.email,
+      status: "completed"
+    })
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+    return res.status(200).json(depositos);
+
+  } catch (error) {
+    console.error("Erro ao listar depósitos:", error);
+    return res.status(500).json({ error: "Erro interno do servidor" });
+  }
 }
 
     return res.status(404).json({ error: "Rota não encontrada." });
