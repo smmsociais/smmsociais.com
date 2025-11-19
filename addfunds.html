@@ -112,11 +112,35 @@
             color: #28a745 !important;
         }
 
+        .text-warning {
+            color: #ffc107 !important;
+        }
+
         .no-deposits {
             text-align: center;
             padding: 20px;
             color: #6c757d;
             font-style: italic;
+        }
+
+        .badge-pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-processing {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .badge-cancelled {
+            background-color: #dc3545;
+            color: white;
         }
     </style>
 
@@ -227,6 +251,13 @@
                 return;
             }
 
+            // Ordenar depósitos por data (mais recentes primeiro)
+            deposits.sort((a, b) => {
+                const dateA = new Date(a.createdAt || a.dataCriacao || 0);
+                const dateB = new Date(b.createdAt || b.dataCriacao || 0);
+                return dateB - dateA;
+            });
+
             tbody.innerHTML = deposits.map(deposit => {
                 // Formatar data
                 const date = new Date(deposit.createdAt || deposit.dataCriacao || Date.now());
@@ -242,16 +273,109 @@
                     currency: 'BRL'
                 }).format(deposit.amount || deposit.valor || 0);
 
+                // Determinar status e badge
+                let statusText = 'Concluído';
+                let badgeClass = 'badge badge-success';
+                
+                if (deposit.status) {
+                    const status = deposit.status.toLowerCase();
+                    if (status === 'pending' || status === 'pendente' || status === 'aguardando') {
+                        statusText = 'Pendente';
+                        badgeClass = 'badge badge-pending';
+                    } else if (status === 'processing' || status === 'processando') {
+                        statusText = 'Processando';
+                        badgeClass = 'badge badge-processing';
+                    } else if (status === 'cancelled' || status === 'cancelado' || status === 'rejected') {
+                        statusText = 'Cancelado';
+                        badgeClass = 'badge badge-cancelled';
+                    } else if (status === 'completed' || status === 'concluído' || status === 'approved') {
+                        statusText = 'Concluído';
+                        badgeClass = 'badge badge-success';
+                    }
+                }
+
                 return `
                     <tr>
-                        <td>${deposit.payment_id || deposit.payment_id || 'N/A'}</td>
+                        <td>${deposit.payment_id || deposit.id || 'N/A'}</td>
                         <td>${formattedDate} ${formattedTime}</td>
                         <td>PIX</td>
                         <td>${formattedAmount}</td>
-                        <td><span class="badge badge-success">Concluído</span></td>
+                        <td><span class="${badgeClass}">${statusText}</span></td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        // Função para atualizar depósitos pendentes em tempo real
+        async function updatePendingDeposits() {
+            try {
+                const deposits = await loadDeposits();
+                renderDeposits(deposits);
+                
+                // Verificar se há depósitos pendentes para monitoramento
+                const pendingDeposits = deposits.filter(deposit => {
+                    const status = (deposit.status || '').toLowerCase();
+                    return status === 'pending' || status === 'pendente' || status === 'aguardando' || status === 'processing' || status === 'processando';
+                });
+
+                // Iniciar monitoramento para depósitos pendentes
+                if (pendingDeposits.length > 0) {
+                    pendingDeposits.forEach(deposit => {
+                        const paymentId = deposit.payment_id || deposit.id;
+                        const amount = deposit.amount || deposit.valor;
+                        if (paymentId) {
+                            iniciarMonitoramentoDeposito(paymentId, amount);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar depósitos pendentes:', error);
+            }
+        }
+
+        // Monitoramento de depósitos pendentes
+        let depositMonitorIntervals = {};
+
+        function iniciarMonitoramentoDeposito(paymentId, amount) {
+            // Evitar múltiplos intervalos para o mesmo paymentId
+            if (depositMonitorIntervals[paymentId]) {
+                return;
+            }
+
+            console.log(`Iniciando monitoramento do depósito: ${paymentId}`);
+            
+            depositMonitorIntervals[paymentId] = setInterval(async () => {
+                try {
+                    const status = await verificarStatusPagamento(paymentId);
+                    
+                    if (status && typeof status === 'object') {
+                        const statusStr = String(status.status || '').toLowerCase();
+                        if (statusStr === 'approved' || statusStr === 'completed' || statusStr === 'paid') {
+                            // Depósito confirmado, parar monitoramento e atualizar lista
+                            console.log(`Depósito ${paymentId} confirmado!`);
+                            pararMonitoramentoDeposito(paymentId);
+                            await updatePendingDeposits(); // Atualizar lista
+                            await loadUserBalance(); // Atualizar saldo
+                        } else if (statusStr === 'cancelled' || statusStr === 'rejected' || statusStr === 'refunded') {
+                            // Depósito cancelado, parar monitoramento
+                            console.log(`Depósito ${paymentId} cancelado!`);
+                            pararMonitoramentoDeposito(paymentId);
+                            await updatePendingDeposits(); // Atualizar lista
+                        }
+                        // Se ainda estiver pendente, continua monitorando
+                    }
+                } catch (error) {
+                    console.error(`Erro ao monitorar depósito ${paymentId}:`, error);
+                }
+            }, 10000); // Verificar a cada 10 segundos
+        }
+
+        function pararMonitoramentoDeposito(paymentId) {
+            if (depositMonitorIntervals[paymentId]) {
+                clearInterval(depositMonitorIntervals[paymentId]);
+                delete depositMonitorIntervals[paymentId];
+                console.log(`Monitoramento parado para: ${paymentId}`);
+            }
         }
 
         // Funções auxiliares removidas (não são mais necessárias)
@@ -324,6 +448,9 @@
                 // iniciar monitoramento
                 if (data.payment_id) {
                     iniciarMonitoramentoPagamento(String(data.payment_id), Number(amount));
+                    
+                    // Atualizar lista de depósitos para incluir o novo depósito pendente
+                    setTimeout(updatePendingDeposits, 1000);
                 } else {
                     console.warn('Gerado pagamento mas sem payment_id retornado:', data);
                 }
@@ -491,8 +618,7 @@
                 try { 
                     await loadUserBalance(); 
                     // Recarregar lista de depósitos após pagamento confirmado
-                    const deposits = await loadDeposits();
-                    renderDeposits(deposits);
+                    await updatePendingDeposits();
                 } catch(e){ 
                     console.warn('Erro ao recarregar saldo após confirmação', e); 
                 }
@@ -590,6 +716,7 @@
         window.novoPagamento = novoPagamento;
         window.loadDeposits = loadDeposits;
         window.renderDeposits = renderDeposits;
+        window.updatePendingDeposits = updatePendingDeposits;
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -604,7 +731,7 @@
     <div class="wrapper  wrapper-sidebar-navbar ">
         <div id="block_52" class="component_private_navbar">
             <span class="component_private_navbar ">
-                <div class="component-navbar-private__wrapper component_private_sidebar ">
+                <div class="component_private_navbar__wrapper component_private_sidebar ">
                     <div class="sidebar-block__top component-navbar component-navbar__navbar-private editor__component-wrapper ">
                         <div>
                             <nav class="navbar navbar-expand-lg navbar-light">
@@ -767,7 +894,7 @@
                                                 <input type="hidden" name="_csrf" value="7YD38vIR1P1Z8zKAC7yPnawd_t3iIdxZ2jIBQoAlwdSL2LWLmVqxlByLANhN983RlSuWkI5-qAG8YTcoxm-AsA==">
                                                 <div class="component_button_submit">
                                                     <div class="">
-                                                        <button type="submit" class="btn btn-block btn-big-primary">Gerar QR Code PIX</button>
+                                                        <button type="submit" class="btn btn-block btn-big-primary">Pagar</button>
                                                     </div>
                                                 </div>
                                             </form>
@@ -889,10 +1016,6 @@
     <script type="text/javascript" src="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js">
     </script>
     <script type="text/javascript">
-        window.modules.layouts = { "theme_id": 23, "auth": 1, "live": true, "csrftoken": "7YD38vIR1P1Z8zKAC7yPnawd_t3iIdxZ2jIBQoAlwdSL2LWLmVqxlByLANhN983RlSuWkI5-qAG8YTcoxm-AsA==" };   </script>
-    <script type="text/javascript">
-        window.modules.paymentMethods = { "format": { "min_price": 0.0001, "max": 7, "min": 2, "delimiter": ",", "thousands": ".", "balance_format": 3 }, "fieldOptions": { "189079": { "commission": { "is_enabled": 0, "fixed": 0, "percent": 0, "type": "extra_fee_enabled", "extrafee": "Extra fee", "total": "Total" }, "cpf_cnpj": { "label": "CPF (PRECISA SER NESSE FORMATO: 123.456.789-10, caso n\u00e3o tenha CPF use o c\u00f3digo 29247183847)", "name": "cpf_cnpj", "type": "input", "rules": [{ "0": "cpf_cnpj", "1": "required", "message": "addfunds.error.cpf" }], "value": "", "texts": [] }, "instruction": { "label": "Instru\u00e7\u00f5es", "name": "instruction", "type": "container", "value": "<p>Dep\u00f3sito M\u00ednimo de 1 real. (R$1)<\/p><p>Dep\u00f3sito M\u00e1ximo de 1.000 reais (nessa op\u00e7\u00e3o).&nbsp;<br><\/p><div><br><\/div><p>Entrada Imediata! (Pagamento entrar\u00e1 automaticamente em menos de 15 segundos)<\/p><p>Arraste a tela para baixo para aparecer o bot\u00e3o de COPIAR<\/p>", "texts": [] } }, "176181": { "commission": { "is_enabled": 0, "fixed": 0, "percent": 0, "type": "extra_fee_enabled", "extrafee": "Extra fee", "total": "Total" }, "instruction": { "label": "Instru\u00e7\u00f5es", "name": "instruction", "type": "container", "value": "<p>Pagamentos de R$ 21 at\u00e9 500<\/p>", "texts": [] } }, "74125": { "commission": { "is_enabled": 0, "fixed": 0, "percent": 0, "type": "extra_fee_enabled", "extrafee": "Extra fee", "total": "Total" }, "payer_cpf_cnpj": { "label": "CPF (PRECISA SER NESSE FORMATO: 123.456.789-10, caso n\u00e3o tenha CPF use o c\u00f3digo 29247183847)", "name": "payer_cpf_cnpj", "type": "input", "rules": [{ "0": "payer_cpf_cnpj", "1": "required", "message": "addfunds.error.cpf" }, { "0": "payer_cpf_cnpj", "1": "string", "message": "addfunds.error.cpf" }], "value": "", "texts": [] }, "instruction": { "label": "Instru\u00e7\u00f5es", "name": "instruction", "type": "container", "value": "<h6>Dep\u00f3sito M\u00ednimo de R$ 21,00 e M\u00e1ximo de R$ 300,00<br><span style=\"background-color: rgb(255, 255, 0);\">Pagamentos que n\u00e3o forem feitos para c\u00f3digo copia e cola ou c\u00f3digo QR n\u00e3o ser\u00e3o reembolsados!&nbsp;<\/span><\/h6><h6><font style=\"\" color=\"#010101\"><font style=\"background-color: rgb(255, 0, 0);\">ATEN\u00c7\u00c3O:<\/font><span style=\"background-color: rgb(255, 255, 255);\"> <\/span><\/font>Use um valor redondo para evitar erros; por exemplo: Exemplo: R$ 100,00 ou R$ 98,00 ou R$26,00<\/h6><h6><font color=\"#010101\">PAGUE APENAS COM O C\u00d3DIGO QR&nbsp;<br><\/font><font color=\"#010101\">OU C\u00d3DIGO COPIA E COLA!!!<br><br><\/font><span style=\"background-color: rgb(1, 1, 1);\"><font color=\"#ffffff\">ATEN\u00c7\u00c3O: o CPF precisa existir e ser no seguinte formato:&nbsp;<span style=\"font-family: Gilroy, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-weight: 700; font-size: 14px;\">123.456.789-10<\/span><\/font><\/span><span style=\"font-family: inherit;\"><span style=\"background-color: rgb(1, 1, 1);\"><font color=\"#ffffff\">&nbsp;se n\u00e3o vai dar erro ao gerar o c\u00f3digo QR<\/font><\/span><br><br><\/span><\/h6><h3><span style=\"color: rgb(1, 1, 1); font-family: inherit;\">Caso n\u00e3o tenha CPF use o c\u00f3digo: <b>29247183847<\/b><\/span><\/h3>", "texts": [] } }, "117136": { "commission": { "is_enabled": 0, "fixed": 0, "percent": 0, "type": "extra_fee_enabled", "extrafee": "Extra fee", "total": "Total" }, "cpf_cnpj": { "label": "CPF (PRECISA SER NESSE FORMATO: 123.456.789-10, caso n\u00e3o tenha CPF use o c\u00f3digo 29247183847)", "name": "cpf_cnpj", "type": "input", "rules": [{ "0": "cpf_cnpj", "1": "required", "message": "addfunds.error.cpf" }], "value": "", "texts": [] }, "instruction": { "label": "Instru\u00e7\u00f5es", "name": "instruction", "type": "container", "value": "<p>N\u00e3o use essa op\u00e7\u00e3o de pagamento<\/p>", "texts": [] } } }, "amountOptions": [], "amountCurrencyOptions": [], "convertAmountOptions": [], "options": { "expaybrasil1": { "code": "expaybrasil1", "type": 189079, "defaultErrorText": "Erro. Tente mais tarde", "modal": { "close_title": "Cancelar" } }, "pushinpayqr": { "code": "pushinpayqr", "type": 176181, "defaultErrorText": "Erro. Tente mais tarde", "modal": { "close_title": "Cancelar" } }, "paghiper": { "code": "paghiper", "type": 74125, "defaultErrorText": "Erro. Tente mais tarde", "modal": { "close_title": "Cancelar", "instruction": "<h6><span style=\"background-color: rgb(255, 0, 0);\">Pagamentos que n\u00e3o forem feitos para c\u00f3digo copia e cola ou c\u00f3digo QR n\u00e3o ser\u00e3o reembolsados!&nbsp;<\/span><\/h6><h5><br><\/h5><h5><font color=\"#010101\">PAGUE APENAS COM O C\u00d3DIGO QR&nbsp;<br><\/font><font color=\"#010101\">OU C\u00d3DIGO COPIA E COLA ABAIXO!!!!<\/font><\/h5>" } }, "expaybrasil": { "code": "expaybrasil", "type": 117136, "defaultErrorText": "Erro. Tente mais tarde", "modal": { "close_title": "Cancelar" } } }, "su": false };   </script>
-    <script type="text/javascript">
         window.modules.alerts = { "alerts": [] };   </script>
 
     <!-- Script para controle de carregamento da página e integração com API PIX -->
@@ -988,6 +1111,10 @@
                                 if (typeof window.renderDeposits === 'function') {
                                     window.renderDeposits(deposits);
                                 }
+                                // Iniciar monitoramento de depósitos pendentes
+                                if (typeof window.updatePendingDeposits === 'function') {
+                                    window.updatePendingDeposits();
+                                }
                                 return deposits;
                             });
                         }
@@ -1011,6 +1138,8 @@
                 .then(data => {
                     // reutiliza a função de render se existir
                     if (typeof window.renderDeposits === 'function') window.renderDeposits(data);
+                    // Iniciar monitoramento de depósitos pendentes
+                    if (typeof window.updatePendingDeposits === 'function') window.updatePendingDeposits();
                     return data;
                 })
                 .catch(err => {
