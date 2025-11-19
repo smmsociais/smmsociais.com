@@ -906,20 +906,23 @@ if (url.startsWith("/api/listar-depositos")) {
     // 🕒 Tempo limite: 30 minutos
     const limiteTempo = new Date(Date.now() - 30 * 60 * 1000);
 
-    // 🧹 DELETE: remove pagamentos pendentes com mais de 30 min
+    // 🧹 Limpa pagamentos pendentes que passaram de 30 min
     await Deposito.deleteMany({
       userEmail: usuario.email,
       status: "pending",
       createdAt: { $lte: limiteTempo }
     });
 
-    // ✅ Lista somente pagamentos já confirmados (completed)
+    // ✅ Busca pendentes (menos de 30 min) + completed
     const depositos = await Deposito.find({
       userEmail: usuario.email,
-      status: "completed"
+      $or: [
+        { status: "completed" },
+        { status: "pending", createdAt: { $gt: limiteTempo } }
+      ]
     })
-    .sort({ createdAt: -1 })
-    .limit(10);
+      .sort({ createdAt: -1 })
+      .limit(20);
 
     return res.status(200).json(depositos);
 
