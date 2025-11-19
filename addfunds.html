@@ -121,7 +121,7 @@
                 localStorage.getItem('token') ||
                 localStorage.getItem('user_token') ||
                 localStorage.getItem('auth') ||
-                getToken()
+                null
             );
         }
 
@@ -131,7 +131,12 @@
 
             if (!token) {
                 console.error("Token não encontrado.");
-                return;
+                // Definir saldo como R$ 0,00 em caso de erro
+                const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
+                if (balanceElement) {
+                    balanceElement.textContent = 'R$ 0,00';
+                }
+                return 0;
             }
 
             try {
@@ -206,6 +211,7 @@
             }
         }
 
+        // Funções auxiliares removidas (não são mais necessárias)
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
         }
@@ -432,19 +438,18 @@
 
             if (confirmado) {
                 if (statusElement) {
-                    statusElement.innerHTML = `
-                        <div class="payment-success">
-                            <i class="fas fa-check-circle"></i> Pagamento confirmado! 
-                            R$ ${Number(amount).toFixed(2)} foram adicionados à sua conta.
-                        </div>
-                    `;
+                    statusElement.innerHTML = '<div class="payment-success"><i class="fas fa-check-circle"></i> Pagamento confirmado! R$ ' + Number(amount).toFixed(2) + ' foram adicionados à sua conta.</div>';
                 }
 
                 // parar monitoramento
                 pararMonitoramentoPagamento();
 
                 // forçar recarregar saldo do usuário (sua função existente)
-                try { await loadUserBalance(); } catch(e){ console.warn('Erro ao recarregar saldo após confirmação', e); }
+                try { 
+                    await loadUserBalance(); 
+                } catch(e){ 
+                    console.warn('Erro ao recarregar saldo após confirmação', e); 
+                }
 
                 // mostrar botão novo pagamento se houver
                 const newBtn = document.getElementById('new-payment-btn');
@@ -456,12 +461,7 @@
 
             if (rejeitado) {
                 if (statusElement) {
-                    statusElement.innerHTML = `
-                        <div class="payment-error">
-                            <i class="fas fa-exclamation-triangle"></i> Pagamento não autorizado ou cancelado. 
-                            Se foi um erro, gere um novo pagamento.
-                        </div>
-                    `;
+                    statusElement.innerHTML = '<div class="payment-error"><i class="fas fa-exclamation-triangle"></i> Pagamento não autorizado ou cancelado. Se foi um erro, gere um novo pagamento.</div>';
                 }
                 pararMonitoramentoPagamento();
                 const newBtn = document.getElementById('new-payment-btn');
@@ -471,12 +471,7 @@
 
             // se ainda pendente / desconhecido
             if (statusElement) {
-                statusElement.innerHTML = `
-                    <div class="payment-processing">
-                        <span class="spinner-border spinner-border-sm" role="status"></span>
-                        Aguardando confirmação do pagamento...
-                    </div>
-                `;
+                statusElement.innerHTML = '<div class="payment-processing"><span class="spinner-border spinner-border-sm" role="status"></span> Aguardando confirmação do pagamento...</div>';
             }
         }
 
@@ -495,12 +490,7 @@
                     pararMonitoramentoPagamento();
                     const statusElement = document.getElementById('payment-status');
                     if (statusElement) {
-                        statusElement.innerHTML = `
-                            <div class="payment-error">
-                                <i class="fas fa-exclamation-triangle"></i> 
-                                QR Code expirado. Por favor, gere um novo pagamento.
-                            </div>
-                        `;
+                        statusElement.innerHTML = '<div class="payment-error"><i class="fas fa-exclamation-triangle"></i> QR Code expirado. Por favor, gere um novo pagamento.</div>';
                     }
                     const newBtn = document.getElementById('new-payment-btn');
                     if (newBtn) newBtn.style.display = 'block';
@@ -509,16 +499,13 @@
 
                 const minutes = Math.floor(timeLeft / 60000);
                 const seconds = Math.floor((timeLeft % 60000) / 1000);
-                countdownElement.innerHTML = `
-                    Tempo restante para pagamento: 
-                    <span class="text-danger">${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}</span>
-                `;
+                countdownElement.innerHTML = 'Tempo restante para pagamento: <span class="text-danger">' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0') + '</span>';
             }, 1000);
         }
 
         // --- Copiar Pix (mantive a sua função) ---
         function copiarCodigoPix() {
-            const codigoPix = document.getElementById('qr-code-text')?.value || '';
+            const codigoPix = document.getElementById('qr-code-text') ? document.getElementById('qr-code-text').value : '';
             navigator.clipboard.writeText(codigoPix).then(function() {
                 const copyBtn = document.querySelector('.qr-code-copy-btn');
                 if (!copyBtn) return;
@@ -538,10 +525,16 @@
         // --- Novo pagamento (mantive sua função) ---
         function novoPagamento() {
             pararMonitoramentoPagamento();
-            document.getElementById('block_60')?.style.display = 'none';
-            document.getElementById('qr-code-container')?.style.display = 'none';
-            document.getElementById('pix-payment-form')?.reset();
-            document.getElementById('new-payment-btn')?.style.display = 'none';
+            const block60 = document.getElementById('block_60');
+            const qrContainer = document.getElementById('qr-code-container');
+            const paymentForm = document.getElementById('pix-payment-form');
+            const newBtn = document.getElementById('new-payment-btn');
+            
+            if (block60) block60.style.display = 'none';
+            if (qrContainer) qrContainer.style.display = 'none';
+            if (paymentForm) paymentForm.reset();
+            if (newBtn) newBtn.style.display = 'none';
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -564,21 +557,16 @@
         <div id="block_52" class="component_private_navbar">
             <span class="component_private_navbar ">
                 <div class="component-navbar-private__wrapper component_private_sidebar ">
-                    <div
-                        class="sidebar-block__top component-navbar component-navbar__navbar-private editor__component-wrapper ">
+                    <div class="sidebar-block__top component-navbar component-navbar__navbar-private editor__component-wrapper ">
                         <div>
                             <nav class="navbar navbar-expand-lg navbar-light">
                                 <div class="navbar-private__header">
                                     <div class="sidebar-block__top-brand">
                                         <a href="/painel" class="component-navbar-brand component-navbar-public-brand">
-                                            <h3><strong style="font-weight: bold"></strong><span
-                                                    style="color: var(--color-id-117)"><strong
-                                                        style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
+                                            <h3><strong style="font-weight: bold"></strong><span style="color: var(--color-id-117)"><strong style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
                                         </a>
                                     </div>
-                                    <button class="navbar-toggler" type="button" data-toggle="collapse"
-                                        data-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
-                                        aria-expanded="false" aria-label="Toggle navigation">
+                                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapse-52" aria-controls="navbar-collapse-52" aria-expanded="false" aria-label="Toggle navigation">
                                         <span class="navbar-burger">
                                             <span class="navbar-burger-line"></span>
                                         </span>
@@ -588,72 +576,53 @@
                                     <div class="component-navbar-collapse-divider"></div>
                                     <div class="d-flex component-navbar-collapse">
                                         <ul class="navbar-nav navbar-nav-sidebar-menu">
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/painel">
+                                            <li class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private " href="/painel">
                                                     Novo pedido
                                                 </a>
                                             </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/services">
+                                            <li class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private " href="/services">
                                                     Serviços
                                                 </a>
                                             </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/orders">
+                                            <li class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private " href="/orders">
                                                     Ordens
                                                 </a>
                                             </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
-                                                    href="/addfunds">
+                                            <li class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private" href="/addfunds">
                                                     ADICIONAR SALDO (DEPOSITAR PIX)
                                                 </a>
                                             </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/affiliates">
+                                            <li class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private " href="/affiliates">
                                                     Meus indicados
                                                 </a>
                                             </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/massorder">
+                                            <li class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private " href="/massorder">
                                                     Mass order
                                                 </a>
                                             </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/suporte">
+                                            <li class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private " href="/suporte">
                                                     Suporte
                                                 </a>
                                             </li>
                                         </ul>
                                         <ul class="navbar-nav navbar-nav-currencies">
-                                            <li
-                                                class="nav-item d-flex align-items-center component-navbar-nav-item component-navbar-private-nav-item component-navbar-balance-wrap__navbar-private">
+                                            <li class="nav-item d-flex align-items-center component-navbar-nav-item component-navbar-private-nav-item component-navbar-balance-wrap__navbar-private">
                                                 <a class="component-navbar-balance-item__navbar-private">R$ 0,00</a>
                                             </li>
                                         </ul>
                                         <ul class="navbar-nav">
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private"
-                                                    href="/account">Conta</a>
+                                            <li class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private" href="/account">Conta</a>
                                             </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private"
-                                                    href="/">Sair</a>
+                                            <li class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private" href="/">Sair</a>
                                             </li>
                                         </ul>
                                     </div>
@@ -665,13 +634,11 @@
             </span>
             <span class="component_private_sidebar ">
                 <div class="component-sidebar_wrapper">
-                    <div
-                        class="sidebar-block__left component-sidebar component-sidebar-with-navbar component_private_navbar editor__component-wrapper">
+                    <div class="sidebar-block__left component-sidebar component-sidebar-with-navbar component_private_navbar editor__component-wrapper">
                         <div class="component-sidebar__menu">
                             <div class="component-sidebar__menu-logo">
                                 <a href="/painel" class="component-navbar-brand component-sidebar__menu-brand">
-                                    <h3><strong style="font-weight: bold">SMM </strong><span
-                                            style="font-weight: bold">SOCIAIS</strong></span></h3>
+                                    <h3><strong style="font-weight: bold">SMM </strong><span style="font-weight: bold">SOCIAIS</strong></span></h3>
                                 </a>
                             </div>
                             <ul class="sidebar-block__left-menu editor__component-wrapper">
@@ -732,10 +699,8 @@
                                             <form id="pix-payment-form" class="component_form_group">
                                                 <div class="">
                                                     <div class="form-group">
-                                                        <label for="method" class="control-label">Método de
-                                                            pagamento</label>
-                                                        <select class="form-control" id="method"
-                                                            name="AddFoundsForm[type]" id="order_type">
+                                                        <label for="method" class="control-label">Método de pagamento</label>
+                                                        <select class="form-control" id="method" name="AddFoundsForm[type]">
                                                             <option value="189079">PIX</option>
                                                         </select>
                                                     </div>
@@ -743,9 +708,7 @@
                                                         <div id="amount-fields">
                                                             <div>
                                                                 <label for="amount" class="control-label">Valor</label>
-                                                                <input type="text" inputmode="decimal"
-                                                                    class="form-control" name="AddFoundsForm[amount]"
-                                                                    id="amount" placeholder="Ex: 50.00" required>
+                                                                <input type="text" inputmode="decimal" class="form-control" name="AddFoundsForm[amount]" id="amount" placeholder="Ex: 50.00" required>
                                                                 <small class="form-text text-muted">
                                                                     Valor mínimo: R$ 1,00 | Valor máximo: R$ 1.000,00
                                                                 </small>
@@ -753,12 +716,10 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <input type="hidden" name="_csrf"
-                                                    value="7YD38vIR1P1Z8zKAC7yPnawd_t3iIdxZ2jIBQoAlwdSL2LWLmVqxlByLANhN983RlSuWkI5-qAG8YTcoxm-AsA==">
+                                                <input type="hidden" name="_csrf" value="7YD38vIR1P1Z8zKAC7yPnawd_t3iIdxZ2jIBQoAlwdSL2LWLmVqxlByLANhN983RlSuWkI5-qAG8YTcoxm-AsA==">
                                                 <div class="component_button_submit">
                                                     <div class="">
-                                                        <button type="submit"
-                                                            class="btn btn-block btn-big-primary">Gerar QR Code PIX</button>
+                                                        <button type="submit" class="btn btn-block btn-big-primary">Gerar QR Code PIX</button>
                                                     </div>
                                                 </div>
                                             </form>
@@ -928,11 +889,7 @@
             // mostra um overlay loader enquanto aguarda
             const loader = document.createElement('div');
             loader.id = 'page-loader';
-            loader.innerHTML = `
-            <div style="text-align:center">
-              <div class="spinner-border" role="status" aria-hidden="true"></div>
-              <div style="margin-top:8px">Carregando dados...</div>
-            </div>`;
+            loader.innerHTML = '<div style="text-align:center"><div class="spinner-border" role="status" aria-hidden="true"></div><div style="margin-top:8px">Carregando dados...</div></div>';
             document.body.appendChild(loader);
 
             // --- helper para garantir que loadUserBalance() retorne uma Promise ---
@@ -1007,8 +964,8 @@
             function initializePageFunctions() {
                 return new Promise((resolve) => {
                     try {
-                        // Executar fillAndHideInput (função que estava sendo chamada automaticamente)
-                        fillAndHideInput();
+                        // Removida a chamada para fillAndHideInput que estava causando erro
+                        // Esta função não é mais necessária para o funcionamento do sistema PIX
                         resolve();
                     } catch (error) {
                         console.error('Erro na inicialização das funções da página:', error);
