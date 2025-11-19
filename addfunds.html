@@ -226,232 +226,322 @@
         }
 
         // Variáveis globais para controle do monitoramento
-        let paymentCheckInterval = null;
-        let currentPaymentId = null;
-        let countdownTimer = null;
-        let paymentExpiryTime = null;
+  let paymentCheckInterval = null;
+  let countdownTimer = null;
+  let paymentExpiryTime = null;
+  let currentPaymentId = null;
 
         // Função para gerar pagamento PIX via API
-        async function gerarPagamentoPix(amount) {
-            const token = loadToken();
-            
-            if (!token) {
-                alert('Token não encontrado. Faça login novamente.');
-                return null;
+  // usa sua função loadToken() existente
+
+  // --- Gerar pagamento PIX e exibir QR ---
+  async function gerarPagamentoPix(amount) {
+    const token = loadToken();
+    if (!token) {
+      alert('Token não encontrado. Faça login novamente.');
+      return null;
+    }
+
+    try {
+      const response = await fetch('https://smmsociais.com/api/gerar-pagamento', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ amount, token })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao gerar pagamento');
+      }
+
+      // Exibir QR: base64 e/ou texto
+      if (data.qr_code_base64) {
+        const img = document.getElementById('qr-code-img');
+        if (img) {
+          img.src = `data:image/png;base64,${data.qr_code_base64}`;
+          img.style.display = 'block';
+        }
+      }
+      if (data.qr_code) {
+        const qrTextEl = document.getElementById('qr-code-text');
+        if (qrTextEl) {
+          qrTextEl.textContent = data.qr_code;
+        }
+      }
+
+      // iniciar monitoramento
+      if (data.payment_id) {
+        iniciarMonitoramentoPagamento(String(data.payment_id), Number(amount));
+      } else {
+        console.warn('Gerado pagamento mas sem payment_id retornado:', data);
+      }
+
+      // mostrar bloco QR
+      const block60 = document.getElementById('block_60');
+      const qrContainer = document.getElementById('qr-code-container');
+      if (block60) block60.style.display = 'block';
+      if (qrContainer) qrContainer.style.display = 'block';
+
+      return data;
+    } catch (error) {
+      console.error('Erro ao gerar pagamento PIX:', error);
+      alert('Erro ao gerar pagamento: ' + (error.message || error));
+      return null;
+    }
+  }
+
+  // --- Verificar status do pagamento (tenta /api/check_payment, se falhar tenta /api/confirmar-pagamento como fallback) ---
+  async function verificarStatusPagamento(paymentId) {
+    const token = loadToken();
+    if (!token) {
+      console.error('Token não encontrado para verificar pagamento');
+      return null;
+    }
+
+    // helper para processar resposta e extrair status
+    const parseStatusFromJson = (json) => {
+      // Se a rota custom retornar { status: "completed" } ou { status: "approved" }
+      if (json && typeof json.status === 'string') return json.status;
+
+      // Se a rota retornar o objeto de pagamento do Mercado Pago (payment.status)
+      if (json && typeof json !== 'string' && json.status) return json.status;
+
+      // Em caso de retorno custom como { deposito: { status: ... } }
+      if (json && json.deposito && typeof json.deposito.status === 'string') return json.deposito.status;
+
+      // fallback null
+      return null;
+    };
+
+    // tenta rota recomendada primeiro
+    try {
+      const urlsToTry = [
+        `https://smmsociais.com/api/check_payment?payment_id=${encodeURIComponent(paymentId)}`,
+        `https://smmsociais.com/api/confirmar-pagamento?payment_id=${encodeURIComponent(paymentId)}` // fallback
+      ];
+
+      for (const url of urlsToTry) {
+        try {
+          const resp = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             }
+          });
 
-            try {
-                const response = await fetch('https://smmsociais.com/api/gerar-pagamento', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        amount: amount,
-                        token: token
-                    })
-                });
+          // se 404/405, tenta próxima URL
+          if (resp.status === 404 || resp.status === 405) {
+            console.info('Endpoint não disponível, tentando fallback:', url);
+            continue;
+          }
 
-                const data = await response.json();
+          // tenta extrair JSON
+          const json = await resp.json().catch(() => null);
 
-                if (!response.ok) {
-                    throw new Error(data.error || 'Erro ao gerar pagamento');
-                }
+          // se a rota devolver algo útil
+          const status = parseStatusFromJson(json);
+          if (status) {
+            return status; // ex: 'approved', 'completed', 'pending', 'cancelled', etc
+          }
 
-                return data;
-            } catch (error) {
-                console.error('Erro ao gerar pagamento PIX:', error);
-                alert('Erro ao gerar pagamento: ' + error.message);
-                return null;
-            }
+          // Em algumas implementações a rota retorna { status: 'completed' } dentro de outro objeto
+          // Se não conseguir extrair, mas a rota for ok, devolve o json inteiro para posterior parsing
+          return json;
+        } catch (innerErr) {
+          console.warn('Erro ao chamar endpoint de verificação:', innerErr);
+          // tenta próxima URL no loop
         }
+      }
 
-        // Função para verificar status do pagamento
-        async function verificarStatusPagamento(paymentId) {
-            const token = loadToken();
-            
-            if (!token) {
-                console.error('Token não encontrado para verificar pagamento');
-                return null;
-            }
+      // se chegou aqui, nenhuma rota respondeu corretamente
+      return null;
+    } catch (error) {
+      console.error('Erro geral ao verificar status do pagamento:', error);
+      return null;
+    }
+  }
 
-            try {
-                const response = await fetch(`https://smmsociais.com/api/confirmar-pagamento?payment_id=${paymentId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+  // --- Monitoramento real-time ---
 
-                if (!response.ok) {
-                    throw new Error('Erro ao verificar status do pagamento');
-                }
 
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error('Erro ao verificar status do pagamento:', error);
-                return null;
-            }
+  function iniciarMonitoramentoPagamento(paymentId, amount) {
+    // segurança: limpar monitoramento anterior
+    pararMonitoramentoPagamento();
+
+    currentPaymentId = paymentId;
+    paymentExpiryTime = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
+    iniciarContadorRegressivo();
+
+    // verificação imediata e depois em intervalos
+    (async () => {
+      const status = await verificarStatusPagamento(paymentId);
+      atualizarStatusPagamento(status, amount);
+    })();
+
+    paymentCheckInterval = setInterval(async () => {
+      const status = await verificarStatusPagamento(paymentId);
+      atualizarStatusPagamento(status, amount);
+    }, 5000); // 5s
+  }
+
+  function pararMonitoramentoPagamento() {
+    if (paymentCheckInterval) {
+      clearInterval(paymentCheckInterval);
+      paymentCheckInterval = null;
+    }
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    paymentExpiryTime = null;
+    currentPaymentId = null;
+  }
+
+  // --- Atualizar UI com base no status retornado ---
+  // status pode ser: string (ex: 'approved','completed','pending') ou um objeto JSON (fallback)
+  async function atualizarStatusPagamento(status, amount) {
+    const statusElement = document.getElementById('payment-status');
+    const countdownElement = document.getElementById('countdown-timer');
+
+    // normaliza status para string
+    let statusStr = null;
+    if (!status) {
+      statusStr = null;
+    } else if (typeof status === 'string') {
+      statusStr = status.toLowerCase();
+    } else if (typeof status === 'object') {
+      // tenta extrair campo comum
+      statusStr = (status.status || status.payment_status || status.result || null);
+      if (statusStr) statusStr = String(statusStr).toLowerCase();
+    }
+
+    // Interpreta possíveis valores:
+    // - 'approved' ou 'completed' => pagamento confirmado
+    // - 'pending' / 'in_process' => aguardando
+    // - 'rejected' / 'cancelled' => falhou
+    const confirmado = statusStr === 'approved' || statusStr === 'completed' || statusStr === 'paid';
+    const pendente = statusStr === 'pending' || statusStr === 'in_process' || statusStr === 'in_mediation' || !statusStr;
+    const rejeitado = statusStr === 'rejected' || statusStr === 'cancelled' || statusStr === 'error' || statusStr === 'refunded';
+
+    if (confirmado) {
+      if (statusElement) {
+        statusElement.innerHTML = `
+          <div class="payment-success">
+            <i class="fas fa-check-circle"></i> Pagamento confirmado! 
+            R$ ${Number(amount).toFixed(2)} foram adicionados à sua conta.
+          </div>
+        `;
+      }
+
+      // parar monitoramento
+      pararMonitoramentoPagamento();
+
+      // forçar recarregar saldo do usuário (sua função existente)
+      try { await loadUserBalance(); } catch(e){ console.warn('Erro ao recarregar saldo após confirmação', e); }
+
+      // mostrar botão novo pagamento se houver
+      const newBtn = document.getElementById('new-payment-btn');
+      if (newBtn) newBtn.style.display = 'block';
+
+      if (countdownElement) countdownElement.style.display = 'none';
+      return;
+    }
+
+    if (rejeitado) {
+      if (statusElement) {
+        statusElement.innerHTML = `
+          <div class="payment-error">
+            <i class="fas fa-exclamation-triangle"></i> Pagamento não autorizado ou cancelado. 
+            Se foi um erro, gere um novo pagamento.
+          </div>
+        `;
+      }
+      pararMonitoramentoPagamento();
+      const newBtn = document.getElementById('new-payment-btn');
+      if (newBtn) newBtn.style.display = 'block';
+      return;
+    }
+
+    // se ainda pendente / desconhecido
+    if (statusElement) {
+      statusElement.innerHTML = `
+        <div class="payment-processing">
+          <span class="spinner-border spinner-border-sm" role="status"></span>
+          Aguardando confirmação do pagamento...
+        </div>
+      `;
+    }
+  }
+
+  // --- Contador regressivo ---
+  function iniciarContadorRegressivo() {
+    const countdownElement = document.getElementById('countdown-timer');
+    if (!countdownElement) return;
+
+    countdownTimer = setInterval(() => {
+      const now = new Date();
+      const timeLeft = paymentExpiryTime - now;
+
+      if (timeLeft <= 0) {
+        countdownElement.innerHTML = 'Tempo esgotado! QR Code expirado.';
+        countdownElement.className = 'countdown-timer text-danger';
+        pararMonitoramentoPagamento();
+        const statusElement = document.getElementById('payment-status');
+        if (statusElement) {
+          statusElement.innerHTML = `
+            <div class="payment-error">
+              <i class="fas fa-exclamation-triangle"></i> 
+              QR Code expirado. Por favor, gere um novo pagamento.
+            </div>
+          `;
         }
+        const newBtn = document.getElementById('new-payment-btn');
+        if (newBtn) newBtn.style.display = 'block';
+        return;
+      }
 
-        // Função para monitorar pagamento em tempo real
-        function iniciarMonitoramentoPagamento(paymentId, amount) {
-            currentPaymentId = paymentId;
-            
-            // Configurar tempo de expiração (30 minutos)
-            paymentExpiryTime = new Date(Date.now() + 30 * 60 * 1000);
-            iniciarContadorRegressivo();
+      const minutes = Math.floor(timeLeft / 60000);
+      const seconds = Math.floor((timeLeft % 60000) / 1000);
+      countdownElement.innerHTML = `
+        Tempo restante para pagamento: 
+        <span class="text-danger">${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}</span>
+      `;
+    }, 1000);
+  }
 
-            // Iniciar verificação periódica
-            paymentCheckInterval = setInterval(async () => {
-                const status = await verificarStatusPagamento(paymentId);
-                
-                if (status) {
-                    atualizarStatusPagamento(status, amount);
-                }
-            }, 5000); // Verificar a cada 5 segundos
+  // --- Copiar Pix (mantive a sua função) ---
+  function copiarCodigoPix() {
+    const codigoPix = document.getElementById('qr-code-text')?.textContent || '';
+    navigator.clipboard.writeText(codigoPix).then(function() {
+      const copyBtn = document.querySelector('.qr-code-copy-btn');
+      if (!copyBtn) return;
+      const originalText = copyBtn.textContent;
+      copyBtn.textContent = 'Copiado!';
+      copyBtn.className = 'btn btn-success qr-code-copy-btn';
+      setTimeout(() => {
+        copyBtn.textContent = originalText;
+        copyBtn.className = 'btn btn-outline-secondary qr-code-copy-btn';
+      }, 2000);
+    }, function(err) {
+      console.error('Erro ao copiar código PIX: ', err);
+      alert('Erro ao copiar código PIX. Tente novamente.');
+    });
+  }
 
-            // Também verificar imediatamente
-            verificarStatusPagamento(paymentId).then(status => {
-                if (status) {
-                    atualizarStatusPagamento(status, amount);
-                }
-            });
-        }
-
-        // Função para atualizar a interface com o status do pagamento
-        function atualizarStatusPagamento(status, amount) {
-            const statusElement = document.getElementById('payment-status');
-            const countdownElement = document.getElementById('countdown-timer');
-            
-            // Verificar se o pagamento foi confirmado
-            const pagamentoConfirmado = status.acoes && status.acoes.some(acao => {
-                // Aqui você precisa ajustar a lógica conforme a estrutura real da resposta
-                // da API de confirmação de pagamento
-                return acao.status === 'completed' || acao.validadas > 0;
-            });
-
-            if (pagamentoConfirmado) {
-                // Pagamento confirmado
-                statusElement.innerHTML = `
-                    <div class="payment-success">
-                        <i class="fas fa-check-circle"></i> Pagamento confirmado! 
-                        R$ ${amount.toFixed(2)} foram adicionados à sua conta.
-                    </div>
-                `;
-                
-                // Parar o monitoramento
-                pararMonitoramentoPagamento();
-                
-                // Atualizar saldo
-                loadUserBalance();
-                
-                // Mostrar botão para novo pagamento
-                document.getElementById('new-payment-btn').style.display = 'block';
-                
-                if (countdownElement) {
-                    countdownElement.style.display = 'none';
-                }
-            } else {
-                // Pagamento ainda pendente
-                statusElement.innerHTML = `
-                    <div class="payment-processing">
-                        <span class="spinner-border spinner-border-sm" role="status"></span>
-                        Aguardando confirmação do pagamento...
-                    </div>
-                `;
-            }
-        }
-
-        // Função para parar o monitoramento
-        function pararMonitoramentoPagamento() {
-            if (paymentCheckInterval) {
-                clearInterval(paymentCheckInterval);
-                paymentCheckInterval = null;
-            }
-            if (countdownTimer) {
-                clearInterval(countdownTimer);
-                countdownTimer = null;
-            }
-            currentPaymentId = null;
-        }
-
-        // Função para iniciar contador regressivo
-        function iniciarContadorRegressivo() {
-            const countdownElement = document.getElementById('countdown-timer');
-            if (!countdownElement) return;
-
-            countdownTimer = setInterval(() => {
-                const now = new Date();
-                const timeLeft = paymentExpiryTime - now;
-                
-                if (timeLeft <= 0) {
-                    // Tempo esgotado
-                    countdownElement.innerHTML = 'Tempo esgotado! QR Code expirado.';
-                    countdownElement.className = 'countdown-timer text-danger';
-                    pararMonitoramentoPagamento();
-                    
-                    const statusElement = document.getElementById('payment-status');
-                    statusElement.innerHTML = `
-                        <div class="payment-error">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            QR Code expirado. Por favor, gere um novo pagamento.
-                        </div>
-                    `;
-                    
-                    document.getElementById('new-payment-btn').style.display = 'block';
-                    return;
-                }
-                
-                const minutes = Math.floor(timeLeft / 60000);
-                const seconds = Math.floor((timeLeft % 60000) / 1000);
-                
-                countdownElement.innerHTML = `
-                    Tempo restante para pagamento: 
-                    <span class="text-danger">${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}</span>
-                `;
-            }, 1000);
-        }
-
-        // Função para copiar código PIX
-        function copiarCodigoPix() {
-            const codigoPix = document.getElementById('qr-code-text').textContent;
-            navigator.clipboard.writeText(codigoPix).then(function() {
-                // Mostrar feedback visual
-                const copyBtn = document.querySelector('.qr-code-copy-btn');
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = 'Copiado!';
-                copyBtn.className = 'btn btn-success qr-code-copy-btn';
-                
-                setTimeout(() => {
-                    copyBtn.textContent = originalText;
-                    copyBtn.className = 'btn btn-outline-secondary qr-code-copy-btn';
-                }, 2000);
-            }, function(err) {
-                console.error('Erro ao copiar código PIX: ', err);
-                alert('Erro ao copiar código PIX. Tente novamente.');
-            });
-        }
-
-        // Função para iniciar novo pagamento
-        function novoPagamento() {
-            // Limpar estado anterior
-            pararMonitoramentoPagamento();
-            
-            // Esconder seção do QR Code
-            document.getElementById('block_60').style.display = 'none';
-            document.getElementById('qr-code-container').style.display = 'none';
-            
-            // Resetar formulário
-            document.getElementById('pix-payment-form').reset();
-            document.getElementById('new-payment-btn').style.display = 'none';
-            
-            // Rolar para o topo
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+  // --- Novo pagamento (mantive sua função) ---
+  function novoPagamento() {
+    pararMonitoramentoPagamento();
+    document.getElementById('block_60')?.style.display = 'none';
+    document.getElementById('qr-code-container')?.style.display = 'none';
+    document.getElementById('pix-payment-form')?.reset();
+    document.getElementById('new-payment-btn')?.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+        
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
