@@ -6,11 +6,34 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Orders - Concluídas</title>
+    <style>
+        /* Initial Load */
+        body {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 240ms ease;
+        }
+
+        body.loaded {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        #page-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
+        }
+    </style>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <!-- Adicionando Bootstrap CSS adicional para garantir funcionamento -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-   <script>
+    <script>
         // Função para obter o token do localStorage
         function loadToken() {
             return (
@@ -18,8 +41,24 @@
                 localStorage.getItem('token') ||
                 localStorage.getItem('user_token') ||
                 localStorage.getItem('auth') ||
-                getToken()
+                getTokenFromCookie()
             );
+        }
+
+        // Função auxiliar para buscar token nos cookies
+        function getTokenFromCookie() {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; authToken=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+
+            // Tentar outros nomes comuns de token
+            const tokenNames = ['token', 'user_token', 'auth'];
+            for (const name of tokenNames) {
+                const tokenParts = value.split(`; ${name}=`);
+                if (tokenParts.length === 2) return tokenParts.pop().split(';').shift();
+            }
+
+            return null;
         }
 
         // Função para carregar saldo do usuário
@@ -69,6 +108,219 @@
                 }
                 return 0;
             }
+        }
+
+        // Função para determinar o status baseado na URL
+        function getStatusFromURL() {
+            let path = window.location.pathname.replace(/\/$/, ""); // remove barra final
+
+            const statusMap = {
+                '/orders/pending': 'pending',
+                '/orders/inprogress': 'progress',
+                '/orders/completed': 'completed',
+                '/orders/partial': 'partial',
+                '/orders/processing': 'processing',
+                '/orders/canceled': 'canceled',
+                '/orders': 'todos'
+            };
+
+            return statusMap[path] || 'completed'; // Default para completed nesta página
+        }
+
+        // Função para carregar as ordens da API
+        function loadOrders() {
+            return new Promise(async (resolve) => {
+                try {
+                    const token = loadToken();
+
+                    if (!token) {
+                        console.error('Token de autenticação não encontrado');
+                        document.getElementById('orders-tbody').innerHTML =
+                            '<tr><td colspan="9" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
+                        resolve([]);
+                        return;
+                    }
+
+                    const status = getStatusFromURL();
+                    const url = `/api/orders${status !== 'todos' ? `?status=${status}` : ''}`;
+
+                    console.log('Carregando ordens concluídas com URL:', url, 'Status:', status);
+
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            localStorage.removeItem('authToken');
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user_token');
+                            throw new Error('Token inválido ou expirado. Faça login novamente.');
+                        }
+                        throw new Error(`Erro na requisição: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('Dados recebidos:', data);
+
+                    // Suporte para diferentes estruturas de resposta da API
+                    const orders = data.acoes || data.orders || data.data || data;
+                    displayOrders(Array.isArray(orders) ? orders : []);
+                    updateActiveTab();
+                    resolve(orders);
+
+                } catch (error) {
+                    console.error('Erro ao carregar ordens:', error);
+                    document.getElementById('orders-tbody').innerHTML =
+                        `<tr><td colspan="9" class="text-center text-danger">${error.message}</td></tr>`;
+                    resolve([]);
+                }
+            });
+        }
+
+        // Função para exibir as ordens na tabela
+        function displayOrders(orders) {
+            const tbody = document.getElementById('orders-tbody');
+
+            if (!orders || orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma ordem concluída encontrada</td></tr>';
+                return;
+            }
+
+            // Ordenar ordens por data de conclusão (mais recentes primeiro)
+            const sortedOrders = orders.sort((a, b) => {
+                const dateA = new Date(a.dataConclusao || a.completedAt || a.updatedAt || a.dataCriacao);
+                const dateB = new Date(b.dataConclusao || b.completedAt || b.updatedAt || b.dataCriacao);
+                return dateB - dateA;
+            });
+
+            tbody.innerHTML = sortedOrders.map(order => {
+                // Formatar data
+                const date = new Date(order.dataCriacao || order.createdAt || order.date || order.data);
+                const formattedDate = date.toLocaleDateString('pt-BR');
+                const formattedTime = date.toLocaleTimeString('pt-BR');
+
+                // Calcular valores
+                const quantidade = order.quantidade || order.quantity || 0;
+                const validadas = order.validadas || order.validated || order.completed || quantidade;
+                const restam = Math.max(0, quantidade - validadas);
+
+                // Formatar valor monetário
+                const valor = order.valor || order.value || order.price || 0;
+                const valorFormatado = parseFloat(valor).toFixed(2).replace('.', ',');
+
+                // Tratar link
+                const link = order.link || order.url || '#';
+                const linkDisplay = link && link !== '#' ?
+                    (link.length > 25 ? link.substring(0, 25) + '...' : link) : 'N/A';
+
+                // Tratar serviço
+                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome :
+                    (order.serviceName || order.service || 'Serviço não encontrado');
+
+                return `
+                    <tr class="table-success">
+                        <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : order.id || 'N/A'}</td>
+                        <td data-label="Data">
+                            <span class="nowrap">${formattedDate}</span>
+                            <span class="nowrap">${formattedTime}</span>
+                        </td>
+                        <td data-label="Link" class="table-link">
+                            <a href="${link}" target="_blank" title="${link}" style="${link === '#' ? 'pointer-events: none; color: #6c757d;' : ''}">
+                                ${linkDisplay}
+                            </a>
+                        </td>
+                        <td data-label="Valor">R$ ${valorFormatado}</td>
+                        <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || order.initialCount || 0}</td>
+                        <td data-label="Quantidade">${quantidade}</td>
+                        <td data-label="Serviço" class="table-service" title="${servicoNome}">
+                            ${servicoNome.length > 35 ? servicoNome.substring(0, 35) + '...' : servicoNome}
+                        </td>
+                        <td data-label="Status">
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i>Concluído
+                            </span>
+                        </td>
+                        <td data-label="Restam">${restam}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Função para atualizar a aba ativa
+        function updateActiveTab() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('#status-tabs .nav-link');
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // Função para filtrar ordens localmente
+        function filterOrders(searchTerm) {
+            const rows = document.querySelectorAll('#orders-tbody tr');
+            let hasResults = false;
+            const searchLower = searchTerm.toLowerCase();
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchLower)) {
+                    row.style.display = '';
+                    hasResults = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (!hasResults && searchTerm) {
+                document.getElementById('orders-tbody').innerHTML =
+                    '<tr><td colspan="9" class="text-center">Nenhuma ordem concluída encontrada para: ' + searchTerm + '</td></tr>';
+            }
+        }
+
+        // Função para configurar event listeners após o carregamento
+        function setupEventListeners() {
+            // Adicionar event listeners para os links de filtro
+            const filterLinks = document.querySelectorAll('#status-tabs .nav-link');
+            filterLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const href = this.getAttribute('href');
+
+                    // Redirecionar para a página específica
+                    window.location.href = href;
+                });
+            });
+
+            // Lidar com busca
+            const searchForm = document.getElementById('history-search');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const searchTerm = this.querySelector('input[name="search"]').value.trim();
+
+                    if (searchTerm) {
+                        // Implementar busca local
+                        filterOrders(searchTerm);
+                    } else {
+                        // Recarregar todas as ordens se busca estiver vazia
+                        loadOrders();
+                    }
+                });
+            }
+
+            // Atualização menos frequente para ordens concluídas (a cada 60 segundos)
+            setInterval(() => {
+                loadOrders();
+            }, 60000);
         }
     </script>
 </head>
@@ -375,253 +627,66 @@
     <!-- Adicionando Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script type="text/javascript">
-        // Função para determinar o status baseado na URL
-        function getStatusFromURL() {
-            let path = window.location.pathname.replace(/\/$/, ""); // remove barra final
+    <!-- Script para garantir que a página apareça apenas após todas as APIs terminarem -->
+    <script>
+        (function () {
+            // mostra um overlay loader enquanto aguarda
+            const loader = document.createElement('div');
+            loader.id = 'page-loader';
+            loader.innerHTML = `
+                <div style="text-align:center">
+                    <div class="spinner-border text-success" role="status" aria-hidden="true"></div>
+                    <div style="margin-top:8px">Carregando ordens concluídas...</div>
+                </div>`;
+            document.body.appendChild(loader);
 
-            const statusMap = {
-                '/orders/pending': 'pending',
-                '/orders/inprogress': 'progress',
-                '/orders/completed': 'completed',
-                '/orders/partial': 'partial',
-                '/orders/processing': 'processing',
-                '/orders/canceled': 'canceled',
-                '/orders': 'todos'
-            };
+            // --- opcional: esperar window.load para garantir recursos externos carregados ---
+            const windowLoadPromise = new Promise(resolve => {
+                if (document.readyState === 'complete') return resolve();
+                window.addEventListener('load', resolve);
+            });
 
-            return statusMap[path] || 'completed'; // Default para completed nesta página
-        }
+            // --- Promise principal: saldo + ordens concluídas (+ window.load) ---
+            const saldoPromise = loadUserBalance();
+            const ordersPromise = loadOrders();
 
-        function loadToken() {
-            return (
-                localStorage.getItem('authToken') ||
-                localStorage.getItem('token') ||
-                localStorage.getItem('user_token') ||
-                localStorage.getItem('auth') ||
-                getTokenFromCookie()
-            );
-        }
-
-        // Função auxiliar para buscar token nos cookies
-        function getTokenFromCookie() {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; authToken=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-
-            // Tentar outros nomes comuns de token
-            const tokenNames = ['token', 'user_token', 'auth'];
-            for (const name of tokenNames) {
-                const tokenParts = value.split(`; ${name}=`);
-                if (tokenParts.length === 2) return tokenParts.pop().split(';').shift();
-            }
-
-            return null;
-        }
-
-        // Função para carregar as ordens da API
-        async function loadOrders() {
-            try {
-                const token = loadToken();
-
-                if (!token) {
-                    console.error('Token de autenticação não encontrado');
-                    document.getElementById('orders-tbody').innerHTML =
-                        '<tr><td colspan="9" class="text-center">Erro de autenticação. Faça login novamente.</td></tr>';
-                    // Redirecionar para login se não tiver token
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 2000);
-                    return;
-                }
-
-                const status = getStatusFromURL();
-                const url = `/api/orders${status !== 'todos' ? `?status=${status}` : ''}`;
-
-                console.log('Carregando ordens concluídas com URL:', url, 'Status:', status);
-
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+            Promise.all([saldoPromise, ordersPromise, windowLoadPromise])
+                .then(() => {
+                    // tudo OK (ou tratamos falhas individualmente): mostrar a página
+                    document.body.classList.add('loaded');
+                    
+                    // Configurar event listeners após o carregamento
+                    setupEventListeners();
+                })
+                .catch(err => {
+                    // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
+                    console.error('Erro ao carregar dados principais:', err);
+                    document.body.classList.add('loaded');
+                    const tbody = document.getElementById('orders-tbody');
+                    if (tbody && tbody.innerHTML.includes('Carregando ordens concluídas')) {
+                        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Erro ao carregar ordens concluídas. Tente novamente mais tarde.</td></tr>';
                     }
+                    
+                    // Configurar event listeners mesmo em caso de erro
+                    setupEventListeners();
+                })
+                .finally(() => {
+                    // remover loader visual
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
                 });
 
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        localStorage.removeItem('authToken');
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user_token');
-                        throw new Error('Token inválido ou expirado. Faça login novamente.');
-                    }
-                    throw new Error(`Erro na requisição: ${response.status}`);
+            // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
+            setTimeout(() => {
+                if (!document.body.classList.contains('loaded')) {
+                    console.warn('Fallback: exibindo página após timeout.');
+                    document.body.classList.add('loaded');
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                    
+                    // Configurar event listeners no fallback
+                    setupEventListeners();
                 }
-
-                const data = await response.json();
-                console.log('Dados recebidos:', data);
-
-                // Suporte para diferentes estruturas de resposta da API
-                const orders = data.acoes || data.orders || data.data || data;
-                displayOrders(Array.isArray(orders) ? orders : []);
-                updateActiveTab();
-
-            } catch (error) {
-                console.error('Erro ao carregar ordens:', error);
-                document.getElementById('orders-tbody').innerHTML =
-                    `<tr><td colspan="9" class="text-center text-danger">${error.message}</td></tr>`;
-            }
-        }
-
-        // Função para exibir as ordens na tabela
-        function displayOrders(orders) {
-            const tbody = document.getElementById('orders-tbody');
-
-            if (!orders || orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma ordem concluída encontrada</td></tr>';
-                return;
-            }
-
-            // Ordenar ordens por data de conclusão (mais recentes primeiro)
-            const sortedOrders = orders.sort((a, b) => {
-                const dateA = new Date(a.dataConclusao || a.completedAt || a.updatedAt || a.dataCriacao);
-                const dateB = new Date(b.dataConclusao || b.completedAt || b.updatedAt || b.dataCriacao);
-                return dateB - dateA;
-            });
-
-            tbody.innerHTML = sortedOrders.map(order => {
-                // Formatar data
-                const date = new Date(order.dataCriacao || order.createdAt || order.date || order.data);
-                const formattedDate = date.toLocaleDateString('pt-BR');
-                const formattedTime = date.toLocaleTimeString('pt-BR');
-
-                // Calcular valores
-                const quantidade = order.quantidade || order.quantity || 0;
-                const validadas = order.validadas || order.validated || order.completed || quantidade;
-                const restam = Math.max(0, quantidade - validadas);
-
-                // Formatar valor monetário
-                const valor = order.valor || order.value || order.price || 0;
-                const valorFormatado = parseFloat(valor).toFixed(2).replace('.', ',');
-
-                // Tratar link
-                const link = order.link || order.url || '#';
-                const linkDisplay = link && link !== '#' ?
-                    (link.length > 25 ? link.substring(0, 25) + '...' : link) : 'N/A';
-
-                // Tratar serviço
-                const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome :
-                    (order.serviceName || order.service || 'Serviço não encontrado');
-
-                return `
-                    <tr class="table-success">
-                        <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : order.id || 'N/A'}</td>
-                        <td data-label="Data">
-                            <span class="nowrap">${formattedDate}</span>
-                            <span class="nowrap">${formattedTime}</span>
-                        </td>
-                        <td data-label="Link" class="table-link">
-                            <a href="${link}" target="_blank" title="${link}" style="${link === '#' ? 'pointer-events: none; color: #6c757d;' : ''}">
-                                ${linkDisplay}
-                            </a>
-                        </td>
-                        <td data-label="Valor">R$ ${valorFormatado}</td>
-                        <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || order.initialCount || 0}</td>
-                        <td data-label="Quantidade">${quantidade}</td>
-                        <td data-label="Serviço" class="table-service" title="${servicoNome}">
-                            ${servicoNome.length > 35 ? servicoNome.substring(0, 35) + '...' : servicoNome}
-                        </td>
-                        <td data-label="Status">
-                            <span class="badge bg-success">
-                                <i class="fas fa-check-circle me-1"></i>Concluído
-                            </span>
-                        </td>
-                        <td data-label="Restam">${restam}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        // Função para atualizar a aba ativa
-        function updateActiveTab() {
-            const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('#status-tabs .nav-link');
-
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
-                }
-            });
-        }
-
-        // Prevenir comportamento padrão dos links de filtro
-        document.addEventListener('DOMContentLoaded', function () {
-
-                        loadUserBalance();
-                        
-            // Atualizar aba ativa
-            updateActiveTab();
-
-            // Carregar ordens concluídas
-            loadOrders();
-
-            // Adicionar event listeners para os links de filtro
-            const filterLinks = document.querySelectorAll('#status-tabs .nav-link');
-            filterLinks.forEach(link => {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const href = this.getAttribute('href');
-
-                    // Redirecionar para a página específica
-                    window.location.href = href;
-                });
-            });
-
-            // Lidar com busca
-            const searchForm = document.getElementById('history-search');
-            if (searchForm) {
-                searchForm.addEventListener('submit', function (e) {
-                    e.preventDefault();
-                    const searchTerm = this.querySelector('input[name="search"]').value.trim();
-
-                    if (searchTerm) {
-                        // Implementar busca local
-                        filterOrders(searchTerm);
-                    } else {
-                        // Recarregar todas as ordens se busca estiver vazia
-                        loadOrders();
-                    }
-                });
-            }
-
-            // Atualização menos frequente para ordens concluídas (a cada 60 segundos)
-            setInterval(() => {
-                loadOrders();
-            }, 60000);
-        });
-
-        // Função para filtrar ordens localmente
-        function filterOrders(searchTerm) {
-            const rows = document.querySelectorAll('#orders-tbody tr');
-            let hasResults = false;
-            const searchLower = searchTerm.toLowerCase();
-
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(searchLower)) {
-                    row.style.display = '';
-                    hasResults = true;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-
-            if (!hasResults && searchTerm) {
-                document.getElementById('orders-tbody').innerHTML =
-                    '<tr><td colspan="9" class="text-center">Nenhuma ordem concluída encontrada para: ' + searchTerm + '</td></tr>';
-            }
-        }
+            }, 15000); // 15s — opcional, ajuste conforme necessidade
+        })();
     </script>
 </body>
 
