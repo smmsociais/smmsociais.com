@@ -9,11 +9,25 @@
 
     <!-- CSS para controle de visibilidade da página -->
     <style>
-        body { visibility: hidden; opacity: 0; transition: opacity 240ms ease; }
-        body.loaded { visibility: visible; opacity: 1; }
+        body {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 240ms ease;
+        }
+
+        body.loaded {
+            visibility: visible;
+            opacity: 1;
+        }
+
         #page-loader {
-          position: fixed; inset: 0; display:flex; align-items:center; justify-content:center;
-          background: rgba(255,255,255,0.9); z-index: 9999;
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
         }
     </style>
 
@@ -85,7 +99,7 @@
         async function loadServices() {
             try {
                 const token = loadToken();
-                
+
                 if (!token) {
                     console.error("Token não encontrado para carregar serviços.");
                     return [];
@@ -105,7 +119,7 @@
 
                 const servicesData = await response.json();
                 console.log('Serviços carregados:', servicesData);
-                
+
                 return servicesData;
             } catch (error) {
                 console.error('Erro ao carregar serviços:', error);
@@ -117,7 +131,7 @@
         async function loadTickets() {
             try {
                 const token = loadToken();
-                
+
                 if (!token) {
                     console.error("Token não encontrado para carregar tickets.");
                     return [];
@@ -137,10 +151,10 @@
 
                 const ticketsData = await response.json();
                 console.log('Tickets carregados:', ticketsData);
-                
+
                 // Atualizar a tabela de tickets
                 updateTicketsTable(ticketsData);
-                
+
                 return ticketsData;
             } catch (error) {
                 console.error('Erro ao carregar tickets:', error);
@@ -151,7 +165,7 @@
         // Função para atualizar a tabela de tickets
         function updateTicketsTable(tickets) {
             const tbody = document.querySelector('.tickets-list table tbody');
-            
+
             if (!tbody || !tickets || tickets.length === 0) {
                 return;
             }
@@ -240,10 +254,10 @@
                             <nav class="navbar navbar-expand-lg navbar-light">
                                 <div class="navbar-private__header">
                                     <div class="sidebar-block__top-brand">
-                                        <a href="/" class="component-navbar-brand component-navbar-public-brand">
-                                            <h3><strong style="font-weight: bold">✅</strong><span
+                                        <a href="/painel" class="component-navbar-brand component-navbar-public-brand">
+                                            <h3><strong style="font-weight: bold"></strong><span
                                                     style="color: var(--color-id-117)"><strong
-                                                        style="font-weight: bold">erified</strong></span></h3>
+                                                        style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
                                         </a>
                                     </div>
                                     <button class="navbar-toggler" type="button" data-toggle="collapse"
@@ -267,7 +281,7 @@
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
                                                     href="/services">
                                                     Serviços
                                                 </a>
@@ -283,14 +297,7 @@
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/addfunds">
-                                                    ADICIONAR SALDO (DEPOSITAR PIX)
-                                                </a>
-                                            </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/como-usar">
-                                                    Aprenda a colocar saldo e usar o painel clicando aqui
+                                                    Adicionar Saldo
                                                 </a>
                                             </li>
                                             <li
@@ -309,7 +316,7 @@
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/suporte">
                                                     Suporte
                                                 </a>
@@ -346,10 +353,9 @@
                         class="sidebar-block__left component-sidebar component-sidebar-with-navbar component_private_navbar editor__component-wrapper">
                         <div class="component-sidebar__menu">
                             <div class="component-sidebar__menu-logo">
-                                <a href="/bp" class="component-navbar-brand component-sidebar__menu-brand">
-                                    <h3><strong style="font-weight: bold">✅</strong><span
-                                            style="color: var(--color-id-117)"><strong
-                                                style="font-weight: bold">erified</strong></span></h3>
+                                <a href="/painel" class="component-navbar-brand component-sidebar__menu-brand">
+                                    <h3><strong style="font-weight: bold">SMM </strong><span
+                                            style="font-weight: bold">SOCIAIS</strong></span></h3>
                                 </a>
                             </div>
                             <ul class="sidebar-block__left-menu editor__component-wrapper">
@@ -358,7 +364,7 @@
                                         Novo pedido
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item ">
+                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
                                     <a class="component-sidebar__menu-item-link" href="/services">
                                         Serviços
                                     </a>
@@ -370,12 +376,7 @@
                                 </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/addfunds">
-                                        ADICIONAR SALDO (DEPOSITAR PIX)
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/como-usar">
-                                        Aprenda a colocar saldo e usar o painel clicando aqui
+                                        Adicionar Saldo
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item ">
@@ -388,7 +389,7 @@
                                         Mass order
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
+                                <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/suporte">
                                         Suporte
                                     </a>
@@ -541,145 +542,145 @@
     <script>
         /* script para garantir que a página apareça apenas após todas as APIs terminarem */
         (function () {
-          // mostra um overlay loader enquanto aguarda
-          const loader = document.createElement('div');
-          loader.id = 'page-loader';
-          loader.innerHTML = `
+            // mostra um overlay loader enquanto aguarda
+            const loader = document.createElement('div');
+            loader.id = 'page-loader';
+            loader.innerHTML = `
             <div style="text-align:center">
               <div class="spinner-border" role="status" aria-hidden="true"></div>
               <div style="margin-top:8px">Carregando dados de suporte...</div>
             </div>`;
-          document.body.appendChild(loader);
+            document.body.appendChild(loader);
 
-          // --- helper para garantir que loadUserBalance() retorne uma Promise ---
-          function callOrWrapLoadUserBalance() {
-            // se existe a função definida no outro script e ela é async, reaproveite
-            if (typeof window.loadUserBalance === 'function') {
-              try {
-                const r = window.loadUserBalance(); // função async retorna Promise
-                return Promise.resolve(r);
-              } catch (err) {
-                return Promise.reject(err);
-              }
-            }
-            // fallback: tentar fetch diretamente (ajuste URL se necessário)
-            return fetch('https://smmsociais.com/api/get_saldo', { method: 'GET' })
-              .then(res => res.ok ? res.json() : Promise.reject(new Error('Erro saldo')))
-              .then(json => {
-                // atualiza DOM (mesma lógica do seu script)
-                const formattedBalance = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-                  .format(json.saldo || 0);
-                const el = document.querySelector('.component-navbar-balance-item__navbar-private');
-                if (el) el.textContent = formattedBalance;
-                return json;
-              })
-              .catch(err => {
-                console.error('Erro ao carregar saldo (fallback):', err);
-                const el = document.querySelector('.component-navbar-balance-item__navbar-private');
-                if (el) el.textContent = 'R$ 0,00';
-                return { saldo: 0 };
-              });
-          }
-
-          // --- helper para carregar serviços e garantir Promise ---
-          function loadServicesAndRender() {
-            // se já existe a função loadServices no outro script e ela retornar Promise, tente usá-la
-            if (typeof window.loadServices === 'function') {
-              try {
-                const r = window.loadServices();
-                // se a função não retornar promise (undefined), faz fallback abaixo:
-                if (r && typeof r.then === 'function') return Promise.resolve(r);
-              } catch (e) {
-                // ignore e faça fallback
-              }
+            // --- helper para garantir que loadUserBalance() retorne uma Promise ---
+            function callOrWrapLoadUserBalance() {
+                // se existe a função definida no outro script e ela é async, reaproveite
+                if (typeof window.loadUserBalance === 'function') {
+                    try {
+                        const r = window.loadUserBalance(); // função async retorna Promise
+                        return Promise.resolve(r);
+                    } catch (err) {
+                        return Promise.reject(err);
+                    }
+                }
+                // fallback: tentar fetch diretamente (ajuste URL se necessário)
+                return fetch('https://smmsociais.com/api/get_saldo', { method: 'GET' })
+                    .then(res => res.ok ? res.json() : Promise.reject(new Error('Erro saldo')))
+                    .then(json => {
+                        // atualiza DOM (mesma lógica do seu script)
+                        const formattedBalance = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+                            .format(json.saldo || 0);
+                        const el = document.querySelector('.component-navbar-balance-item__navbar-private');
+                        if (el) el.textContent = formattedBalance;
+                        return json;
+                    })
+                    .catch(err => {
+                        console.error('Erro ao carregar saldo (fallback):', err);
+                        const el = document.querySelector('.component-navbar-balance-item__navbar-private');
+                        if (el) el.textContent = 'R$ 0,00';
+                        return { saldo: 0 };
+                    });
             }
 
-            // fallback/implementação direta (garante que a promise será resolvida mesmo em erro)
-            return fetch('https://smmsociais.com/api/servico')
-              .then(response => {
-                if (!response.ok) throw new Error('Erro ao carregar serviços da API');
-                return response.json();
-              })
-              .then(data => {
-                // reutiliza as funções de render (se existirem) para integrar com seu layout atual
-                if (typeof window.renderServices === 'function') window.renderServices(data);
-                if (typeof window.renderCategories === 'function') window.renderCategories(data);
-                return data;
-              })
-              .catch(err => {
-                console.error('Erro ao carregar serviços:', err);
-                // resolvemos com array vazio para não bloquear a exibição da página
-                return [];
-              });
-          }
+            // --- helper para carregar serviços e garantir Promise ---
+            function loadServicesAndRender() {
+                // se já existe a função loadServices no outro script e ela retornar Promise, tente usá-la
+                if (typeof window.loadServices === 'function') {
+                    try {
+                        const r = window.loadServices();
+                        // se a função não retornar promise (undefined), faz fallback abaixo:
+                        if (r && typeof r.then === 'function') return Promise.resolve(r);
+                    } catch (e) {
+                        // ignore e faça fallback
+                    }
+                }
 
-          // --- helper para carregar tickets ---
-          function loadTicketsWrapper() {
-            // se já existe a função loadTickets no outro script e ela retornar Promise, tente usá-la
-            if (typeof window.loadTickets === 'function') {
-              try {
-                const r = window.loadTickets();
-                // se a função não retornar promise (undefined), faz fallback abaixo:
-                if (r && typeof r.then === 'function') return Promise.resolve(r);
-              } catch (e) {
-                // ignore e faça fallback
-              }
+                // fallback/implementação direta (garante que a promise será resolvida mesmo em erro)
+                return fetch('https://smmsociais.com/api/servico')
+                    .then(response => {
+                        if (!response.ok) throw new Error('Erro ao carregar serviços da API');
+                        return response.json();
+                    })
+                    .then(data => {
+                        // reutiliza as funções de render (se existirem) para integrar com seu layout atual
+                        if (typeof window.renderServices === 'function') window.renderServices(data);
+                        if (typeof window.renderCategories === 'function') window.renderCategories(data);
+                        return data;
+                    })
+                    .catch(err => {
+                        console.error('Erro ao carregar serviços:', err);
+                        // resolvemos com array vazio para não bloquear a exibição da página
+                        return [];
+                    });
             }
 
-            // fallback: retornar array vazio para não bloquear a página
-            return Promise.resolve([]);
-          }
+            // --- helper para carregar tickets ---
+            function loadTicketsWrapper() {
+                // se já existe a função loadTickets no outro script e ela retornar Promise, tente usá-la
+                if (typeof window.loadTickets === 'function') {
+                    try {
+                        const r = window.loadTickets();
+                        // se a função não retornar promise (undefined), faz fallback abaixo:
+                        if (r && typeof r.then === 'function') return Promise.resolve(r);
+                    } catch (e) {
+                        // ignore e faça fallback
+                    }
+                }
 
-          // --- Executar funções de inicialização ---
-          function initializePageFunctions() {
-            return new Promise((resolve) => {
-              try {
-                // Executar fillAndHideInput (função que estava sendo chamada automaticamente)
-                fillAndHideInput();
-                resolve();
-              } catch (error) {
-                console.error('Erro na inicialização das funções da página:', error);
-                resolve(); // Resolve mesmo com erro para não travar a página
-              }
-            });
-          }
+                // fallback: retornar array vazio para não bloquear a página
+                return Promise.resolve([]);
+            }
 
-          // --- opcional: esperar window.load para garantir recursos externos carregados ---
-          const windowLoadPromise = new Promise(resolve => {
-            if (document.readyState === 'complete') return resolve();
-            window.addEventListener('load', resolve);
-          });
+            // --- Executar funções de inicialização ---
+            function initializePageFunctions() {
+                return new Promise((resolve) => {
+                    try {
+                        // Executar fillAndHideInput (função que estava sendo chamada automaticamente)
+                        fillAndHideInput();
+                        resolve();
+                    } catch (error) {
+                        console.error('Erro na inicialização das funções da página:', error);
+                        resolve(); // Resolve mesmo com erro para não travar a página
+                    }
+                });
+            }
 
-          // --- Promise principal: saldo + serviços + tickets + inicialização + window.load ---
-          const saldoPromise = callOrWrapLoadUserBalance();
-          const servicesPromise = loadServicesAndRender();
-          const ticketsPromise = loadTicketsWrapper();
-          const initPromise = initializePageFunctions();
-
-          // se quiser aguardar também window.load, inclua windowLoadPromise no Promise.all (recomendo)
-          Promise.all([saldoPromise, servicesPromise, ticketsPromise, initPromise, windowLoadPromise])
-            .then(() => {
-              // tudo OK (ou tratamos falhas individualmente): mostrar a página
-              document.body.classList.add('loaded');
-            })
-            .catch(err => {
-              // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
-              console.error('Erro ao carregar dados principais:', err);
-              document.body.classList.add('loaded');
-            })
-            .finally(() => {
-              // remover loader visual
-              if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+            // --- opcional: esperar window.load para garantir recursos externos carregados ---
+            const windowLoadPromise = new Promise(resolve => {
+                if (document.readyState === 'complete') return resolve();
+                window.addEventListener('load', resolve);
             });
 
-          // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
-          setTimeout(() => {
-            if (!document.body.classList.contains('loaded')) {
-              console.warn('Fallback: exibindo página após timeout.');
-              document.body.classList.add('loaded');
-              if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
-            }
-          }, 15000); // 15s — opcional, ajuste conforme necessidade
+            // --- Promise principal: saldo + serviços + tickets + inicialização + window.load ---
+            const saldoPromise = callOrWrapLoadUserBalance();
+            const servicesPromise = loadServicesAndRender();
+            const ticketsPromise = loadTicketsWrapper();
+            const initPromise = initializePageFunctions();
+
+            // se quiser aguardar também window.load, inclua windowLoadPromise no Promise.all (recomendo)
+            Promise.all([saldoPromise, servicesPromise, ticketsPromise, initPromise, windowLoadPromise])
+                .then(() => {
+                    // tudo OK (ou tratamos falhas individualmente): mostrar a página
+                    document.body.classList.add('loaded');
+                })
+                .catch(err => {
+                    // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
+                    console.error('Erro ao carregar dados principais:', err);
+                    document.body.classList.add('loaded');
+                })
+                .finally(() => {
+                    // remover loader visual
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                });
+
+            // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
+            setTimeout(() => {
+                if (!document.body.classList.contains('loaded')) {
+                    console.warn('Fallback: exibindo página após timeout.');
+                    document.body.classList.add('loaded');
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                }
+            }, 15000); // 15s — opcional, ajuste conforme necessidade
         })();
     </script>
 </body>
