@@ -58,7 +58,7 @@ const handler = async (req, res) => {
       }
     }
 
-    // validações
+    // Validações
     if (id_servico && typeof id_servico !== "string") {
       return res.status(400).json({ error: "id_servico inválido" });
     }
@@ -73,98 +73,115 @@ const handler = async (req, res) => {
       return res.status(400).json({ error: "A quantidade deve ser um número entre 50 e 1.000.000!" });
     }
 
-    // ===== ATÔMICO: tentar debitar saldo do usuário =====
-    // Filter garante que apenas decrementamos se saldo >= valorNum
-    const debitResult = await User.updateOne(
-      { _id: usuario._id, saldo: { $gte: valorNum } },
-      { $inc: { saldo: -valorNum } }
-    );
-
-    if (!debitResult.matchedCount || debitResult.matchedCount === 0) {
-      // saldo insuficiente (nenhum documento correspondido)
-      return res.status(402).json({ error: "Saldo insuficiente" });
-    }
-
-    // buscar usuário atualizado para retornar novo saldo
-    const usuarioAtualizado = await User.findById(usuario._id).select('saldo');
-
-    // Criar a ação (agora que o débito já foi aplicado)
-    const novaAcao = new Action({
-      userId: usuario._id,
-      id_servico: id_servico ? String(id_servico) : undefined,
-      rede,
-      tipo,
-      nome,
-      valor: valorNum,
-      quantidade: quantidadeNum,
-      validadas: 0,
-      link,
-      status: "pendente",
-      dataCriacao: new Date()
-    });
+    // Inicia sessão / transação
+    const session = await mongoose.startSession();
 
     try {
-      await novaAcao.save();
-    } catch (errSave) {
-      // rollback: credita de volta o valor
-      console.error("❌ Falha ao salvar ação, efetuando rollback do débito:", errSave);
-      await User.updateOne({ _id: usuario._id }, { $inc: { saldo: valorNum } });
-      return res.status(500).json({ error: "Erro ao criar ação. Saldo reembolsado automaticamente." });
-    }
+      session.startTransaction();
 
-    const id_pedido = novaAcao._id.toString();
-
-    // Envia para ganhesocial (não precisa bloquear a resposta para o usuário se preferir)
-    const nome_usuario = (link && link.includes("@")) ? link.split("@")[1].trim() : (link ? link.trim() : '');
-    const quantidade_pontos = +(valorNum * 0.001).toFixed(6);
-
-    let tipo_acao = "Outro";
-    const tipoLower = (tipo || "").toLowerCase();
-    if (tipoLower === "seguidores") tipo_acao = "Seguir";
-    else if (tipoLower === "curtidas") tipo_acao = "Curtir";
-
-    const payloadGanheSocial = {
-      tipo_acao,
-      nome_usuario,
-      quantidade_pontos,
-      quantidade: quantidadeNum,
-      valor: valorNum,
-      url_dir: link,
-      id_pedido,
-    };
-
-    console.log("➡️ Enviando para ganhesocial.com:", payloadGanheSocial);
-
-    try {
-      const response = await fetch("https://ganhesocial.com/api/smm_acao", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: chaveEsperada
-        },
-        body: JSON.stringify(payloadGanheSocial)
+      // 1) criar a action (na transação)
+      const novaAcao = new Action({
+        userId: usuario._id,
+        id_servico: id_servico ? String(id_servico) : undefined,
+        rede,
+        tipo,
+        nome,
+        valor: valorNum,
+        quantidade: quantidadeNum,
+        validadas: 0,
+        link,
+        status: "pendente",
+        dataCriacao: new Date()
       });
 
-      const data = await response.json().catch(()=>null);
+      await novaAcao.save({ session });
 
-      if (!response.ok) {
-        console.error("⚠️ Erro na resposta do ganhesocial:", response.status, data);
-      } else {
-        console.log("✅ Ação registrada no ganhesocial:", data);
-        if (data && data.id_acao_smm) {
-          await Action.findByIdAndUpdate(novaAcao._id, { id_acao_smm: data.id_acao_smm });
-        }
+      // 2) debitar do usuário (na mesma transação)
+      const debitResult = await User.updateOne(
+        { _id: usuario._id, saldo: { $gte: valorNum } },
+        { $inc: { saldo: -valorNum } },
+        { session }
+      );
+
+      if (!debitResult.matchedCount || debitResult.matchedCount === 0) {
+        // saldo insuficiente -> abortar transação
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(402).json({ error: "Saldo insuficiente" });
       }
-    } catch (erroEnvio) {
-      console.error("❌ Falha na comunicação com ganhesocial:", erroEnvio);
-    }
 
-    // Retorna novo saldo para o frontend atualizar UI imediatamente
-    return res.status(201).json({
-      message: "Ação criada com sucesso",
-      id_pedido,
-      newSaldo: usuarioAtualizado.saldo
-    });
+      // 3) commit
+      await session.commitTransaction();
+      session.endSession();
+
+      const id_pedido = novaAcao._id.toString();
+
+      // buscar novo saldo (fora da transação)
+      const usuarioAtualizado = await User.findById(usuario._id).select('saldo');
+
+      // Prepare payload para ganhesocial (fazer fora da transação)
+      const nome_usuario = (link && link.includes("@")) ? link.split("@")[1].trim() : (link ? link.trim() : '');
+      const quantidade_pontos = +(valorNum * 0.001).toFixed(6);
+
+      let tipo_acao = "Outro";
+      const tipoLower = (tipo || "").toLowerCase();
+      if (tipoLower === "seguidores") tipo_acao = "Seguir";
+      else if (tipoLower === "curtidas") tipo_acao = "Curtir";
+
+      const payloadGanheSocial = {
+        tipo_acao,
+        nome_usuario,
+        quantidade_pontos,
+        quantidade: quantidadeNum,
+        valor: valorNum,
+        url_dir: link,
+        id_pedido,
+      };
+
+      // Envia para ganhesocial (não bloqueia o commit)
+      (async () => {
+        try {
+          const response = await fetch("https://ganhesocial.com/api/smm_acao", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: chaveEsperada
+            },
+            body: JSON.stringify(payloadGanheSocial)
+          });
+
+          const data = await response.json().catch(()=>null);
+
+          if (!response.ok) {
+            console.error("⚠️ Erro na resposta do ganhesocial:", response.status, data);
+          } else {
+            console.log("✅ Ação registrada no ganhesocial:", data);
+            if (data && data.id_acao_smm) {
+              // atualiza action com id_acao_smm (fora da transação)
+              await Action.findByIdAndUpdate(id_pedido, { id_acao_smm: data.id_acao_smm });
+            }
+          }
+        } catch (erroEnvio) {
+          console.error("❌ Falha na comunicação com ganhesocial:", erroEnvio);
+        }
+      })();
+
+      // Resposta ao frontend com novo saldo
+      return res.status(201).json({
+        message: "Ação criada com sucesso",
+        id_pedido,
+        newSaldo: usuarioAtualizado.saldo
+      });
+
+    } catch (txErr) {
+      // qualquer erro na transação -> abortar e retornar 500
+      try {
+        await session.abortTransaction();
+      } catch(e2) { console.error('Erro abortando transação:', e2); }
+      session.endSession();
+      console.error("❌ Erro durante transação:", txErr);
+      return res.status(500).json({ error: "Erro ao criar ação (transação)." });
+    }
 
   } catch (error) {
     console.error("❌ Erro interno ao criar ação:", error);
