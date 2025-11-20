@@ -96,12 +96,15 @@ const handler = async (req, res) => {
 
       await novaAcao.save({ session });
 
-      // 2) debitar do usuário (na mesma transação)
-      const debitResult = await User.updateOne(
-        { _id: usuario._id, saldo: { $gte: valorNum } },
-        { $inc: { saldo: -valorNum } },
-        { session }
-      );
+// cálculo TOTAL correto
+const custoTotal = valorNum * quantidadeNum;
+
+// 2) debitar custo total
+const debitResult = await User.updateOne(
+  { _id: usuario._id, saldo: { $gte: custoTotal } },
+  { $inc: { saldo: -custoTotal } },
+  { session }
+);
 
       if (!debitResult.matchedCount || debitResult.matchedCount === 0) {
         // saldo insuficiente -> abortar transação
