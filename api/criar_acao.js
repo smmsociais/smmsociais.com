@@ -1,3 +1,5 @@
+//api/criar_acao.js
+
 import connectDB from "./db.js";
 import { User, Action } from './schema.js';
 import mongoose from "mongoose";
@@ -23,14 +25,19 @@ const handler = async (req, res) => {
 
     if (authorization === chaveEsperada) {
       isInternalCall = true;
+      console.log("🟣 Chamada interna autenticada via SMM_API_KEY");
     } else if (authorization.startsWith('Bearer ')) {
       const token = authorization.split(' ')[1].trim();
       console.log("🔐 Token recebido (criar_acao):", token);
+
       usuario = await User.findOne({ token });
+
       if (!usuario) {
         console.warn("🔒 Token de usuário não encontrado:", token);
         return res.status(401).json({ error: "Não autorizado" });
       }
+
+      console.log("🧑‍💻 Usuário identificado:", usuario.email);
     } else {
       console.warn("🔒 Authorization header inválido:", authorization);
       return res.status(401).json({ error: "Não autorizado" });
@@ -47,15 +54,18 @@ const handler = async (req, res) => {
       id_servico
     } = req.body || {};
 
-    // Se é chamada interna, espera userId no body
+    // Se é chamada interna → buscar usuário pelo userId
     if (isInternalCall) {
       if (!bodyUserId) {
         return res.status(400).json({ error: "userId obrigatório para chamadas internas" });
       }
+
       usuario = await User.findById(String(bodyUserId));
       if (!usuario) {
         return res.status(400).json({ error: "Usuário não encontrado!" });
       }
+
+      console.log("🟣 Chamada interna para usuário:", usuario.email);
     }
 
     // Validações
@@ -64,22 +74,32 @@ const handler = async (req, res) => {
     }
 
     const valorNum = parseFloat(valor);
+    const quantidadeNum = Number(quantidade);
+
     if (isNaN(valorNum) || valorNum <= 0) {
       return res.status(400).json({ error: "Valor inválido" });
     }
 
-    const quantidadeNum = Number(quantidade);
     if (!Number.isInteger(quantidadeNum) || quantidadeNum < 50 || quantidadeNum > 1000000) {
       return res.status(400).json({ error: "A quantidade deve ser um número entre 50 e 1.000.000!" });
     }
 
-    // Inicia sessão / transação
+    console.log("📌 Dados recebidos:");
+    console.log("   ➤ Valor unitário:", valorNum);
+    console.log("   ➤ Quantidade:", quantidadeNum);
+
+    // INICIAR TRANSAÇÃO
     const session = await mongoose.startSession();
 
     try {
       session.startTransaction();
 
-      // 1) criar a action (na transação)
+      console.log("💳 Saldo do usuário (antes do débito):", usuario.saldo);
+
+      const custoTotal = valorNum * quantidadeNum;
+      console.log("💰 Custo total calculado:", custoTotal);
+
+      // Criar a action
       const novaAcao = new Action({
         userId: usuario._id,
         id_servico: id_servico ? String(id_servico) : undefined,
@@ -96,33 +116,35 @@ const handler = async (req, res) => {
 
       await novaAcao.save({ session });
 
-// cálculo TOTAL correto
-const custoTotal = valorNum * quantidadeNum;
+      // TENTAR DEBITAR
+      console.log("🧮 Tentando debitar...");
 
-// 2) debitar custo total
-const debitResult = await User.updateOne(
-  { _id: usuario._id, saldo: { $gte: custoTotal } },
-  { $inc: { saldo: -custoTotal } },
-  { session }
-);
+      const debitResult = await User.updateOne(
+        { _id: usuario._id, saldo: { $gte: custoTotal } },
+        { $inc: { saldo: -custoTotal } },
+        { session }
+      );
 
-      if (!debitResult.matchedCount || debitResult.matchedCount === 0) {
-        // saldo insuficiente -> abortar transação
+      console.log("📊 Resultado do débito:", debitResult);
+
+      if (!debitResult.matchedCount) {
+        console.warn("❌ Saldo insuficiente. Débito abortado.");
         await session.abortTransaction();
         session.endSession();
         return res.status(402).json({ error: "Saldo insuficiente" });
       }
 
-      // 3) commit
       await session.commitTransaction();
       session.endSession();
 
       const id_pedido = novaAcao._id.toString();
+      console.log("🆔 Ação criada com ID:", id_pedido);
 
-      // buscar novo saldo (fora da transação)
-      const usuarioAtualizado = await User.findById(usuario._id).select('saldo');
+      // SALDO ATUALIZADO
+      const usuarioAtualizado = await User.findById(usuario._id).select("saldo");
+      console.log("💳 Saldo após o débito:", usuarioAtualizado.saldo);
 
-      // Prepare payload para ganhesocial (fazer fora da transação)
+      // Enviar ação para ganhesocial (assíncrono)
       const nome_usuario = (link && link.includes("@")) ? link.split("@")[1].trim() : (link ? link.trim() : '');
       const quantidade_pontos = +(valorNum * 0.001).toFixed(6);
 
@@ -141,9 +163,9 @@ const debitResult = await User.updateOne(
         id_pedido,
       };
 
-      // Envia para ganhesocial (não bloqueia o commit)
       (async () => {
         try {
+          console.log("📤 Enviando ação para ganhesocial...");
           const response = await fetch("https://ganhesocial.com/api/smm_acao", {
             method: "POST",
             headers: {
@@ -153,23 +175,22 @@ const debitResult = await User.updateOne(
             body: JSON.stringify(payloadGanheSocial)
           });
 
-          const data = await response.json().catch(()=>null);
+          const data = await response.json().catch(() => null);
 
           if (!response.ok) {
             console.error("⚠️ Erro na resposta do ganhesocial:", response.status, data);
           } else {
             console.log("✅ Ação registrada no ganhesocial:", data);
+
             if (data && data.id_acao_smm) {
-              // atualiza action com id_acao_smm (fora da transação)
               await Action.findByIdAndUpdate(id_pedido, { id_acao_smm: data.id_acao_smm });
             }
           }
         } catch (erroEnvio) {
-          console.error("❌ Falha na comunicação com ganhesocial:", erroEnvio);
+          console.error("❌ Falha ao enviar para ganhesocial:", erroEnvio);
         }
       })();
 
-      // Resposta ao frontend com novo saldo
       return res.status(201).json({
         message: "Ação criada com sucesso",
         id_pedido,
@@ -177,10 +198,10 @@ const debitResult = await User.updateOne(
       });
 
     } catch (txErr) {
-      // qualquer erro na transação -> abortar e retornar 500
       try {
         await session.abortTransaction();
-      } catch(e2) { console.error('Erro abortando transação:', e2); }
+      } catch(e2) { console.error("Erro abortando transação:", e2); }
+
       session.endSession();
       console.error("❌ Erro durante transação:", txErr);
       return res.status(500).json({ error: "Erro ao criar ação (transação)." });
