@@ -28,12 +28,22 @@
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
         }
-        
+
         .hidden {
             display: none !important;
         }
     </style>
     <script>
+        // Função para obter parâmetros da URL
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const paramsObj = {};
+            for (const [key, value] of params) {
+                paramsObj[key] = value;
+            }
+            return paramsObj;
+        }
+
         // Função para obter o token do localStorage
         function loadToken() {
             const token = localStorage.getItem('authToken') ||
@@ -175,9 +185,18 @@
                 serviceSelect.appendChild(option);
             });
 
-            // Preencher automaticamente com o primeiro serviço
-            if (services.length > 0) {
-                autoSelectFirstService(services);
+            // Verificar se há um serviço específico na URL
+            const urlParams = getUrlParams();
+            const serviceIdFromUrl = urlParams.service;
+
+            if (serviceIdFromUrl) {
+                // Tentar selecionar o serviço da URL
+                selectServiceById(serviceIdFromUrl, services);
+            } else {
+                // Preencher automaticamente com o primeiro serviço se não houver parâmetro
+                if (services.length > 0) {
+                    autoSelectFirstService(services);
+                }
             }
 
             // Atualizar categorias com base nos serviços
@@ -185,6 +204,40 @@
 
             // Configurar event listeners
             setupServiceEventListeners(services);
+        }
+
+        // Função para selecionar serviço por ID
+        function selectServiceById(serviceId, services) {
+            const serviceSelect = document.getElementById('orderform-service');
+            if (!serviceSelect) return;
+
+            // Encontrar o serviço pelo ID
+            const service = services.find(s => s.id_servico == serviceId);
+            
+            if (service) {
+                // Encontrar a opção correspondente no select
+                for (let i = 0; i < serviceSelect.options.length; i++) {
+                    if (serviceSelect.options[i].value == serviceId) {
+                        serviceSelect.selectedIndex = i;
+                        
+                        // Disparar o evento change para atualizar todos os campos
+                        const event = new Event('change');
+                        serviceSelect.dispatchEvent(event);
+                        
+                        // Garantir que os campos sejam exibidos
+                        showServiceFields();
+                        
+                        console.log(`Serviço selecionado automaticamente: ${service.nome} (ID: ${serviceId})`);
+                        return;
+                    }
+                }
+            }
+            
+            // Se não encontrou o serviço, usar o primeiro disponível
+            console.warn(`Serviço com ID ${serviceId} não encontrado. Selecionando primeiro serviço disponível.`);
+            if (services.length > 0) {
+                autoSelectFirstService(services);
+            }
         }
 
         // Função para preencher automaticamente o primeiro serviço
@@ -197,7 +250,7 @@
                 // Disparar o evento change para atualizar todos os campos
                 const event = new Event('change');
                 serviceSelect.dispatchEvent(event);
-                
+
                 // Garantir que os campos sejam exibidos
                 showServiceFields();
             }
@@ -254,7 +307,7 @@
                 // Pular a primeira opção (índice 0) que é "Favorite services"
                 // e selecionar a primeira categoria real (índice 1)
                 categorySelect.selectedIndex = 1;
-                
+
                 // Disparar o evento change para filtrar os serviços
                 const event = new Event('change');
                 categorySelect.dispatchEvent(event);
@@ -330,8 +383,21 @@
                 serviceSelect.appendChild(option);
             });
 
-            // Preencher automaticamente com o primeiro serviço após filtro
-            if (filteredServices.length > 0) {
+            // Verificar se há um serviço específico na URL após o filtro
+            const urlParams = getUrlParams();
+            const serviceIdFromUrl = urlParams.service;
+
+            if (serviceIdFromUrl) {
+                // Tentar selecionar o serviço da URL mesmo após o filtro
+                const serviceExists = filteredServices.some(s => s.id_servico == serviceIdFromUrl);
+                if (serviceExists) {
+                    selectServiceById(serviceIdFromUrl, filteredServices);
+                } else if (filteredServices.length > 0) {
+                    // Se o serviço da URL não está na categoria filtrada, usar o primeiro disponível
+                    autoSelectFirstService(filteredServices);
+                }
+            } else if (filteredServices.length > 0) {
+                // Preencher automaticamente com o primeiro serviço após filtro
                 autoSelectFirstService(filteredServices);
             }
         }
@@ -436,7 +502,7 @@
             if (serviceSelect && serviceSelect.selectedIndex > 0) {
                 // Garantir que os campos estejam visíveis
                 showServiceFields();
-                
+
                 // Disparar evento change para preencher todos os campos
                 const event = new Event('change');
                 serviceSelect.dispatchEvent(event);
@@ -913,7 +979,7 @@
                 .then(() => {
                     // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
-                    
+
                     // Inicializar campos com valores padrão após um pequeno delay
                     // para garantir que o DOM esteja completamente renderizado
                     setTimeout(() => {
