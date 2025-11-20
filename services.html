@@ -28,6 +28,11 @@
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
         }
+        
+        .service-action-btn {
+            margin-top: 8px;
+            width: 100%;
+        }
     </style>
     <script>
         // Função para obter o token do localStorage
@@ -230,6 +235,15 @@
                                     Visualizar
                                 </button>
                             </div>
+                            ` : ''}
+                            <div class="component_button_submit">
+                                <button class="btn btn-big-primary service-action-btn btn-select-service"
+                                    data-service-id="${service.id_servico}"
+                                    data-service-name="${service.nome}">
+                                    Selecionar Serviço
+                                </button>
+                            </div>
+                            ${service.descricao ? `
                             <div class="d-none" id="service-description-id-55-${service.id_servico}">
                                 ${service.descricao.replace(/\n/g, "<br>")}
                             </div>
@@ -242,6 +256,7 @@
             });
 
             initializeServiceDescriptionButtons();
+            initializeServiceSelectionButtons();
         }
 
         // Função para renderizar categorias no filtro
@@ -297,16 +312,36 @@
                 });
             });
 
-            // Event listener para o botão de criar pedido rápido
+            // Event listener para o botão de criar pedido rápido no modal
             document.getElementById('createQuickOrder').addEventListener('click', function () {
                 const serviceId = this.getAttribute('data-service-id');
-                const serviceName = this.getAttribute('data-service-name');
-                const min = this.getAttribute('data-min');
-                const max = this.getAttribute('data-max');
-
-                // Redirecionar para a página de novo pedido com os parâmetros do serviço
-                window.location.href = `/?service=${serviceId}`;
+                if (serviceId) {
+                    // Redirecionar para a página de painel com o parâmetro do serviço
+                    window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
+                }
             });
+        }
+
+        // Nova função para inicializar botões de seleção de serviço
+        function initializeServiceSelectionButtons() {
+            const selectButtons = document.querySelectorAll('.btn-select-service');
+            selectButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const serviceId = this.getAttribute('data-service-id');
+                    const serviceName = this.getAttribute('data-service-name');
+                    
+                    // Confirmar seleção (opcional)
+                    if (confirm(`Deseja selecionar o serviço "${serviceName}"?`)) {
+                        // Redirecionar para a página de painel com o parâmetro do serviço
+                        window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
+                    }
+                });
+            });
+        }
+
+        // Função para redirecionar para o painel com serviço específico
+        function redirectToPanelWithService(serviceId) {
+            window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
         }
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
