@@ -21,13 +21,9 @@ const handler = async (req, res) => {
     let usuario = null;
     let isInternalCall = false;
 
-    // 1) chamada interna com chave do serviço
     if (authorization === chaveEsperada) {
       isInternalCall = true;
-      // Para chamadas internas, esperamos que o body traga userId
-      // (userId será validado abaixo)
     } else if (authorization.startsWith('Bearer ')) {
-      // 2) chamada de usuário: buscar usuário pelo token enviado
       const token = authorization.split(' ')[1].trim();
       console.log("🔐 Token recebido (criar_acao):", token);
       usuario = await User.findOne({ token });
@@ -40,7 +36,6 @@ const handler = async (req, res) => {
       return res.status(401).json({ error: "Não autorizado" });
     }
 
-    // Extrair campos do body
     const {
       rede,
       tipo,
@@ -52,7 +47,7 @@ const handler = async (req, res) => {
       id_servico
     } = req.body || {};
 
-    // Se chamada interna (server key), procurar usuário pelo userId do body
+    // Se é chamada interna, espera userId no body
     if (isInternalCall) {
       if (!bodyUserId) {
         return res.status(400).json({ error: "userId obrigatório para chamadas internas" });
@@ -63,8 +58,7 @@ const handler = async (req, res) => {
       }
     }
 
-    // agora 'usuario' existe (autenticado de uma das maneiras)
-    // validações simples
+    // validações
     if (id_servico && typeof id_servico !== "string") {
       return res.status(400).json({ error: "id_servico inválido" });
     }
@@ -79,7 +73,22 @@ const handler = async (req, res) => {
       return res.status(400).json({ error: "A quantidade deve ser um número entre 50 e 1.000.000!" });
     }
 
-    // criar a ação
+    // ===== ATÔMICO: tentar debitar saldo do usuário =====
+    // Filter garante que apenas decrementamos se saldo >= valorNum
+    const debitResult = await User.updateOne(
+      { _id: usuario._id, saldo: { $gte: valorNum } },
+      { $inc: { saldo: -valorNum } }
+    );
+
+    if (!debitResult.matchedCount || debitResult.matchedCount === 0) {
+      // saldo insuficiente (nenhum documento correspondido)
+      return res.status(402).json({ error: "Saldo insuficiente" });
+    }
+
+    // buscar usuário atualizado para retornar novo saldo
+    const usuarioAtualizado = await User.findById(usuario._id).select('saldo');
+
+    // Criar a ação (agora que o débito já foi aplicado)
     const novaAcao = new Action({
       userId: usuario._id,
       id_servico: id_servico ? String(id_servico) : undefined,
@@ -94,9 +103,18 @@ const handler = async (req, res) => {
       dataCriacao: new Date()
     });
 
-    await novaAcao.save();
+    try {
+      await novaAcao.save();
+    } catch (errSave) {
+      // rollback: credita de volta o valor
+      console.error("❌ Falha ao salvar ação, efetuando rollback do débito:", errSave);
+      await User.updateOne({ _id: usuario._id }, { $inc: { saldo: valorNum } });
+      return res.status(500).json({ error: "Erro ao criar ação. Saldo reembolsado automaticamente." });
+    }
+
     const id_pedido = novaAcao._id.toString();
 
+    // Envia para ganhesocial (não precisa bloquear a resposta para o usuário se preferir)
     const nome_usuario = (link && link.includes("@")) ? link.split("@")[1].trim() : (link ? link.trim() : '');
     const quantidade_pontos = +(valorNum * 0.001).toFixed(6);
 
@@ -141,7 +159,12 @@ const handler = async (req, res) => {
       console.error("❌ Falha na comunicação com ganhesocial:", erroEnvio);
     }
 
-    return res.status(201).json({ message: "Ação criada com sucesso", id_pedido });
+    // Retorna novo saldo para o frontend atualizar UI imediatamente
+    return res.status(201).json({
+      message: "Ação criada com sucesso",
+      id_pedido,
+      newSaldo: usuarioAtualizado.saldo
+    });
 
   } catch (error) {
     console.error("❌ Erro interno ao criar ação:", error);
