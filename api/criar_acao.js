@@ -127,13 +127,15 @@ const handler = async (req, res) => {
 
       console.log("📊 Resultado do débito:", debitResult);
 
-      if (!debitResult.matchedCount) {
-        console.warn("❌ Saldo insuficiente. Débito abortado.");
-        await session.abortTransaction();
-        session.endSession();
-        return res.status(402).json({ error: "Saldo insuficiente" });
-      }
-
+if (
+  (debitResult.modifiedCount !== undefined && debitResult.modifiedCount === 0) ||
+  (debitResult.nModified !== undefined && debitResult.nModified === 0)
+) {
+  console.warn("❌ O débito não foi aplicado (saldo insuficiente)");
+  await session.abortTransaction();
+  session.endSession();
+  return res.status(402).json({ error: "Saldo insuficiente" });
+}
       await session.commitTransaction();
       session.endSession();
 
