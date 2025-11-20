@@ -175,7 +175,7 @@ try {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: chaveEsperada
+              Authorization: `Bearer ${process.env.SMM_API_KEY}`
             },
             body: JSON.stringify(payloadGanheSocial)
           });
@@ -188,7 +188,7 @@ try {
             console.log("✅ Ação registrada no ganhesocial:", data);
 
             if (data && data.id_acao_smm) {
-              await Action.findByIdAndUpdate(id_pedido, { id_acao_smm: data.id_acao_smm });
+             await Pedido.findByIdAndUpdate(id_pedido, { id_acao_smm: data.id_acao_smm });
             }
           }
         } catch (erroEnvio) {
