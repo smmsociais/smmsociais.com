@@ -122,35 +122,47 @@
         }
 
         // Função para obter informações do usuário
-        async function getUserInfo() {
-            const token = loadToken();
-            
-            if (!token) {
-                console.error("Token não encontrado.");
-                return null;
+async function getUserInfo() {
+    const token = loadToken();
+
+    if (!token) {
+        console.error("Token não encontrado.");
+        return null;
+    }
+
+    try {
+        const response = await fetch('https://smmsociais.com/api/account', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
+        });
 
-            try {
-                const response = await fetch('https://smmsociais.com/api/account', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Erro ao carregar informações do usuário');
-                }
-
-                const userData = await response.json();
-                return userData;
-
-            } catch (error) {
-                console.error('Erro ao carregar informações do usuário:', error);
-                return null;
-            }
+        if (!response.ok) {
+            // mostra o status e corpo para debug
+            const txt = await response.text().catch(()=>null);
+            console.error('Erro ao carregar informações do usuário. status:', response.status, txt);
+            throw new Error('Erro ao carregar informações do usuário');
         }
+
+        const userData = await response.json();
+        console.log('getUserInfo response:', userData);
+
+        // Normaliza campos esperados
+        const normalized = {
+            userId: userData.userId || userData.id || userData._id || null,
+            nome_usuario: userData.nome_usuario || userData.nome || null,
+            email: userData.email || null,
+            token: userData.token || token
+        };
+
+        return normalized;
+    } catch (error) {
+        console.error('Erro ao carregar informações do usuário:', error);
+        return null;
+    }
+}
 
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
@@ -751,9 +763,10 @@ async function handleFormSubmit(event) {
 
         // Obter informações do usuário
         const userInfo = await getUserInfo();
-        if (!userInfo || !userInfo.userId) {
-            throw new Error('Não foi possível obter informações do usuário');
-        }
+// sugerido (aceita vários campos possíveis)
+if (!userInfo || !(userInfo.userId || userInfo.id || userInfo._id || userInfo.token)) {
+    throw new Error('Não foi possível obter informações do usuário');
+}
 
         // Preparar dados para a API
         const actionData = {
