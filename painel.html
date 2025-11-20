@@ -523,26 +523,30 @@
             }
         }
 
-        // Função para calcular o valor baseado na quantidade
-        function calculateTotal(pricePer1000, quantity) {
-            if (!pricePer1000 || !quantity) return 0;
-            return (parseFloat(pricePer1000) * parseInt(quantity)) / 1000;
-        }
+// --- Calcular total (robusto) ---
+function calculateTotal(pricePer1000, quantity) {
+    const price = parseFloat(pricePer1000);
+    const qty = parseInt(String(quantity).replace(/[^\d]/g, ''), 10);
 
-        // Função para atualizar o campo de valor
-        function updateChargeField(pricePer1000, quantity) {
-            const chargeInput = document.getElementById('charge');
-            if (!chargeInput) return;
+    if (isNaN(price) || isNaN(qty) || qty <= 0) return 0;
+    return (price * qty) / 1000;
+}
 
-            if (pricePer1000 && quantity) {
-                const total = calculateTotal(pricePer1000, quantity);
-                chargeInput.value = `R$ ${total.toFixed(2)} (R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000)`;
-            } else if (pricePer1000) {
-                chargeInput.value = `R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000`;
-            } else {
-                chargeInput.value = '';
-            }
-        }
+function updateChargeField(pricePer1000, quantity) {
+    const chargeInput = document.getElementById('charge');
+    if (!chargeInput) return;
+
+    const qty = parseInt(String(quantity).replace(/[^\d]/g, ''), 10);
+
+    if (pricePer1000 && !isNaN(qty) && qty > 0) {
+        const total = calculateTotal(pricePer1000, qty);
+        chargeInput.value = `R$ ${total.toFixed(2)} (R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000)`;
+    } else if (pricePer1000) {
+        chargeInput.value = `R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000`;
+    } else {
+        chargeInput.value = '';
+    }
+}
 
         // Função para inicializar todos os campos com valores padrão
         function initializeDefaultFields() {
@@ -603,93 +607,195 @@
             }
         }
 
-        // Função para lidar com o envio do formulário
-        async function handleFormSubmit(event) {
-            event.preventDefault();
+// --- Ao mudar de serviço, configurar min/max corretamente ---
+function handleServiceChange() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (!selectedOption) return;
 
-            const submitButton = event.target.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
+    const price = selectedOption.getAttribute('data-price');
+    const description = selectedOption.getAttribute('data-description');
+    const minAttr = selectedOption.getAttribute('data-min');
+    const maxAttr = selectedOption.getAttribute('data-max');
 
-            try {
-                // Mostrar estado de carregamento
-                submitButton.textContent = 'Enviando...';
-                submitButton.disabled = true;
-                document.body.classList.add('loading');
+    // conversão segura de limites
+    const minQuantity = (minAttr !== null && minAttr !== '') ? parseInt(minAttr, 10) : null;
+    const maxQuantity = (maxAttr !== null && maxAttr !== '') ? parseInt(maxAttr, 10) : null;
 
-                // Obter dados do formulário
-                const serviceSelect = document.getElementById('orderform-service');
-                const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-                const link = document.getElementById('orderform-link').value;
-                const quantity = document.getElementById('orderform-quantity').value;
-                const pricePer1000 = selectedOption.getAttribute('data-price');
-                const totalValue = calculateTotal(pricePer1000, quantity);
+    // Atualizar preço
+    const quantityInput = document.getElementById('orderform-quantity');
+    const currentQuantity = quantityInput ? quantityInput.value || (minQuantity !== null ? minQuantity : '') : '';
+    updateChargeField(price, currentQuantity);
 
-                // Validar campos obrigatórios
-                if (!serviceSelect.value) {
-                    throw new Error('Por favor, selecione um serviço');
-                }
+    // Atualizar descrição
+    const descriptionPanel = document.querySelector('.panel-description');
+    if (description && descriptionPanel) {
+        descriptionPanel.innerHTML = description.replace(/\n/g, '<br>');
+        const serviceDescription = document.getElementById('service_description');
+        if (serviceDescription) {
+            serviceDescription.classList.remove('hidden');
+        }
+    } else if (descriptionPanel) {
+        descriptionPanel.innerHTML = '';
+        const serviceDescription = document.getElementById('service_description');
+        if (serviceDescription) {
+            serviceDescription.classList.add('hidden');
+        }
+    }
 
-                if (!link.trim()) {
-                    throw new Error('Por favor, informe o link');
-                }
+    // Mostrar/ocultar campos de link e quantidade
+    const linkField = document.getElementById('link_field');
+    const quantityField = document.getElementById('quantity_field');
 
-                if (!quantity || quantity < selectedOption.getAttribute('data-min') || quantity > selectedOption.getAttribute('data-max')) {
-                    throw new Error('Quantidade inválida para este serviço');
-                }
+    if (selectedOption.value) {
+        if (linkField) linkField.classList.remove('hidden');
+        if (quantityField) quantityField.classList.remove('hidden');
 
-                // Obter informações do usuário
-                const userInfo = await getUserInfo();
-                if (!userInfo || !userInfo.userId) {
-                    throw new Error('Não foi possível obter informações do usuário');
-                }
+        // Configurar limites da quantidade no input de forma segura
+        if (quantityInput) {
+            if (minQuantity !== null) {
+                quantityInput.min = minQuantity;
+                quantityInput.placeholder = `Mínimo: ${minQuantity}`;
+            } else {
+                quantityInput.removeAttribute('min');
+            }
 
-                // Preparar dados para a API
-                const actionData = {
-                    rede: selectedOption.getAttribute('data-rede'),
-                    tipo: selectedOption.getAttribute('data-tipo'),
-                    nome: selectedOption.textContent,
-                    valor: totalValue,
-                    quantidade: parseInt(quantity),
-                    link: link.trim(),
-                    userId: userInfo.userId,
-                    id_servico: serviceSelect.value
-                };
+            if (maxQuantity !== null) {
+                quantityInput.max = maxQuantity;
+                // placeholder já mostra mínimo; vamos juntar info se existir max
+                const minText = minQuantity !== null ? `Mínimo: ${minQuantity}, ` : '';
+                quantityInput.placeholder = `${minText}Máximo: ${maxQuantity}`;
+            } else {
+                quantityInput.removeAttribute('max');
+            }
 
-                // Chamar API para criar ação
-                const result = await criarAcao(actionData);
-
-                // Mostrar mensagem de sucesso
-                showNotification(`Pedido criado com sucesso! ID: ${result.id_pedido}`, 'success');
-
-                // Limpar formulário
-                event.target.reset();
-                
-                // Recarregar saldo
-                await loadUserBalance();
-
-                // Resetar campos visuais
-                const chargeInput = document.getElementById('charge');
-                if (chargeInput) chargeInput.value = '';
-
-                // Ocultar campos de serviço
-                const linkField = document.getElementById('link_field');
-                const quantityField = document.getElementById('quantity_field');
-                const serviceDescription = document.getElementById('service_description');
-                
-                if (linkField) linkField.classList.add('hidden');
-                if (quantityField) quantityField.classList.add('hidden');
-                if (serviceDescription) serviceDescription.classList.add('hidden');
-
-            } catch (error) {
-                console.error('Erro ao processar pedido:', error);
-                showNotification(error.message, 'danger');
-            } finally {
-                // Restaurar estado normal
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-                document.body.classList.remove('loading');
+            // Preencher quantidade mínima automaticamente se estiver vazio
+            if (minQuantity !== null && !quantityInput.value) {
+                quantityInput.value = minQuantity;
+                updateChargeField(price, minQuantity);
             }
         }
+    } else {
+        if (linkField) linkField.classList.add('hidden');
+        if (quantityField) quantityField.classList.add('hidden');
+    }
+}
+
+// --- Ao mudar a quantidade pelo input ---
+function handleQuantityChange() {
+    const serviceSelect = document.getElementById('orderform-service');
+    if (!serviceSelect) return;
+
+    const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+    const price = selectedOption ? selectedOption.getAttribute('data-price') : null;
+
+    // sanitiza a quantidade para números antes de atualizar
+    const raw = this.value;
+    const sanitized = raw ? String(raw).replace(/[^\d]/g, '') : '';
+    if (sanitized !== raw) {
+        // opcional: atualiza o campo para remover chars inválidos
+        this.value = sanitized;
+    }
+
+    if (price) {
+        updateChargeField(price, sanitized);
+    }
+}
+
+// --- Envio do formulário com validação numérica correta ---
+async function handleFormSubmit(event) {
+    event.preventDefault();
+
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    const originalText = submitButton ? submitButton.textContent : 'Enviar';
+
+    try {
+        if (submitButton) {
+            submitButton.textContent = 'Enviando...';
+            submitButton.disabled = true;
+        }
+        document.body.classList.add('loading');
+
+        // Obter dados do formulário
+        const serviceSelect = document.getElementById('orderform-service');
+        if (!serviceSelect || !serviceSelect.value) {
+            throw new Error('Por favor, selecione um serviço');
+        }
+        const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+
+        const linkInput = document.getElementById('orderform-link');
+        const link = linkInput ? linkInput.value.trim() : '';
+        if (!link) throw new Error('Por favor, informe o link');
+
+        const quantityInput = document.getElementById('orderform-quantity');
+        const quantityRaw = quantityInput ? quantityInput.value : '';
+        const quantity = parseInt(String(quantityRaw).replace(/[^\d]/g, ''), 10);
+
+        const minAttr = selectedOption.getAttribute('data-min');
+        const maxAttr = selectedOption.getAttribute('data-max');
+        const minQuantity = (minAttr !== null && minAttr !== '') ? parseInt(minAttr, 10) : null;
+        const maxQuantity = (maxAttr !== null && maxAttr !== '') ? parseInt(maxAttr, 10) : null;
+
+        // Validações numéricas
+        if (isNaN(quantity) || quantity <= 0) {
+            throw new Error('Quantidade inválida para este serviço');
+        }
+        if (minQuantity !== null && quantity < minQuantity) {
+            throw new Error(`Quantidade abaixo do mínimo (${minQuantity})`);
+        }
+        if (maxQuantity !== null && quantity > maxQuantity) {
+            throw new Error(`Quantidade acima do máximo (${maxQuantity})`);
+        }
+
+        const pricePer1000 = selectedOption.getAttribute('data-price');
+        const totalValue = calculateTotal(pricePer1000, quantity);
+
+        // Obter informações do usuário
+        const userInfo = await getUserInfo();
+        if (!userInfo || !userInfo.userId) {
+            throw new Error('Não foi possível obter informações do usuário');
+        }
+
+        // Preparar dados para a API
+        const actionData = {
+            rede: selectedOption.getAttribute('data-rede'),
+            tipo: selectedOption.getAttribute('data-tipo'),
+            nome: selectedOption.textContent,
+            valor: totalValue,
+            quantidade: parseInt(quantity, 10),
+            link: link,
+            userId: userInfo.userId,
+            id_servico: serviceSelect.value
+        };
+
+        // Chamar API para criar ação
+        const result = await criarAcao(actionData);
+
+        showNotification(`Pedido criado com sucesso! ID: ${result.id_pedido}`, 'success');
+        event.target.reset();
+        await loadUserBalance();
+
+        const chargeInput = document.getElementById('charge');
+        if (chargeInput) chargeInput.value = '';
+
+        const linkField = document.getElementById('link_field');
+        const quantityField = document.getElementById('quantity_field');
+        const serviceDescription = document.getElementById('service_description');
+
+        if (linkField) linkField.classList.add('hidden');
+        if (quantityField) quantityField.classList.add('hidden');
+        if (serviceDescription) serviceDescription.classList.add('hidden');
+
+    } catch (error) {
+        console.error('Erro ao processar pedido:', error);
+        showNotification(error.message || 'Erro ao processar pedido', 'danger');
+    } finally {
+        if (submitButton) {
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
+        }
+        document.body.classList.remove('loading');
+    }
+}
 
         // Configurar event listener para o formulário
         document.addEventListener('DOMContentLoaded', function() {
