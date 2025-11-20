@@ -1,54 +1,79 @@
-// smmsociais.com/api/criar_acao.js
-
+// /api/criar_acao.js
 import connectDB from "./db.js";
-import { User, Action } from "./schema.js";
+import { User, Action } from './schema.js';
 import mongoose from "mongoose";
-import axios from "axios";
+
+const SMM_API_KEY = process.env.SMM_API_KEY;
+const GANHESOCIAL_URL = process.env.GANHESOCIAL_URL || "https://ganhesocialtest.com/api/smm_acao";
+const SEND_TIMEOUT_MS = process.env.SEND_TIMEOUT_MS ? Number(process.env.SEND_TIMEOUT_MS) : 10000;
+
+async function enviarParaGanheSocial(payload) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
+
+  try {
+    const resp = await fetch(GANHESOCIAL_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SMM_API_KEY}`,
+        "User-Agent": "SMM-Sociais-Server"
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeout);
+
+    // Ler o corpo com segurança
+    const raw = await resp.text().catch(() => null);
+    let json = null;
+    try { json = raw ? JSON.parse(raw) : null; } catch (e) { json = null; }
+
+    return { ok: resp.ok, status: resp.status, statusText: resp.statusText, raw, json };
+  } catch (err) {
+    clearTimeout(timeout);
+    throw err;
+  }
+}
 
 const handler = async (req, res) => {
-  if (req.method !== "POST")
+  if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
+  }
 
   try {
     await connectDB();
 
-    // ---------------------------------------------
-    // 🔐 VALIDAÇÃO DO HEADER AUTHORIZATION
-    // ---------------------------------------------
-    const auth = req.headers.authorization;
-    const chaveEsperada = `Bearer ${process.env.SMM_API_KEY}`;
+    const { authorization } = req.headers || {};
+    const chaveEsperada = `Bearer ${SMM_API_KEY}`;
 
-    if (!auth) return res.status(401).json({ error: "Não autorizado" });
-
-    let usuario = null;
-    let isInternal = false;
-
-    // Chamada interna
-    if (auth === chaveEsperada) {
-      isInternal = true;
-      console.log("🟣 Chamada interna autenticada via SMM_API_KEY");
-    }
-    // Chamada externa com token do usuário
-    else if (auth.startsWith("Bearer ")) {
-      const token = auth.split(" ")[1].trim();
-      console.log("🔐 Token recebido:", token);
-
-      usuario = await User.findOne({ token });
-
-      if (!usuario) {
-        console.warn("❌ Token não encontrado:", token);
-        return res.status(401).json({ error: "Não autorizado" });
-      }
-
-      console.log("🧑‍💻 Usuário autenticado:", usuario.email);
-    }
-    else {
+    if (!authorization) {
+      console.warn("🔒 Sem header Authorization");
       return res.status(401).json({ error: "Não autorizado" });
     }
 
-    // ---------------------------------------------
-    // 📦 EXTRAÇÃO DO BODY
-    // ---------------------------------------------
+    let usuario = null;
+    let isInternalCall = false;
+
+    if (authorization === chaveEsperada) {
+      isInternalCall = true;
+      console.log("🟣 Chamada interna autenticada via SMM_API_KEY");
+    } else if (authorization.startsWith('Bearer ')) {
+      const token = authorization.split(' ')[1].trim();
+      console.log("🔐 Token recebido (criar_acao):", token);
+
+      usuario = await User.findOne({ token });
+      if (!usuario) {
+        console.warn("🔒 Token de usuário não encontrado:", token);
+        return res.status(401).json({ error: "Não autorizado" });
+      }
+      console.log("🧑‍💻 Usuário identificado:", usuario.email);
+    } else {
+      console.warn("🔒 Authorization header inválido:", authorization);
+      return res.status(401).json({ error: "Não autorizado" });
+    }
+
     const {
       rede,
       tipo,
@@ -60,170 +85,165 @@ const handler = async (req, res) => {
       id_servico
     } = req.body || {};
 
-    if (isInternal) {
-      if (!bodyUserId)
-        return res.status(400).json({ error: "userId obrigatório" });
-
-      usuario = await User.findById(bodyUserId);
-      if (!usuario)
-        return res.status(400).json({ error: "Usuário não encontrado" });
-
-      console.log("🟣 Criando ação para usuário:", usuario.email);
+    // se chamada interna, usa userId do body
+    if (isInternalCall) {
+      if (!bodyUserId) {
+        return res.status(400).json({ error: "userId obrigatório para chamadas internas" });
+      }
+      usuario = await User.findById(String(bodyUserId));
+      if (!usuario) {
+        return res.status(400).json({ error: "Usuário não encontrado!" });
+      }
+      console.log("🟣 Chamada interna para usuário:", usuario.email);
     }
 
-    // ---------------------------------------------
-    // 🔍 VALIDAÇÕES
-    // ---------------------------------------------
-    if (!rede || !tipo || !nome || !valor || !quantidade || !link)
-      return res.status(400).json({ error: "Dados incompletos" });
-
-    if (id_servico && typeof id_servico !== "string")
+    // validações
+    if (id_servico && typeof id_servico !== "string") {
       return res.status(400).json({ error: "id_servico inválido" });
+    }
 
     const valorNum = parseFloat(valor);
-    const quantidadeNum = parseInt(quantidade);
+    const quantidadeNum = Number(quantidade);
 
-    if (isNaN(valorNum) || valorNum <= 0)
+    if (isNaN(valorNum) || valorNum <= 0) {
       return res.status(400).json({ error: "Valor inválido" });
+    }
 
-    if (
-      !Number.isInteger(quantidadeNum) ||
-      quantidadeNum < 50 ||
-      quantidadeNum > 1000000
-    )
-      return res.status(400).json({
-        error: "A quantidade deve ser um número entre 50 e 1.000.000!"
-      });
+    if (!Number.isInteger(quantidadeNum) || quantidadeNum < 50 || quantidadeNum > 1000000) {
+      return res.status(400).json({ error: "A quantidade deve ser um número entre 50 e 1.000.000!" });
+    }
 
-    console.log("📌 Dados validados:");
+    console.log("📌 Dados recebidos:");
     console.log("   ➤ Valor unitário:", valorNum);
     console.log("   ➤ Quantidade:", quantidadeNum);
 
-    // ---------------------------------------------
-    // 🔄 TRANSAÇÃO
-    // ---------------------------------------------
+    // Inicia sessão / transação
     const session = await mongoose.startSession();
 
     try {
       session.startTransaction();
 
-      console.log("💳 Saldo antes:", usuario.saldo);
+      console.log("💳 Saldo do usuário (antes do débito):", usuario.saldo);
 
-      const custoTotal = valorNum; // DESCONTO UNITÁRIO
-      console.log("💰 Debitando:", custoTotal);
+      // ⚠️ Conforme pedido: débito APENAS do valor unitário (não multiplicar pela quantidade)
+      const custoATerDebitado = valorNum;
+      console.log("💰 Valor que será debitado (unitário):", custoATerDebitado);
 
-      // Criar a Action
-      const novaAcao = await Action.create(
-        [
-          {
-            userId: usuario._id,
-            id_servico,
-            rede,
-            tipo,
-            nome,
-            valor: valorNum,
-            quantidade: quantidadeNum,
-            validadas: 0,
-            link,
-            status: "pendente",
-            dataCriacao: new Date()
-          }
-        ],
-        { session, validateBeforeSave: true }
-      );
+      // Criar a action (na transação)
+      const novaAcao = new Action({
+        userId: usuario._id,
+        id_servico: id_servico ? String(id_servico) : undefined,
+        rede,
+        tipo,
+        nome,
+        valor: valorNum,
+        quantidade: quantidadeNum,
+        validadas: 0,
+        link,
+        status: "pendente",
+        dataCriacao: new Date()
+      });
 
-      const acao = novaAcao[0];
+      await novaAcao.save({ session });
 
-      // Debitar saldo
-      const debito = await User.updateOne(
-        { _id: usuario._id, saldo: { $gte: custoTotal } },
-        { $inc: { saldo: -custoTotal } },
+      // Tenta debitar (condicional: saldo >= custo)
+      console.log("🧮 Tentando debitar...");
+      const debitResult = await User.updateOne(
+        { _id: usuario._id, saldo: { $gte: custoATerDebitado } },
+        { $inc: { saldo: -custoATerDebitado } },
         { session }
       );
 
-      if (debito.modifiedCount === 0) {
-        console.warn("❌ Saldo insuficiente");
+      console.log("📊 Resultado do débito:", debitResult);
+
+      // checar resultado (compatível com diferentes drivers)
+      const modified = debitResult.modifiedCount ?? debitResult.nModified ?? debitResult.n ?? 0;
+      const matched = debitResult.matchedCount ?? debitResult.n ?? 0;
+
+      if (!matched || modified === 0) {
+        console.warn("❌ O débito não foi aplicado (saldo insuficiente)");
         await session.abortTransaction();
+        session.endSession();
         return res.status(402).json({ error: "Saldo insuficiente" });
       }
 
+      // commit da transação
       await session.commitTransaction();
+      session.endSession();
 
-      const id_pedido = acao._id.toString();
+      const id_pedido = novaAcao._id.toString();
+      console.log("🆔 Ação criada com ID:", id_pedido);
 
-      const usuarioAtual = await User.findById(usuario._id);
+      // buscar novo saldo (fora da transação)
+      const usuarioAtualizado = await User.findById(usuario._id).select("saldo");
+      console.log("💳 Saldo após o débito:", usuarioAtualizado ? usuarioAtualizado.saldo : "(não encontrado)");
 
-      console.log("💳 Saldo final:", usuarioAtual.saldo);
+      // montar payload para ganhesocial
+      const nome_usuario = (link && link.includes("@")) ? link.split("@")[1].trim() : (link ? link.trim() : "");
+      const quantidade_pontos = +(valorNum * 0.001).toFixed(6);
+      let tipo_acao = "Outro";
+      const tipoLower = (tipo || "").toLowerCase();
+      if (tipoLower === "seguidores") tipo_acao = "Seguir";
+      else if (tipoLower === "curtidas") tipo_acao = "Curtir";
 
-      // --------------------------------------------------------------------
-      // 📤 ENVIO PARA GANHESOCIAL (ASSÍNCRONO + BLINDADO)
-      // --------------------------------------------------------------------
-      enviarParaGanheSocial({
-        tipo_acao:
-          tipo.toLowerCase() === "seguidores"
-            ? "Seguir"
-            : tipo.toLowerCase() === "curtidas"
-            ? "Curtir"
-            : "Outro",
-        nome_usuario: link.includes("@")
-          ? link.split("@")[1]
-          : link.replace("https://", "").split("/")[0],
-        quantidade_pontos: +(valorNum * 0.001).toFixed(6),
+      const payloadGanheSocial = {
+        tipo_acao,
+        nome_usuario,
+        quantidade_pontos,
         quantidade: quantidadeNum,
         valor: valorNum,
         url_dir: link,
-        id_pedido
-      });
+        id_pedido,
+      };
 
-      // Resposta OK
+      // === Envia para ganhesocial e AWAIT (para evitar vazamento entre requests) ===
+      try {
+        console.log("📤 Enviando ação para ganhesocial ->", GANHESOCIAL_URL);
+        console.log("📤 Payload:", JSON.stringify(payloadGanheSocial));
+
+        const sendResult = await enviarParaGanheSocial(payloadGanheSocial);
+
+        console.log("📩 Resposta ganhesocial:", sendResult.status, sendResult.statusText);
+        if (sendResult.json) console.log("📩 JSON:", sendResult.json);
+        else if (sendResult.raw) console.log("📩 Raw:", sendResult.raw);
+
+        if (sendResult.ok && sendResult.json && sendResult.json.id_acao_smm) {
+          try {
+            await Action.findByIdAndUpdate(id_pedido, { id_acao_smm: sendResult.json.id_acao_smm });
+            console.log("🔁 Action atualizado com id_acao_smm:", sendResult.json.id_acao_smm);
+          } catch (errUpdate) {
+            console.error("❌ Falha ao atualizar Action com id_acao_smm:", errUpdate);
+          }
+        } else if (!sendResult.ok) {
+          console.warn("⚠️ ganhesocial retornou erro:", sendResult.status, sendResult.json ?? sendResult.raw);
+        }
+      } catch (errSend) {
+        // log detalhado — mas não rollback (já commitamos o débito)
+        if (errSend.name === "AbortError") {
+          console.error(`❌ ERRO FETCH: Abort devido a timeout (${SEND_TIMEOUT_MS}ms)`);
+        } else {
+          console.error("❌ ERRO FETCH:", errSend && errSend.message ? errSend.message : errSend);
+        }
+      }
+
+      // resposta final para o frontend (sempre retorna 201 se action criada e débito OK)
       return res.status(201).json({
         message: "Ação criada com sucesso",
         id_pedido,
-        newSaldo: usuarioAtual.saldo
+        newSaldo: usuarioAtualizado ? usuarioAtualizado.saldo : null
       });
-    } catch (err) {
-      await session.abortTransaction();
-      console.error("❌ Erro transação:", err);
-      return res.status(500).json({ error: "Erro ao criar ação" });
-    } finally {
+
+    } catch (txErr) {
+      try { await session.abortTransaction(); } catch (e2) { console.error("Erro abortando transação:", e2); }
       session.endSession();
+      console.error("❌ Erro durante transação:", txErr);
+      return res.status(500).json({ error: "Erro ao criar ação (transação)." });
     }
+
   } catch (error) {
-    console.error("❌ Erro geral:", error);
-    return res.status(500).json({ error: "Erro interno ao criar ação" });
+    console.error("❌ Erro interno ao criar ação:", error);
+    return res.status(500).json({ error: "Erro ao criar ação" });
   }
 };
 
 export default handler;
-
-/* ============================================================
-   🔥 Função separada para envio ao ganhesocial
-   Blindado + retry + headers reais + logs clean
-   ============================================================ */
-async function enviarParaGanheSocial(payload) {
-  const url = "https://ganhesocialtest.com/api/smm_acao";
-
-  console.log("📤 Enviando para GanheSocial:", payload);
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const res = await axios.post(url, payload, {
-        timeout: 15000,
-        headers: {
-          Authorization: `Bearer ${process.env.SMM_API_KEY}`,
-          "Content-Type": "application/json",
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122"
-        }
-      });
-
-      console.log("📩 Resposta GS:", res.data);
-      return;
-    } catch (e) {
-      console.error(`⚠ Tentativa ${attempt}/3 falhou:`, e.message);
-      await new Promise((r) => setTimeout(r, 1000));
-    }
-  }
-
-  console.error("❌ Falha ao enviar ação ao GanheSocial após 3 tentativas");
-}
