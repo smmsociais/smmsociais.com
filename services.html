@@ -28,7 +28,7 @@
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
         }
-        
+
         .service-action-btn {
             margin-top: 8px;
             width: 100%;
@@ -235,12 +235,7 @@
                                     Visualizar
                                 </button>
                             </div>
-                            ` : ''}
-                            <div class="component_button_submit">
-                                <button class="btn btn-big-primary service-action-btn btn-select-service"
-                                    data-service-id="${service.id_servico}"
-                                    data-service-name="${service.nome}">
-                                    Selecionar Serviço
+                            ` : ''}ar Serviço
                                 </button>
                             </div>
                             ${service.descricao ? `
@@ -329,7 +324,7 @@
                 button.addEventListener('click', function () {
                     const serviceId = this.getAttribute('data-service-id');
                     const serviceName = this.getAttribute('data-service-name');
-                    
+
                     // Confirmar seleção (opcional)
                     if (confirm(`Deseja selecionar o serviço "${serviceName}"?`)) {
                         // Redirecionar para a página de painel com o parâmetro do serviço
