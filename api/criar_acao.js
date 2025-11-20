@@ -171,7 +171,7 @@ try {
       (async () => {
         try {
           console.log("📤 Enviando ação para ganhesocial...");
-          const response = await fetch("https://ganhesocial.com/api/smm_acao", {
+          const response = await fetch("https://ganhesocialtest.com/api/smm_acao", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
