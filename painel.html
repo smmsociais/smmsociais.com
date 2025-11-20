@@ -1167,7 +1167,6 @@
 
             Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
                 .then(() => {
-                    // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
 
                     // Inicializar campos com valores padrão após um pequeno delay
