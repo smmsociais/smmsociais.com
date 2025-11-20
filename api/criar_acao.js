@@ -1,4 +1,4 @@
-//api/criar_acao.js
+//smmsociais.com/api/criar_acao.js
 
 import connectDB from "./db.js";
 import { User, Action } from './schema.js';
@@ -169,32 +169,80 @@ try {
       };
 
 (async () => {
-const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), 8000);
+  const targetUrl = "https://ganhesocialtest.com/api/smm_acao";
+  const payload = payloadGanheSocial; // já criado acima
+  console.log("📤 Enviando ação para ganhesocial ->", targetUrl);
+  console.log("📤 Payload:", JSON.stringify(payload));
 
-try {
-  const response = await fetch("https://ganhesocialtest.com/api/smm_acao", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.SMM_API_KEY}`,
-      "User-Agent": "SMM-Sociais-Server"
-    },
-    body: JSON.stringify(payloadGanheSocial),
-    signal: controller.signal
-  });
+  const controller = new AbortController();
+  const timeoutMs = 10000; // 10s
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  clearTimeout(timeout);
+  try {
+    // mostra os headers que irá enviar
+    const reqOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.SMM_API_KEY}`,
+        "User-Agent": "SMM-Sociais-Server"
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    };
+    console.log("📤 Request options:", { headers: reqOptions.headers, timeoutMs });
 
-  console.log("📩 Resposta recebida:", response.status);
+    const response = await fetch(targetUrl, reqOptions);
+    clearTimeout(timeout);
 
-  const data = await response.json().catch(() => "erro ao converter JSON");
-  console.log("📩 JSON:", data);
-  
-} catch (erro) {
-  console.error("❌ ERRO FETCH:", erro);
-}
+    console.log("📩 Resposta recebida:", response.status, response.statusText);
 
+    // tenta ler texto primeiro (sempre seguro)
+    const raw = await response.text().catch((e) => {
+      console.error("❗ Falha ao ler response.text():", e);
+      return null;
+    });
+
+    // mostra cabeçalhos da resposta (útil)
+    try {
+      const respHeaders = {};
+      response.headers.forEach((v, k) => { respHeaders[k] = v; });
+      console.log("📩 Response headers:", respHeaders);
+    } catch (e) {
+      // ignore
+    }
+
+    // tenta parse JSON, se falhar mostra raw
+    let data = null;
+    try {
+      data = raw ? JSON.parse(raw) : null;
+      console.log("📩 JSON:", data);
+    } catch (errParse) {
+      console.warn("⚠️ Resposta não-JSON. raw:", raw);
+    }
+
+    if (!response.ok) {
+      console.error("⚠️ Erro na resposta do ganhesocial:", response.status, data || raw);
+    } else {
+      console.log("✅ Ação registrada no ganhesocial (ok):", data);
+      // se receber id_acao_smm, atualiza action (se quiser)
+      if (data && data.id_acao_smm) {
+        try {
+          await Action.findByIdAndUpdate(id_pedido, { id_acao_smm: data.id_acao_smm });
+          console.log("🔁 Action atualizado com id_acao_smm:", data.id_acao_smm);
+        } catch (errUpdate) {
+          console.error("❌ Falha ao atualizar Action com id_acao_smm:", errUpdate);
+        }
+      }
+    }
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === "AbortError") {
+      console.error("❌ ERRO FETCH: Abort devido a timeout (" + timeoutMs + "ms)");
+    } else {
+      console.error("❌ ERRO FETCH:", err && err.message ? err.message : err);
+    }
+  }
 })();
 
       return res.status(201).json({
