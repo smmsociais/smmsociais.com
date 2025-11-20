@@ -56,6 +56,27 @@
             margin-top: 20px;
             text-align: center;
         }
+
+        /* Ajustes para dispositivos pequenos */
+        @media (max-width: 991.98px) {
+            .success-message-mobile {
+                margin: 20px 0;
+                order: 1;
+            }
+            
+            .new_order-block .row {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .new_order-block .col-lg-7 {
+                order: 2;
+            }
+            
+            .new_order-block .col-lg-5 {
+                order: 3;
+            }
+        }
     </style>
     <script>
         // Função para obter parâmetros da URL
@@ -610,12 +631,40 @@
             const successMessage = document.createElement('div');
             successMessage.id = 'success-message';
             successMessage.className = 'success-message';
+            
+            // Adicionar classe específica para mobile
+            if (window.innerWidth < 992) {
+                successMessage.classList.add('success-message-mobile');
+            }
+            
             successMessage.textContent = message;
 
-            // Inserir após o container dos serviços
-            const servicesContainer = document.querySelector('.new_order-block');
-            if (servicesContainer) {
-                servicesContainer.parentNode.insertBefore(successMessage, servicesContainer.nextSibling);
+            // Inserir no local correto baseado no tamanho da tela
+            if (window.innerWidth < 992) {
+                // Em dispositivos pequenos: inserir entre os containers
+                const servicesContainer = document.querySelector('.new_order-block .col-lg-7');
+                const contactContainer = document.querySelector('.new_order-block .col-lg-5');
+                const rowContainer = document.querySelector('.new_order-block .row');
+                
+                if (rowContainer && servicesContainer && contactContainer) {
+                    // Remover a mensagem existente primeiro
+                    const existingMsg = document.getElementById('success-message');
+                    if (existingMsg) existingMsg.remove();
+                    
+                    // Criar uma nova linha para a mensagem
+                    const messageRow = document.createElement('div');
+                    messageRow.className = 'col-12';
+                    messageRow.appendChild(successMessage);
+                    
+                    // Inserir após o container de serviços e antes do container de contato
+                    rowContainer.insertBefore(messageRow, contactContainer);
+                }
+            } else {
+                // Em dispositivos grandes: inserir após o container principal (comportamento original)
+                const servicesContainer = document.querySelector('.new_order-block');
+                if (servicesContainer) {
+                    servicesContainer.parentNode.insertBefore(successMessage, servicesContainer.nextSibling);
+                }
             }
         }
 
@@ -873,6 +922,16 @@
             if (orderForm) {
                 orderForm.addEventListener('submit', handleFormSubmit);
             }
+            
+            // Reaplicar o posicionamento da mensagem quando a janela for redimensionada
+            window.addEventListener('resize', function() {
+                const existingMessage = document.getElementById('success-message');
+                if (existingMessage) {
+                    const messageText = existingMessage.textContent;
+                    existingMessage.remove();
+                    showSuccessMessage(messageText);
+                }
+            });
         });
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
