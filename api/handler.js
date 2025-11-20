@@ -155,7 +155,7 @@ if (url.startsWith("/api/signup")) {
     }
 };
 
-// Rota: /api/profile (GET ou PUT)
+// Rota: /api/account (GET ou PUT)
 if (url.startsWith("/api/account")) {
   if (method !== "GET" && method !== "PUT") {
     return res.status(405).json({ error: "Método não permitido." });
@@ -186,11 +186,14 @@ if (url.startsWith("/api/account")) {
         }).sort({ data: -1 });
       }
 
-      return res.status(200).json({
-        nome_usuario: usuario.nome,
-        email: usuario.email,
-        token: usuario.token
-      });
+// dentro do bloco if (method === "GET") { ... }
+return res.status(200).json({
+  nome_usuario: usuario.nome,
+  email: usuario.email,
+  token: usuario.token,
+  userId: usuario._id ? String(usuario._id) : null, // <-- adiciona userId
+  id: usuario._id ? String(usuario._id) : null      // <-- alias opcional
+});
     }
 
     if (method === "PUT") {
