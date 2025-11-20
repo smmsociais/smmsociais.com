@@ -45,6 +45,17 @@
             z-index: 10000;
             min-width: 300px;
         }
+
+        /* Estilo para a mensagem de sucesso */
+        .success-message {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: center;
+        }
     </style>
     <script>
         // Função para obter parâmetros da URL
@@ -587,6 +598,27 @@
             }, 5000);
         }
 
+        // Função para mostrar mensagem de sucesso abaixo do container dos serviços
+        function showSuccessMessage(message) {
+            // Remover mensagem anterior se existir
+            const existingMessage = document.getElementById('success-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            // Criar nova mensagem
+            const successMessage = document.createElement('div');
+            successMessage.id = 'success-message';
+            successMessage.className = 'success-message';
+            successMessage.textContent = message;
+
+            // Inserir após o container dos serviços
+            const servicesContainer = document.querySelector('.new_order-block');
+            if (servicesContainer) {
+                servicesContainer.parentNode.insertBefore(successMessage, servicesContainer.nextSibling);
+            }
+        }
+
         // criarAcao agora aceita tokenOpcional (string)
         async function criarAcao(formData, tokenOpcional = null) {
             // tenta usar o token passado; senão carrega do localStorage
@@ -794,34 +826,34 @@
                     id_servico: serviceSelect.value
                 };
 
-// Chamar API para criar ação
-const result = await criarAcao(actionData);
+                // Chamar API para criar ação
+                const result = await criarAcao(actionData);
 
-// Se a API retornou novo saldo, atualiza o display IMEDIATAMENTE
-if (result && typeof result.newSaldo !== 'undefined') {
-    const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
-    if (balanceElement) {
-        const formatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.newSaldo || 0);
-        balanceElement.textContent = formatted;
-    }
-} else {
-    // fallback: recarrega saldo do servidor
-    await loadUserBalance();
-}
+                // Se a API retornou novo saldo, atualiza o display IMEDIATAMENTE
+                if (result && typeof result.newSaldo !== 'undefined') {
+                    const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
+                    if (balanceElement) {
+                        const formatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.newSaldo || 0);
+                        balanceElement.textContent = formatted;
+                    }
+                } else {
+                    // fallback: recarrega saldo do servidor
+                    await loadUserBalance();
+                }
 
-showNotification(`Pedido criado com sucesso! ID: ${result.id_pedido}`, 'success');
+                // Mostrar notificação e mensagem de sucesso
+                showNotification(`Pedido criado com sucesso! ID: ${result.id_pedido}`, 'success');
+                showSuccessMessage(`Pedido enviado com sucesso! ID: ${result.id_pedido}`);
 
-
+                // Limpar apenas os campos específicos, mantendo o container expandido
                 const chargeInput = document.getElementById('charge');
                 if (chargeInput) chargeInput.value = '';
 
-                const linkField = document.getElementById('link_field');
-                const quantityField = document.getElementById('quantity_field');
-                const serviceDescription = document.getElementById('service_description');
+                const linkInputField = document.getElementById('orderform-link');
+                if (linkInputField) linkInputField.value = ''; // Remove apenas o valor do link
 
-                if (linkField) linkField.classList.add('hidden');
-                if (quantityField) quantityField.classList.add('hidden');
-                if (serviceDescription) serviceDescription.classList.add('hidden');
+                // NÃO esconder os campos para manter o container expandido
+                // Apenas limpar os valores dos campos sensíveis
 
             } catch (error) {
                 console.error('Erro ao processar pedido:', error);
