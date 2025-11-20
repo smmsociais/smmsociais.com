@@ -84,58 +84,61 @@ const handler = async (req, res) => {
       return res.status(400).json({ error: "A quantidade deve ser um número entre 50 e 1.000.000!" });
     }
 
-    console.log("📌 Dados recebidos:");
-    console.log("   ➤ Valor unitário:", valorNum);
-    console.log("   ➤ Quantidade:", quantidadeNum);
+console.log("📌 Dados recebidos:");
+console.log("   ➤ Valor unitário:", valorNum);
+console.log("   ➤ Quantidade:", quantidadeNum);
 
-    // INICIAR TRANSAÇÃO
-    const session = await mongoose.startSession();
+// INICIAR TRANSAÇÃO
+const session = await mongoose.startSession();
 
-    try {
-      session.startTransaction();
+try {
+  session.startTransaction();
 
-      console.log("💳 Saldo do usuário (antes do débito):", usuario.saldo);
+  console.log("💳 Saldo do usuário (antes do débito):", usuario.saldo);
 
-      const custoTotal = valorNum * quantidadeNum;
-      console.log("💰 Custo total calculado:", custoTotal);
+  // *** MUDANÇA IMPORTANTE ***
+  // AGORA DEBITA APENAS O VALOR UNITÁRIO
+  const custoTotal = valorNum;
+  console.log("💰 Valor debitado (unitário):", custoTotal);
 
-      // Criar a action
-      const novaAcao = new Action({
-        userId: usuario._id,
-        id_servico: id_servico ? String(id_servico) : undefined,
-        rede,
-        tipo,
-        nome,
-        valor: valorNum,
-        quantidade: quantidadeNum,
-        validadas: 0,
-        link,
-        status: "pendente",
-        dataCriacao: new Date()
-      });
+  // Criar a action
+  const novaAcao = new Action({
+    userId: usuario._id,
+    id_servico: id_servico ? String(id_servico) : undefined,
+    rede,
+    tipo,
+    nome,
+    valor: valorNum,
+    quantidade: quantidadeNum,
+    validadas: 0,
+    link,
+    status: "pendente",
+    dataCriacao: new Date()
+  });
 
-      await novaAcao.save({ session });
+  await novaAcao.save({ session });
 
-      // TENTAR DEBITAR
-      console.log("🧮 Tentando debitar...");
+  // TENTAR DEBITAR APENAS O VALOR UNITÁRIO
+  console.log("🧮 Tentando debitar...");
 
-      const debitResult = await User.updateOne(
-        { _id: usuario._id, saldo: { $gte: custoTotal } },
-        { $inc: { saldo: -custoTotal } },
-        { session }
-      );
+  const debitResult = await User.updateOne(
+    { _id: usuario._id, saldo: { $gte: custoTotal } },
+    { $inc: { saldo: -custoTotal } },
+    { session }
+  );
 
-      console.log("📊 Resultado do débito:", debitResult);
+  console.log("📊 Resultado do débito:", debitResult);
 
-if (
-  (debitResult.modifiedCount !== undefined && debitResult.modifiedCount === 0) ||
-  (debitResult.nModified !== undefined && debitResult.nModified === 0)
-) {
-  console.warn("❌ O débito não foi aplicado (saldo insuficiente)");
-  await session.abortTransaction();
-  session.endSession();
-  return res.status(402).json({ error: "Saldo insuficiente" });
-}
+  if (
+    (debitResult.modifiedCount !== undefined && debitResult.modifiedCount === 0) ||
+    (debitResult.nModified !== undefined && debitResult.nModified === 0)
+  ) {
+    console.warn("❌ O débito não foi aplicado (saldo insuficiente)");
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(402).json({ error: "Saldo insuficiente" });
+  }
+
       await session.commitTransaction();
       session.endSession();
 
