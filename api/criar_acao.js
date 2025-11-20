@@ -169,37 +169,32 @@ try {
       };
 
 (async () => {
-  try {
-    console.log("📤 Enviando ação para ganhesocial...");
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 8000);
 
-    const response = await fetch("https://ganhesocialtest.com/api/smm_acao", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.SMM_API_KEY}`
-      },
-      body: JSON.stringify(payloadGanheSocial)
-    });
+try {
+  const response = await fetch("https://ganhesocialtest.com/api/smm_acao", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.SMM_API_KEY}`,
+      "User-Agent": "SMM-Sociais-Server"
+    },
+    body: JSON.stringify(payloadGanheSocial),
+    signal: controller.signal
+  });
 
-    console.log("📥 Status da resposta:", response.status);
+  clearTimeout(timeout);
 
-    const data = await response.json().catch(() => null);
+  console.log("📩 Resposta recebida:", response.status);
 
-    if (!response.ok) {
-      console.error("⚠️ Erro na resposta do ganhesocial:", response.status, data);
-    } else {
-      console.log("✅ Ação registrada no ganhesocial:", data);
+  const data = await response.json().catch(() => "erro ao converter JSON");
+  console.log("📩 JSON:", data);
+  
+} catch (erro) {
+  console.error("❌ ERRO FETCH:", erro);
+}
 
-      if (data && data.id_acao_smm) {
-        // CORREÇÃO AQUI
-        await Action.findByIdAndUpdate(id_pedido, {
-          id_acao_smm: data.id_acao_smm
-        });
-      }
-    }
-  } catch (erroEnvio) {
-    console.error("❌ Falha ao enviar para ganhesocial:", erroEnvio);
-  }
 })();
 
       return res.status(201).json({
