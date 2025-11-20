@@ -28,6 +28,10 @@
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
         }
+        
+        .hidden {
+            display: none !important;
+        }
     </style>
     <script>
         // Função para obter o token do localStorage
@@ -193,7 +197,21 @@
                 // Disparar o evento change para atualizar todos os campos
                 const event = new Event('change');
                 serviceSelect.dispatchEvent(event);
+                
+                // Garantir que os campos sejam exibidos
+                showServiceFields();
             }
+        }
+
+        // Função para mostrar campos do serviço
+        function showServiceFields() {
+            const linkField = document.getElementById('link_field');
+            const quantityField = document.getElementById('quantity_field');
+            const serviceDescription = document.getElementById('service_description');
+
+            if (linkField) linkField.classList.remove('hidden');
+            if (quantityField) quantityField.classList.remove('hidden');
+            if (serviceDescription) serviceDescription.classList.remove('hidden');
         }
 
         // Função para atualizar categorias com base nos serviços
@@ -409,6 +427,19 @@
                 chargeInput.value = `R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000`;
             } else {
                 chargeInput.value = '';
+            }
+        }
+
+        // Função para inicializar todos os campos com valores padrão
+        function initializeDefaultFields() {
+            const serviceSelect = document.getElementById('orderform-service');
+            if (serviceSelect && serviceSelect.selectedIndex > 0) {
+                // Garantir que os campos estejam visíveis
+                showServiceFields();
+                
+                // Disparar evento change para preencher todos os campos
+                const event = new Event('change');
+                serviceSelect.dispatchEvent(event);
             }
         }
     </script>
@@ -882,6 +913,12 @@
                 .then(() => {
                     // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
+                    
+                    // Inicializar campos com valores padrão após um pequeno delay
+                    // para garantir que o DOM esteja completamente renderizado
+                    setTimeout(() => {
+                        initializeDefaultFields();
+                    }, 100);
                 })
                 .catch(err => {
                     // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
