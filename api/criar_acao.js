@@ -168,33 +168,39 @@ try {
         id_pedido,
       };
 
-      (async () => {
-        try {
-          console.log("📤 Enviando ação para ganhesocial...");
-          const response = await fetch("https://ganhesocialtest.com/api/smm_acao", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.SMM_API_KEY}`
-            },
-            body: JSON.stringify(payloadGanheSocial)
-          });
+(async () => {
+  try {
+    console.log("📤 Enviando ação para ganhesocial...");
 
-          const data = await response.json().catch(() => null);
+    const response = await fetch("https://ganhesocialtest.com/api/smm_acao", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.SMM_API_KEY}`
+      },
+      body: JSON.stringify(payloadGanheSocial)
+    });
 
-          if (!response.ok) {
-            console.error("⚠️ Erro na resposta do ganhesocial:", response.status, data);
-          } else {
-            console.log("✅ Ação registrada no ganhesocial:", data);
+    console.log("📥 Status da resposta:", response.status);
 
-            if (data && data.id_acao_smm) {
-             await Pedido.findByIdAndUpdate(id_pedido, { id_acao_smm: data.id_acao_smm });
-            }
-          }
-        } catch (erroEnvio) {
-          console.error("❌ Falha ao enviar para ganhesocial:", erroEnvio);
-        }
-      })();
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      console.error("⚠️ Erro na resposta do ganhesocial:", response.status, data);
+    } else {
+      console.log("✅ Ação registrada no ganhesocial:", data);
+
+      if (data && data.id_acao_smm) {
+        // CORREÇÃO AQUI
+        await Action.findByIdAndUpdate(id_pedido, {
+          id_acao_smm: data.id_acao_smm
+        });
+      }
+    }
+  } catch (erroEnvio) {
+    console.error("❌ Falha ao enviar para ganhesocial:", erroEnvio);
+  }
+})();
 
       return res.status(201).json({
         message: "Ação criada com sucesso",
