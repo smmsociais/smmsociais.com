@@ -28,6 +28,21 @@
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
         }
+
+        /* ESTILO ADICIONADO: Linha verde para ordens completadas */
+        .order-completed {
+            background-color: #d4edda !important; /* Verde claro */
+            border-left: 4px solid #28a745; /* Verde mais escuro na borda */
+        }
+        
+        .order-completed:hover {
+            background-color: #c3e6cb !important; /* Verde um pouco mais escuro no hover */
+        }
+
+        /* Garantir que o texto seja legível */
+        .order-completed td {
+            color: #155724 !important; /* Texto verde escuro para contraste */
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -208,6 +223,9 @@
 
                 const status = order.status ? order.status.toLowerCase() : '';
 
+                // MODIFICAÇÃO: Adicionar classe específica para ordens completadas
+                let rowClass = '';
+                
                 switch (status) {
                     case 'pending':
                     case 'pendente':
@@ -225,6 +243,7 @@
                     case 'concluido':
                         statusText = 'Concluído';
                         statusClass = 'text-success';
+                        rowClass = 'order-completed'; // CLASSE ADICIONADA
                         break;
                     case 'partial':
                     case 'parcial':
@@ -260,8 +279,9 @@
                 const servicoNome = order.servicoDetalhes ? order.servicoDetalhes.nome :
                     (order.serviceName || order.service || 'Serviço não encontrado');
 
+                // MODIFICAÇÃO: Adicionar a classe da linha para ordens completadas
                 return `
-                    <tr>
+                    <tr class="${rowClass}">
                         <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : order.id || 'N/A'}</td>
                         <td data-label="Data">
                             <span class="nowrap">${formattedDate}</span>
@@ -397,6 +417,7 @@
 </head>
 
 <body class="body  body-internal">
+    <!-- O restante do corpo HTML permanece igual -->
     <div class="wrapper  wrapper-sidebar-navbar ">
         <div id="block_52" class="component_private_navbar">
             <span class="component_private_navbar ">
