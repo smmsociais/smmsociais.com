@@ -52,8 +52,14 @@
         }
 
         .category-content {
-            position: relative;
-            z-index: 2;
+            position: absolute;
+            top: 50%;
+            left: 50px;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            z-index: 1;
         }
 
         .services-category h4 {
@@ -65,7 +71,7 @@
         // Mapeamento de categorias para imagens
         const categoryImages = {
             'Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/9c93b12b9b4044c5e96392fbaf09bb42e74cb16a/instagram.png?raw=true',
-            'Curtidas no Instagram (emoji)': 'https://github.com/smmsociais/smmsociais.com/blob/9c93b12b9b4044c5e96392fbaf09bb42e74cb16a/instagram.png?raw=true',
+            'Curtidas no Instagram': '❤️',
             'Seguidores Brasileiros no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
             'Curtidas Brasileiras no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
             'TikTok': 'https://github.com/smmsociais/smmsociais.com/blob/main/tiktok.png?raw=true'
