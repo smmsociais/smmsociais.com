@@ -43,12 +43,11 @@
         .category-image {
             position: absolute;
             top: 50%;
-            right: 20px;
+            left: 20px;
             transform: translateY(-50%);
             width: 40px;
             height: 40px;
             object-fit: contain;
-            opacity: 0.7;
             z-index: 1;
         }
 
@@ -220,23 +219,23 @@
                 // Linha de título da categoria
                 const categoryRow = document.createElement('tr');
                 categoryRow.className = 'services-list-category-title';
-                
+
                 let categoryContent = `
                     <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
                         <div class="w-100 category-content">
                             <h4>${categoryName}</h4>
                         </div>
                 `;
-                
+
                 // Adicionar imagem se existir para esta categoria
                 if (categoryImage) {
                     categoryContent += `
                         <img src="${categoryImage}" alt="${categoryName}" class="category-image">
                     `;
                 }
-                
+
                 categoryContent += `</td>`;
-                
+
                 categoryRow.innerHTML = categoryContent;
                 tbody.appendChild(categoryRow);
 
