@@ -381,8 +381,8 @@ if (url.startsWith("/api/incrementar-validadas")) {
     }
 
     // 🏁 Se atingiu o limite, marcar como completado
-    if (updated.validadas >= updated.quantidade && updated.status !== "completado") {
-      updated.status = "completado";
+    if (updated.validadas >= updated.quantidade && updated.status !== "Concluído") {
+      updated.status = "Concluído";
       await updated.save();
       console.log("[incrementar-validadas] ação marcada como COMPLETADA");
     }
@@ -425,6 +425,7 @@ if (url.startsWith("/api/orders")) {
     const token = authorization.split(" ")[1];
     const usuario = await User.findOne({ token });
 
+
     if (!usuario) {
       return res.status(401).json({ error: "Token inválido ou usuário não encontrado!" });
     }
@@ -465,11 +466,15 @@ if (url.startsWith("/api/orders")) {
     const servicos = await Servico.find({ id_servico: { $in: idsServico } });
 
     // 🧩 Anexar detalhes dos serviços a cada ação
-    const acoesComDetalhes = acoes.map(acao => {
-      const obj = acao.toObject();
-      obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
-      return obj;
-    });
+const acoesComDetalhes = acoes.map(acao => {
+  const obj = acao.toObject();
+
+  // 🔥 Garantir que ID exibido no frontend seja SEMPRE o id_acao_smm
+  obj.id = obj.id_acao_smm || obj._id.toString();
+
+  obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
+  return obj;
+});
 
     return res.json({ acoes: acoesComDetalhes });
 
