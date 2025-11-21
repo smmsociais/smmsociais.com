@@ -334,45 +334,65 @@ if (url.startsWith("/api/incrementar-validadas")) {
   console.log("[incrementar-validadas] chamada recebida");
   console.log("Método:", req.method);
   console.log("Corpo recebido:", req.body);
-if (req.method !== "POST") {
+
+  if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  // 🔐 Autenticação obrigatória
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Chave ausente" });
+  }
+
+  const apiKey = authHeader.replace("Bearer ", "").trim();
+  if (apiKey !== process.env.SMM_API_KEY) {
+    return res.status(403).json({ error: "Chave inválida" });
   }
 
   let { id_acao_smm } = req.body;
 
   if (!id_acao_smm) {
-    console.log("[incrementar-validadas] id_acao_smm ausente ou inválido:", id_acao_smm);
-    return res.status(400).json({ error: "ID inválido" });
+    return res.status(400).json({ error: "id_acao_smm é obrigatório" });
   }
 
-  // converter para número se for string numérica
-  if (typeof id_acao_smm === "string") {
-    id_acao_smm = Number(id_acao_smm);
-  }
-
-  if (typeof id_acao_smm !== "number" || isNaN(id_acao_smm)) {
-    console.log("[incrementar-validadas] id_acao_smm não é número válido:", id_acao_smm);
-    return res.status(400).json({ error: "ID inválido" });
+  // sempre tenta converter para número
+  const parsedID = Number(id_acao_smm);
+  if (isNaN(parsedID)) {
+    return res.status(400).json({ error: "id_acao_smm inválido" });
   }
 
   try {
     await connectDB();
 
-    const result = await Action.updateOne(
-      { id_acao_smm: id_acao_smm },
-      { $inc: { validadas: 1 } }
-    );
-
-    console.log("[incrementar-validadas] resultado do update:", result);
-
-    if (result.modifiedCount === 0) {
+    // Buscar ação ANTES do update
+    const action = await Action.findOne({ id_acao_smm: parsedID });
+    if (!action) {
       return res.status(404).json({ error: "Ação não encontrada" });
     }
 
-    return res.status(200).json({ status: "ok", updated: result.modifiedCount });
+    // Incrementar
+    action.validadas = (action.validadas ?? 0) + 1;
+
+    // Se completou o total
+    if (action.validadas >= action.quantidade) {
+      action.status = "completado";
+    }
+
+    await action.save();
+
+    console.log("[incrementar-validadas] nova contagem:", action.validadas);
+    console.log("[incrementar-validadas] status atualizado:", action.status);
+
+    return res.status(200).json({
+      status: "ok",
+      id_acao_smm: parsedID,
+      novas_validadas: action.validadas,
+      status_acao: action.status
+    });
 
   } catch (error) {
-    console.error("[incrementar-validadas] erro no servidor:", error);
+    console.error("[incrementar-validadas] erro:", error);
     return res.status(500).json({ error: "Erro interno no servidor" });
   }
 }
