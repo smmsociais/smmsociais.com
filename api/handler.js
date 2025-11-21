@@ -440,41 +440,141 @@ if (url.startsWith("/api/orders")) {
       { $set: { status: "completed" } }
     );
 
-    // 🔎 Filtro dinâmico conforme status
-    const status = req.query.status;
+    // ---------- Helpers locais ----------
+
+    // extrai username do link TikTok (ex: https://www.tiktok.com/@usuario -> usuario)
+    function extractUsernameFromUrl(urlDir) {
+      if (!urlDir || typeof urlDir !== "string") return null;
+      let s = urlDir.replace(/[\r\n]/g, "").trim();
+      s = s.split("?")[0].split("#")[0];
+      const m = s.match(/@([A-Za-z0-9_.-]+)/);
+      if (m && m[1]) return m[1].toLowerCase();
+      s = s.replace(/^\/+|\/+$/g, "");
+      if (s.includes("/")) {
+        const parts = s.split("/");
+        s = parts[parts.length - 1];
+      }
+      if (s.startsWith("@")) s = s.slice(1);
+      s = s.trim().toLowerCase();
+      return s === "" ? null : s;
+    }
+
+    // Scraptik helper com cache simples e retry
+    const SCRAPTIK_KEY = process.env.RAPIDAPI_KEY || process.env.RAPIDAPI || "";
+    const scraptikCache = global.__scraptik_cache__ || new Map();
+    // persistir cache no global durante o lifecycle do processo (evita recriar em cada request)
+    global.__scraptik_cache__ = scraptikCache;
+    const SCRAPTIK_CACHE_TTL = 60 * 1000; // 60s cache (ajuste conforme necessidade)
+    const SCRAPTIK_TIMEOUT_MS = 10000;
+
+    async function fetchFollowerCount(username) {
+      if (!username) return null;
+
+      const cached = scraptikCache.get(username);
+      if (cached && (Date.now() - cached.fetchedAt) < SCRAPTIK_CACHE_TTL) {
+        return cached.count;
+      }
+
+      if (!SCRAPTIK_KEY) {
+        console.warn("SCRAPTIK_KEY não definido — não será possível buscar contagem de seguidores.");
+        scraptikCache.set(username, { count: null, fetchedAt: Date.now() });
+        return null;
+      }
+
+      const axiosConfig = {
+        method: "get",
+        url: "https://scraptik.p.rapidapi.com/get-user",
+        params: { username },
+        headers: {
+          "x-rapidapi-key": SCRAPTIK_KEY,
+          "x-rapidapi-host": "scraptik.p.rapidapi.com"
+        },
+        timeout: SCRAPTIK_TIMEOUT_MS
+      };
+
+      let lastErr = null;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const resp = await axios(axiosConfig);
+          const data = resp?.data;
+          const count = Number(data?.user?.follower_count ?? data?.user?.followerCount ?? null);
+          const normalized = Number.isFinite(count) ? count : null;
+          scraptikCache.set(username, { count: normalized, fetchedAt: Date.now() });
+          return normalized;
+        } catch (err) {
+          lastErr = err;
+          const status = err?.response?.status;
+          // se 400/404 -> não tentar novamente (usuário inexistente/privado)
+          if (status === 400 || status === 404) {
+            console.warn(`scraptik get-user: non-retryable for ${username} ->`, err?.response?.data || err.message);
+            scraptikCache.set(username, { count: null, fetchedAt: Date.now() });
+            return null;
+          }
+          console.warn(`scraptik get-user falhou (tentativa ${attempt}) para ${username}:`, err.message || status || err);
+          await new Promise(r => setTimeout(r, 200 * attempt));
+        }
+      }
+      console.error("scraptik get-user erro final:", lastErr?.message || lastErr);
+      scraptikCache.set(username, { count: null, fetchedAt: Date.now() });
+      return null;
+    }
+
+    // ---------- Buscar ações e serviços ----------
+    const statusQuery = req.query.status;
     const filtro = { userId: usuario._id };
 
-    if (status && status !== "todos") {
-      if (status === "pending") {
+    if (statusQuery && statusQuery !== "todos") {
+      if (statusQuery === "pending") {
         filtro.validadas = 0;
-      } else if (status === "progress") {
+      } else if (statusQuery === "progress") {
         filtro.validadas = { $gt: 0 };
         filtro.status = "progress";
       } else {
-        filtro.status = status;
+        filtro.status = statusQuery;
       }
     }
 
-    // 🔍 Buscar ações do usuário
     const acoes = await Action.find(filtro).sort({ dataCriacao: -1 });
 
-    // 🔗 Buscar serviços relacionados
-    const idsServico = [...new Set(acoes.map(a => a.id_servico))];
-    const servicos = await Servico.find({ id_servico: { $in: idsServico } });
+    const idsServico = [...new Set(acoes.map(a => a.id_servico))].filter(Boolean);
+    const servicos = idsServico.length > 0 ? await Servico.find({ id_servico: { $in: idsServico } }) : [];
 
-    // 🧩 Montar retorno com ID correto (id_acao_smm)
-    const acoesComDetalhes = acoes.map(acao => {
-      const obj = acao.toObject();
+    // ---------- Montar retorno com contagem inicial (com limite de concorrência) ----------
+    const CONCURRENCY = 5;
+    const queue = [...acoes];
+    const acoesComDetalhes = [];
 
-      // 🔥 DEFINIÇÃO DO ID PARA O FRONTEND
-      obj.id = obj.id_acao_smm || obj._id.toString();
+    while (queue.length > 0) {
+      const batch = queue.splice(0, CONCURRENCY);
+      const promises = batch.map(async acao => {
+        const obj = acao.toObject();
+        obj.id = obj.id_acao_smm || obj._id.toString();
+        obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
 
-      // Anexar detalhes do serviço
-      obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
+        // extrair username do link
+        const username = extractUsernameFromUrl(obj.link || obj.url || "");
+        if (username) {
+          try {
+            const count = await fetchFollowerCount(username);
+            obj.contagemInicial = (count !== null && count !== undefined) ? count : 0;
+          } catch (e) {
+            console.warn("Erro ao buscar follower_count para", username, e?.message || e);
+            obj.contagemInicial = 0;
+          }
+        } else {
+          obj.contagemInicial = 0;
+        }
 
-      return obj;
-    });
+        return obj;
+      });
 
+      const results = await Promise.all(promises);
+      acoesComDetalhes.push(...results);
+
+      if (queue.length > 0) await new Promise(r => setTimeout(r, 150));
+    }
+
+    // Retornar
     return res.json({ acoes: acoesComDetalhes });
 
   } catch (error) {
