@@ -333,57 +333,77 @@ if (url.startsWith("/api/massorder")) {
 if (url.startsWith("/api/incrementar-validadas")) {
   console.log("[incrementar-validadas] chamada recebida");
   console.log("Método:", req.method);
-  console.log("Corpo recebido:", req.body);
+  console.log("Headers:", req.headers);
 
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  // 🔐 Autenticação obrigatória
-  const authHeader = req.headers.authorization;
+  // Certifique-se: se estiver usando express, coloque app.use(express.json()) no bootstrap
+  // Caso contrário req.body pode estar vazio.
+  console.log("Corpo recebido (raw):", req.body);
+
+  // Autenticação
+  const authHeader = req.headers.authorization || req.headers.Authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.warn("[incrementar-validadas] auth header ausente ou mal formatado");
     return res.status(401).json({ error: "Chave ausente" });
   }
-
-  const apiKey = authHeader.replace("Bearer ", "").trim();
-  if (apiKey !== process.env.SMM_API_KEY) {
+  const apiKey = String(authHeader).replace(/^Bearer\s+/i, "").trim();
+  if (apiKey !== (process.env.SMM_API_KEY || "")) {
+    console.warn("[incrementar-validadas] chave inválida recebida:", apiKey);
     return res.status(403).json({ error: "Chave inválida" });
   }
 
-  let { id_acao_smm } = req.body;
-
-  if (!id_acao_smm) {
+  let { id_acao_smm } = req.body || {};
+  if (id_acao_smm === undefined || id_acao_smm === null) {
+    console.warn("[incrementar-validadas] id_acao_smm ausente:", id_acao_smm);
     return res.status(400).json({ error: "id_acao_smm é obrigatório" });
   }
 
-  // sempre tenta converter para número
+  // limpar e converter
+  if (typeof id_acao_smm === "string") id_acao_smm = id_acao_smm.trim();
   const parsedID = Number(id_acao_smm);
   if (isNaN(parsedID)) {
+    console.warn("[incrementar-validadas] id_acao_smm não é numérico:", id_acao_smm);
     return res.status(400).json({ error: "id_acao_smm inválido" });
   }
 
   try {
     await connectDB();
 
-    // Buscar ação ANTES do update
-    const action = await Action.findOne({ id_acao_smm: parsedID });
-    if (!action) {
-      return res.status(404).json({ error: "Ação não encontrada" });
+    // Incremento atômico e retorno do documento após o update
+    const query = { id_acao_smm: parsedID };
+    const update = { $inc: { validadas: 1 } };
+    const opts = { returnDocument: "after" /* para MongoDB native driver v4 */ };
+
+    // Se estiver usando mongoose Model:
+    // const updated = await Action.findOneAndUpdate(query, update, { new: true });
+    // Se estiver usando native driver (db.collection):
+    const coll = db ? db.collection("actions") : null; // ajuste conforme sua connectDB
+    if (!coll) {
+      console.error("[incrementar-validadas] coleção actions não disponível (db null).");
+      return res.status(500).json({ error: "DB indisponível" });
     }
 
-    // Incrementar
-    action.validadas = (action.validadas ?? 0) + 1;
+    const result = await coll.findOneAndUpdate(query, update, { returnDocument: "after" });
 
-    // Se completou o total
-    if (action.validadas >= action.quantidade) {
+    if (!result || !result.value) {
+      console.warn("[incrementar-validadas] ação não encontrada para query:", query);
+      return res.status(404).json({ error: "Ação não encontrada", query });
+    }
+
+    // atualiza status se atingiu quantidade
+    const action = result.value;
+    const validadas = Number(action.validadas || 0);
+    const quantidade = Number(action.quantidade || 0);
+    if (validadas >= quantidade && action.status !== "completado") {
+      await coll.updateOne({ id_acao_smm: parsedID }, { $set: { status: "completado" } });
       action.status = "completado";
+      console.log("[incrementar-validadas] status atualizado para completado (quantidade atingida).");
     }
 
-    await action.save();
-
-    console.log("[incrementar-validadas] nova contagem:", action.validadas);
-    console.log("[incrementar-validadas] status atualizado:", action.status);
-
+    console.log("[incrementar-validadas] SUCESSO; id:", parsedID, "validadas:", action.validadas);
     return res.status(200).json({
       status: "ok",
       id_acao_smm: parsedID,
@@ -391,9 +411,9 @@ if (url.startsWith("/api/incrementar-validadas")) {
       status_acao: action.status
     });
 
-  } catch (error) {
-    console.error("[incrementar-validadas] erro:", error);
-    return res.status(500).json({ error: "Erro interno no servidor" });
+  } catch (err) {
+    console.error("[incrementar-validadas] erro:", err);
+    return res.status(500).json({ error: "Erro interno no servidor", details: String(err.message || err) });
   }
 }
 
