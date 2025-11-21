@@ -23,17 +23,24 @@ const actionHistorySchema = new mongoose.Schema({
   url_dir: { type: String, required: true },
   tipo_acao: { type: String, required: true },
   quantidade_pontos: { type: Number, required: true },
-  tipo: { type: String, default: "Seguir" },
+  tipo: { type: String, default: "seguir" },
   rede_social: { type: String, default: "TikTok" },
-  valor_confirmacao: { type: String, required: true },
-  acao_validada: { type: Boolean, default: null },
-  data: { type: Date, default: Date.now }
-});
+  valor_confirmacao: { type: Number, required: true },
+  acao_validada: { 
+    type: String, 
+    enum: ["pendente", "valida", "invalida", "pulada"], 
+    default: "pendente" 
+  },
+  data: { type: Date, default: Date.now },
+  processing: { type: Boolean, default: false },
+  verify_attempts: { type: Number, default: 0 },
+  verificada_em: { type: Date }
+}, { timestamps: true });
 
 /* 🔹 Ações Disponíveis */
 const actionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  id_servico: { type: String }, // ou ObjectId, se houver referência
+  id_servico: { type: String },
   rede: { type: String, required: true },
   tipo: { type: String, required: true },
   nome: { type: String, required: true },
@@ -43,8 +50,9 @@ const actionSchema = new mongoose.Schema({
   link: { type: String, required: true },
   status: { type: String, default: "pendente" },
   dataCriacao: { type: Date, default: Date.now },
-  id_acao_smm: { type: Number } // Identificador da origem externa, opcional
-});
+  id_acao_smm: { type: Number },
+  contagemInicial: { type: Number, default: null } // <-- novo campo
+}, { timestamps: true });
 
 const ServicoSchema = new mongoose.Schema({
     id_servico: {
