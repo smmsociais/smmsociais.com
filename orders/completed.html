@@ -152,12 +152,12 @@
 
                     // Suporte para diferentes estruturas de resposta da API
                     const orders = data.acoes || data.orders || data.data || data;
-                    
+
                     // Filtrar apenas ordens com status "Concluído" para garantir
-                    const completedOrders = Array.isArray(orders) 
+                    const completedOrders = Array.isArray(orders)
                         ? orders.filter(order => order.status === "Concluído")
                         : [];
-                    
+
                     displayOrders(completedOrders);
                     updateActiveTab();
                     resolve(completedOrders);
@@ -213,7 +213,7 @@
 
                 return `
                     <tr class="table-success">
-                        <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : order.id || 'N/A'}</td>
+                        <td data-label="ID">${order.id || (order._id ? order._id.toString().substring(0, 8) : 'N/A')}</td>
                         <td data-label="Data">
                             <span class="nowrap">${formattedDate}</span>
                             <span class="nowrap">${formattedTime}</span>
