@@ -198,9 +198,14 @@
                 const formattedTime = date.toLocaleTimeString('pt-BR');
 
                 // Calcular valores restantes
-                const quantidade = order.quantidade || order.quantity || 0;
-                const validadas = order.validadas || order.validated || order.completed || 0;
+                // Calcular valores com nullish (preserva zero)
+                const quantidade = Number(order.quantidade ?? order.quantity ?? 0);
+                const validadas = Number(order.validadas ?? order.validated ?? order.completed ?? 0);
                 const remaining = Math.max(0, quantidade - validadas);
+
+                // Mostrar contagem inicial corretamente (preserva 0)
+                const contagemInicialRaw = order.contagemInicial ?? order.initialCount ?? 0;
+                const contagemInicialDisplay = new Intl.NumberFormat('pt-BR').format(Number(contagemInicialRaw || 0));
 
                 // Determinar o status em português
                 let statusText = '';
@@ -248,8 +253,8 @@
                 }
 
                 // Formatar valor monetário
-                const valor = order.valor || order.value || order.price || 0;
-                const valorFormatado = parseFloat(valor).toFixed(2).replace('.', ',');
+                const valor = Number(order.valor ?? order.value ?? order.price ?? 0);
+                const valorFormatado = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valor);
 
                 // Tratar link
                 const link = order.link || order.url || '#';
@@ -273,7 +278,7 @@
                             </a>
                         </td>
                         <td data-label="Valor">R$ ${valorFormatado}</td>
-                        <td data-label="Contagem inicial" class="nowrap">${order.contagemInicial || order.initialCount || 0}</td>
+                        <td data-label="Contagem inicial" class="nowrap">${contagemInicialDisplay}</td>
                         <td data-label="Quantidade">${quantidade}</td>
                         <td data-label="Serviço" class="table-service" title="${servicoNome}">
                             ${servicoNome.length > 40 ? servicoNome.substring(0, 40) + '...' : servicoNome}
