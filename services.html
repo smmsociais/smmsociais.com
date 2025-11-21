@@ -33,6 +33,31 @@
             margin-top: 8px;
             width: 100%;
         }
+
+        /* Estilos para as imagens dos serviços */
+        .service-image-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .service-image-bg {
+            position: absolute;
+            left: -40px;
+            width: 32px;
+            height: 32px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.7;
+            z-index: 1;
+        }
+
+        .service-name-text {
+            position: relative;
+            z-index: 2;
+            padding-left: 8px;
+        }
     </style>
     <script>
         // Função para obter o token do localStorage
@@ -127,6 +152,52 @@
             }
         }
 
+        // Função para obter a imagem do serviço baseado no nome
+        function getServiceImage(serviceName) {
+            const imageMap = {
+                'INSTAGRAM - MAIS PEDIDOS': 'https://github.com/smmsociais/smmsociais.com/blob/main/mais_pedidos.png?raw=true',
+                'Seguidores no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/9c93b12b9b4044c5e96392fbaf09bb42e74cb16a/instagram.png?raw=true',
+                'Curtidas no Instagram': '❤️',
+                'Seguidores Brasileiros no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
+                'Curtidas Brasileiras no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
+                'TikTok': 'https://github.com/smmsociais/smmsociais.com/blob/main/tiktok.png?raw=true'
+            };
+
+            // Procura por correspondência exata ou parcial
+            for (const [key, image] of Object.entries(imageMap)) {
+                if (serviceName.includes(key) || key.includes(serviceName)) {
+                    return image;
+                }
+            }
+
+            return null;
+        }
+
+        // Função para criar o HTML da imagem do serviço
+        function createServiceImageHTML(serviceName) {
+            const imageUrl = getServiceImage(serviceName);
+            
+            if (!imageUrl) {
+                return `<span class="service-name-text">${serviceName}</span>`;
+            }
+
+            if (imageUrl === '❤️') {
+                return `
+                    <div class="service-image-container">
+                        <div class="service-image-bg" style="background-image: none; font-size: 24px; left: -35px;">❤️</div>
+                        <span class="service-name-text">${serviceName}</span>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="service-image-container">
+                    <div class="service-image-bg" style="background-image: url('${imageUrl}')"></div>
+                    <span class="service-name-text">${serviceName}</span>
+                </div>
+            `;
+        }
+
         // Função para carregar serviços da API
         function loadServices() {
             return fetch('https://smmsociais.com/api/servico')
@@ -210,7 +281,7 @@
                         <td data-label="ID">${service.id_servico}</td>
 
                         <td data-label="Serviço" class="table-service">
-                            ${service.nome}
+                            ${createServiceImageHTML(service.nome)}
                         </td>
 
                         <td data-label="Preço por 1000">${pricePer1000}</td>
