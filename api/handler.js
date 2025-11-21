@@ -441,8 +441,6 @@ if (url.startsWith("/api/orders")) {
     );
 
     // ---------- Helpers locais ----------
-
-    // extrai username do link TikTok (ex: https://www.tiktok.com/@usuario -> usuario)
     function extractUsernameFromUrl(urlDir) {
       if (!urlDir || typeof urlDir !== "string") return null;
       let s = urlDir.replace(/[\r\n]/g, "").trim();
@@ -461,10 +459,10 @@ if (url.startsWith("/api/orders")) {
 
     // Scraptik helper com cache simples e retry
     const SCRAPTIK_KEY = process.env.RAPIDAPI_KEY || process.env.RAPIDAPI || "";
+    // manter cache no global para reuso entre requests no mesmo processo
     const scraptikCache = global.__scraptik_cache__ || new Map();
-    // persistir cache no global durante o lifecycle do processo (evita recriar em cada request)
     global.__scraptik_cache__ = scraptikCache;
-    const SCRAPTIK_CACHE_TTL = 60 * 1000; // 60s cache (ajuste conforme necessidade)
+    const SCRAPTIK_CACHE_TTL = 60 * 1000; // 60s (ajuste se necessário)
     const SCRAPTIK_TIMEOUT_MS = 10000;
 
     async function fetchFollowerCount(username) {
@@ -504,7 +502,7 @@ if (url.startsWith("/api/orders")) {
         } catch (err) {
           lastErr = err;
           const status = err?.response?.status;
-          // se 400/404 -> não tentar novamente (usuário inexistente/privado)
+          // se 400 ou 404, é non-retryable (usuário privado ou inexistente)
           if (status === 400 || status === 404) {
             console.warn(`scraptik get-user: non-retryable for ${username} ->`, err?.response?.data || err.message);
             scraptikCache.set(username, { count: null, fetchedAt: Date.now() });
@@ -539,7 +537,7 @@ if (url.startsWith("/api/orders")) {
     const idsServico = [...new Set(acoes.map(a => a.id_servico))].filter(Boolean);
     const servicos = idsServico.length > 0 ? await Servico.find({ id_servico: { $in: idsServico } }) : [];
 
-    // ---------- Montar retorno com contagem inicial (com limite de concorrência) ----------
+    // ---------- Montar retorno com contagem inicial (e salvar no DB se ausente) ----------
     const CONCURRENCY = 5;
     const queue = [...acoes];
     const acoesComDetalhes = [];
@@ -551,20 +549,65 @@ if (url.startsWith("/api/orders")) {
         obj.id = obj.id_acao_smm || obj._id.toString();
         obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
 
-        // extrair username do link
-        const username = extractUsernameFromUrl(obj.link || obj.url || "");
-        if (username) {
-          try {
-            const count = await fetchFollowerCount(username);
-            obj.contagemInicial = (count !== null && count !== undefined) ? count : 0;
-          } catch (e) {
-            console.warn("Erro ao buscar follower_count para", username, e?.message || e);
-            obj.contagemInicial = 0;
-          }
-        } else {
-          obj.contagemInicial = 0;
+        // Se contagemInicial já está no documento (não nulo/undefined), reutiliza sem chamar Scraptik
+        if (obj.contagemInicial !== undefined && obj.contagemInicial !== null) {
+          // já tem valor no DB -> só garante que seja número inteiro (fallback)
+          obj.contagemInicial = Number.isFinite(Number(obj.contagemInicial)) ? Number(obj.contagemInicial) : 0;
+          return obj;
         }
 
+        // extrair username do link
+        const username = extractUsernameFromUrl(obj.link || obj.url || "");
+        if (!username) {
+          obj.contagemInicial = 0;
+          // grava contagemInicial 0 no documento (somente se ainda não existir)
+          try {
+            await Action.updateOne(
+              { _id: acao._id, $or: [{ contagemInicial: { $exists: false } }, { contagemInicial: null }] },
+              { $set: { contagemInicial: 0 } }
+            );
+          } catch (e) {
+            console.warn("Falha ao gravar contagemInicial=0 para action", acao._id, e?.message || e);
+          }
+          return obj;
+        }
+
+        // buscar follower_count (cache + retry)
+        let count = null;
+        try {
+          count = await fetchFollowerCount(username);
+        } catch (e) {
+          console.warn("Erro ao buscar follower_count para", username, e?.message || e);
+          count = null;
+        }
+
+        // normalizar (null ou número)
+        const normalized = Number.isFinite(Number(count)) ? Number(count) : null;
+        obj.contagemInicial = (normalized !== null) ? normalized : 0; // frontend espera número; pode ser 0 se não encontrado
+
+        // salvar no documento actions apenas se não existir contagemInicial
+        try {
+          const filter = { _id: acao._id, $or: [{ contagemInicial: { $exists: false } }, { contagemInicial: null }] };
+          const update = { $set: { contagemInicial: normalized } }; // grava `null` quando não encontrado, ou número
+          const resUpdate = await Action.updateOne(filter, update);
+          if (resUpdate.modifiedCount === 1) {
+            console.log(`[orders] contagemInicial salva para action ${acao._id}:`, normalized);
+          } else {
+            // modifiedCount === 0 => outro processo gravou antes, ou já tinha valor
+            if (resUpdate.matchedCount === 0) {
+              // sem match — possivelmente id incorreto (não deveria acontecer)
+              console.warn("[orders] update contagemInicial sem match para", acao._id);
+            } else {
+              // matched but not modified => contagemInicial já estava diferente
+              console.log("[orders] contagemInicial já existente para", acao._id);
+            }
+          }
+        } catch (e) {
+          console.error("[orders] erro ao gravar contagemInicial no DB para", acao._id, e?.message || e);
+        }
+
+        // se normalized for null, deixamos obj.contagemInicial = 0 para exibição (frontend já faz fallback)
+        obj.contagemInicial = (normalized !== null) ? normalized : 0;
         return obj;
       });
 
