@@ -425,25 +425,22 @@ if (url.startsWith("/api/orders")) {
     const token = authorization.split(" ")[1];
     const usuario = await User.findOne({ token });
 
-
     if (!usuario) {
       return res.status(401).json({ error: "Token inválido ou usuário não encontrado!" });
     }
 
-    // 🔄 Atualizar status automaticamente:
-    // De "pendente" para "progress" se validadas > 0
+    // 🔄 Atualizar status automaticamente
     await Action.updateMany(
       { status: "pendente", validadas: { $gt: 0 } },
       { $set: { status: "progress" } }
     );
 
-    // De "pendente" ou "progress" para "completed" se validadas === quantidade
     await Action.updateMany(
       { status: { $in: ["pendente", "progress"] }, $expr: { $eq: ["$validadas", "$quantidade"] } },
       { $set: { status: "completed" } }
     );
 
-    // 🔎 Filtro dinâmico conforme status da query
+    // 🔎 Filtro dinâmico conforme status
     const status = req.query.status;
     const filtro = { userId: usuario._id };
 
@@ -461,20 +458,22 @@ if (url.startsWith("/api/orders")) {
     // 🔍 Buscar ações do usuário
     const acoes = await Action.find(filtro).sort({ dataCriacao: -1 });
 
-    // 🔗 Buscar os serviços relacionados
+    // 🔗 Buscar serviços relacionados
     const idsServico = [...new Set(acoes.map(a => a.id_servico))];
     const servicos = await Servico.find({ id_servico: { $in: idsServico } });
 
-    // 🧩 Anexar detalhes dos serviços a cada ação
-const acoesComDetalhes = acoes.map(acao => {
-  const obj = acao.toObject();
+    // 🧩 Montar retorno com ID correto (id_acao_smm)
+    const acoesComDetalhes = acoes.map(acao => {
+      const obj = acao.toObject();
 
-  // 🔥 Garantir que ID exibido no frontend seja SEMPRE o id_acao_smm
-  obj.id = obj.id_acao_smm || obj._id.toString();
+      // 🔥 DEFINIÇÃO DO ID PARA O FRONTEND
+      obj.id = obj.id_acao_smm || obj._id.toString();
 
-  obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
-  return obj;
-});
+      // Anexar detalhes do serviço
+      obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
+
+      return obj;
+    });
 
     return res.json({ acoes: acoesComDetalhes });
 
@@ -482,7 +481,7 @@ const acoesComDetalhes = acoes.map(acao => {
     console.error("Erro ao buscar histórico de ações:", error);
     return res.status(500).json({ error: "Erro ao buscar histórico de ações" });
   }
-};
+}
 
  // Rota: /api/recover-password
 if (url.startsWith("/api/recover-password")) { 
