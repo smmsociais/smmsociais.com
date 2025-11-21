@@ -34,48 +34,59 @@
             width: 100%;
         }
 
-        /* Estilos para as imagens das categorias */
+        /* Estilos para as imagens das categorias - AJUSTADOS */
         .services-category {
             position: relative;
             overflow: hidden;
+            padding: 8px 15px;
+            min-height: 50px;
         }
 
         .category-image {
             position: absolute;
             top: 50%;
-            left: 10px;
+            left: 15px;
             transform: translateY(-50%);
-            width: 40px;
-            height: 40px;
+            width: 24px; /* Diminuído de 40px para 24px */
+            height: 24px; /* Diminuído de 40px para 24px */
             object-fit: contain;
+            z-index: 1;
+        }
+
+        .category-emoji {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            font-size: 20px; /* Tamanho adequado para emoji */
             z-index: 1;
         }
 
         .category-content {
-            position: absolute;
-            top: 50%;
-            left: 80px;
-            transform: translateY(-50%);
-            width: 40px;
-            height: 40px;
-            object-fit: contain;
-            z-index: 1;
+            position: relative;
+            padding-left: 40px; /* Espaço para a imagem/emoji */
         }
 
         .services-category h4 {
             margin: 0;
-            padding-right: 50px;
+            line-height: 1.2;
         }
     </style>
     <script>
-        // Mapeamento de categorias para imagens
+        // Mapeamento de categorias para imagens - CORRIGIDO para emoji
         const categoryImages = {
             'Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/9c93b12b9b4044c5e96392fbaf09bb42e74cb16a/instagram.png?raw=true',
-            'Curtidas no Instagram': '❤️',
+            'Curtidas no Instagram': '❤️', // Agora é tratado como emoji
             'Seguidores Brasileiros no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
             'Curtidas Brasileiras no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
             'TikTok': 'https://github.com/smmsociais/smmsociais.com/blob/main/tiktok.png?raw=true'
         };
+
+        // Função para verificar se é um emoji
+        function isEmoji(str) {
+            const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/gu;
+            return emojiRegex.test(str);
+        }
 
         // Função para obter o token do localStorage
         function loadToken() {
@@ -193,7 +204,7 @@
                 });
         }
 
-        // Função para renderizar os serviços na tabela
+        // Função para renderizar os serviços na tabela - ATUALIZADA
         function renderServices(services) {
             const tbody = document.getElementById('service-tbody');
             const loadingRow = document.getElementById('loading-row');
@@ -228,16 +239,24 @@
 
                 let categoryContent = `
                     <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
-                        <div class="w-100 category-content">
+                        <div class="category-content">
                             <h4>${categoryName}</h4>
                         </div>
                 `;
 
-                // Adicionar imagem se existir para esta categoria
+                // Adicionar imagem ou emoji se existir para esta categoria
                 if (categoryImage) {
-                    categoryContent += `
-                        <img src="${categoryImage}" alt="${categoryName}" class="category-image">
-                    `;
+                    if (isEmoji(categoryImage)) {
+                        // Se for emoji, usar span em vez de img
+                        categoryContent += `
+                            <span class="category-emoji">${categoryImage}</span>
+                        `;
+                    } else {
+                        // Se for URL de imagem, usar img
+                        categoryContent += `
+                            <img src="${categoryImage}" alt="${categoryName}" class="category-image">
+                        `;
+                    }
                 }
 
                 categoryContent += `</td>`;
@@ -290,8 +309,6 @@
                                 </button>
                             </div>
                             ` : ''}
-                                </button>
-                            </div>
                             ${service.descricao ? `
                             <div class="d-none" id="service-description-id-55-${service.id_servico}">
                                 ${service.descricao.replace(/\n/g, "<br>")}
