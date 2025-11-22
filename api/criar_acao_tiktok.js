@@ -1,4 +1,4 @@
-// /api/criar_acao.js
+// /api/criar_acao_tiktok.js
 import connectDB from "./db.js";
 import { User, Action } from './schema.js';
 import mongoose from "mongoose";
