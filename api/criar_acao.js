@@ -109,8 +109,8 @@ const handler = async (req, res) => {
       return res.status(400).json({ error: "Valor inválido" });
     }
 
-    if (!Number.isInteger(quantidadeNum) || quantidadeNum < 50 || quantidadeNum > 1000000) {
-      return res.status(400).json({ error: "A quantidade deve ser um número entre 50 e 1.000.000!" });
+    if (!Number.isInteger(quantidadeNum) || quantidadeNum < 10 || quantidadeNum > 10000000000) {
+      return res.status(400).json({ error: "A quantidade minima para este pedido é de 10" });
     }
 
     console.log("📌 Dados recebidos:");
