@@ -9,28 +9,26 @@ const GANHESOCIAL_URL = process.env.GANHESOCIAL_URL || "https://ganhesocialtest.
 const SEND_TIMEOUT_MS = process.env.SEND_TIMEOUT_MS ? Number(process.env.SEND_TIMEOUT_MS) : 10000;
 const RAPIDAPI_TIMEOUT_MS = process.env.RAPIDAPI_TIMEOUT_MS ? Number(process.env.RAPIDAPI_TIMEOUT_MS) : 8000;
 
-// RapidAPI keys (tenta nomes diferentes de env)
+// RapidAPI keys
 const SCRAPTIK_KEY = process.env.SCRAPTIK_KEY || process.env.RAPIDAPI_KEY || process.env.RAPIDAPI || process.env.rapidapi_key || "";
 const INSTAGRAM_RAPIDAPI_KEY = process.env.INSTAGRAM_RAPIDAPI_KEY || SCRAPTIK_KEY;
 
-// cache global simples por processo (evita flood em chamadas rápidas)
+// cache global simples por processo
 global.__rapidapi_cache__ = global.__rapidapi_cache__ || new Map();
 const rapidapiCache = global.__rapidapi_cache__;
 
-// util: sleep
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// util: extrair username de vários formatos (instagram/tiktok)
+// extrai username de link/nomes variados
 function extractUsernameFromLink(link) {
   if (!link || typeof link !== "string") return null;
   let s = link.trim();
-  // remove query/hash
   s = s.split("?")[0].split("#")[0];
-  // se contém @username
+  // @user
   const atMatch = s.match(/@([A-Za-z0-9._-]+)/);
   if (atMatch && atMatch[1]) return atMatch[1];
-  // tentar extrair depois de domain/ (instagram.com/username, tiktok.com/@username)
-  const m = s.match(/(?:instagram\.com|tiktok\.com)\/(?:@?([^\/?#&]+))/i);
+  // tiktok.com/@user or instagram.com/user
+  const m = s.match(/(?:tiktok\.com\/(?:@)?|instagram\.com\/(?:@)?)([^\/?#&]+)/i);
   if (m && m[1]) return m[1].replace(/\/$/, "");
   // fallback: último segmento
   s = s.replace(/\/+$/, "");
@@ -40,21 +38,20 @@ function extractUsernameFromLink(link) {
   return null;
 }
 
-// fetcher para Scraptik (TikTok)
+// fetcher Scraptik (TikTok) retorna objeto ou null
 async function fetchTikTokUser(username) {
   if (!username) return null;
   const cacheKey = `tiktok:${username.toLowerCase()}`;
   const cached = rapidapiCache.get(cacheKey);
-  if (cached && (Date.now() - cached.fetchedAt) < (60 * 1000)) return cached.data; // 60s cache
+  if (cached && (Date.now() - cached.fetchedAt) < (60 * 1000)) return cached.data;
 
   if (!SCRAPTIK_KEY) {
-    // sem chave, não tente
     rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
     return null;
   }
 
   const url = "https://scraptik.p.rapidapi.com/get-user";
-  const axiosCfg = {
+  const cfg = {
     method: "get",
     url,
     params: { username },
@@ -68,33 +65,31 @@ async function fetchTikTokUser(username) {
   let lastErr = null;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const resp = await axios(axiosCfg);
+      const resp = await axios(cfg);
       const data = resp?.data ?? null;
       rapidapiCache.set(cacheKey, { data, fetchedAt: Date.now() });
       return data;
     } catch (err) {
       lastErr = err;
       const status = err?.response?.status;
-      // 400/404 -> não retry
       if (status === 400 || status === 404) {
         rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
         return null;
       }
-      // backoff leve
       await sleep(150 * attempt);
     }
   }
-  console.warn("fetchTikTokUser final error for", username, lastErr?.message || lastErr);
   rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
+  console.warn("fetchTikTokUser erro:", lastErr?.message || lastErr);
   return null;
 }
 
-// fetcher para Instagram Social API
+// fetcher Instagram Social API retorna objeto ou null
 async function fetchInstagramUser(username) {
   if (!username) return null;
   const cacheKey = `instagram:${username.toLowerCase()}`;
   const cached = rapidapiCache.get(cacheKey);
-  if (cached && (Date.now() - cached.fetchedAt) < (60 * 1000)) return cached.data; // 60s cache
+  if (cached && (Date.now() - cached.fetchedAt) < (60 * 1000)) return cached.data;
 
   if (!INSTAGRAM_RAPIDAPI_KEY) {
     rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
@@ -102,7 +97,7 @@ async function fetchInstagramUser(username) {
   }
 
   const url = "https://instagram-social-api.p.rapidapi.com/v1/info";
-  const axiosCfg = {
+  const cfg = {
     method: "get",
     url,
     params: { username_or_id_or_url: username },
@@ -116,7 +111,7 @@ async function fetchInstagramUser(username) {
   let lastErr = null;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      const resp = await axios(axiosCfg);
+      const resp = await axios(cfg);
       const data = resp?.data ?? null;
       rapidapiCache.set(cacheKey, { data, fetchedAt: Date.now() });
       return data;
@@ -130,12 +125,53 @@ async function fetchInstagramUser(username) {
       await sleep(150 * attempt);
     }
   }
-  console.warn("fetchInstagramUser final error for", username, lastErr?.message || lastErr);
   rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
+  console.warn("fetchInstagramUser erro:", lastErr?.message || lastErr);
   return null;
 }
 
-// enviar para ganhesocial (mantido da sua versão)
+// obtém contagem inicial (number|null) baseado na rede/link
+async function getInitialCount(rede, link) {
+  try {
+    const username = extractUsernameFromLink(link || "");
+    if (!username) {
+      console.log("[contagemInicial] Username não extraído de link:", link);
+      return null;
+    }
+
+    // Tenta Scraptik primeiro (índice preferencial para TikTok)
+    if (String(rede || "").toLowerCase() === "tiktok") {
+      const info = await fetchTikTokUser(username);
+      const count = info?.user?.follower_count ?? info?.user?.followerCount ?? null;
+      const normalized = Number.isFinite(Number(count)) ? Number(count) : null;
+      console.log(`[contagemInicial][tiktok] ${username} =>`, normalized);
+      return normalized;
+    }
+
+    // Para Instagram, tentar a API do instagram-social-api
+    if (String(rede || "").toLowerCase() === "instagram") {
+      const info = await fetchInstagramUser(username);
+      // a API retorna em data: {...} ou diretamente; tenta vários caminhos
+      const maybe = info?.data ?? info;
+      const count = maybe?.follower_count ?? maybe?.followerCount ?? maybe?.followers ?? null;
+      const normalized = Number.isFinite(Number(count)) ? Number(count) : null;
+      console.log(`[contagemInicial][instagram] ${username} =>`, normalized);
+      return normalized;
+    }
+
+    // fallback: tentar Scraptik genérico
+    const fallback = await fetchTikTokUser(username);
+    const count = fallback?.user?.follower_count ?? fallback?.user?.followerCount ?? null;
+    const normalized = Number.isFinite(Number(count)) ? Number(count) : null;
+    console.log(`[contagemInicial][fallback] ${username} =>`, normalized);
+    return normalized;
+  } catch (e) {
+    console.warn("Erro em getInitialCount:", e?.message || e);
+    return null;
+  }
+}
+
+// enviar para ganhesocial (mantido)
 async function enviarParaGanheSocial(payload) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
@@ -245,33 +281,15 @@ const handler = async (req, res) => {
     console.log("   ➤ Valor unitário:", valorNum);
     console.log("   ➤ Quantidade:", quantidadeNum);
 
-    // tenta enriquecer com dados do RapidAPI (tiktok / instagram) - não é obrigatório
-    let providerData = null;
+    // tenta obter contagem inicial (não bloqueante: mas aqui vamos aguardar para gravar no documento)
+    let contagemInicial = null;
     try {
-      const username = extractUsernameFromLink(link || nome || "");
-      if (username && (String(rede || "").toLowerCase() === "tiktok")) {
-        console.log("🔎 Tentando buscar dados TikTok via Scraptik para:", username);
-        const info = await fetchTikTokUser(username);
-        if (info) {
-          providerData = { provider: "scraptik", user: info.user ?? info };
-          console.log("✅ Scraptik info found:", providerData.user?.unique_id ?? providerData.user?.secUid ?? providerData.user?.follower_count);
-        } else {
-          console.log("⚠ Scraptik: sem dados para", username);
-        }
-      } else if (username && (String(rede || "").toLowerCase() === "instagram")) {
-        console.log("🔎 Tentando buscar dados Instagram via RapidAPI para:", username);
-        const info = await fetchInstagramUser(username);
-        if (info) {
-          // API retorna .data e dentro .data.username etc
-          providerData = { provider: "instagram_social_api", user: info.data ?? info };
-          console.log("✅ Instagram info found:", providerData.user?.username ?? providerData.user?.profile_pic_url_hd);
-        } else {
-          console.log("⚠ Instagram API: sem dados para", username);
-        }
-      }
+      contagemInicial = await getInitialCount(rede, link || nome || "");
+      // contagemInicial pode ser number ou null
+      console.log("📥 contagemInicial obtida:", contagemInicial);
     } catch (e) {
-      console.warn("⚠ Erro ao buscar dados RapidAPI (não bloqueante):", e?.message || e);
-      providerData = providerData ?? null;
+      console.warn("⚠ Erro ao obter contagemInicial (continuando):", e?.message || e);
+      contagemInicial = null;
     }
 
     // Inicia sessão / transação
@@ -286,7 +304,7 @@ const handler = async (req, res) => {
       const custoATerDebitado = valorNum;
       console.log("💰 Valor que será debitado (unitário):", custoATerDebitado);
 
-      // Criar a action (na transação)
+      // Criar a action (na transação) incluindo contagemInicial
       const novaAcao = new Action({
         userId: usuario._id,
         id_servico: id_servico ? String(id_servico) : undefined,
@@ -298,7 +316,8 @@ const handler = async (req, res) => {
         validadas: 0,
         link,
         status: "pendente",
-        dataCriacao: new Date()
+        dataCriacao: new Date(),
+        contagemInicial: contagemInicial // number | null
       });
 
       await novaAcao.save({ session });
@@ -351,11 +370,12 @@ const handler = async (req, res) => {
         url_dir: link,
         id_pedido,
         meta: {
-          provider_data: providerData // pode ser null
+          // inclui contagemInicial no meta enviado ao ganhesocial (útil)
+          contagemInicial: contagemInicial,
         }
       };
 
-      // Envia para ganhesocial e tenta atualizar id_acao_smm
+      // Envia para ganhesocial (tenta atualizar id_acao_smm)
       try {
         console.log("📤 Enviando ação para ganhesocial ->", GANHESOCIAL_URL);
         const sendResult = await enviarParaGanheSocial(payloadGanheSocial);
@@ -386,7 +406,8 @@ const handler = async (req, res) => {
       return res.status(201).json({
         message: "Ação criada com sucesso",
         id_pedido,
-        newSaldo: usuarioAtualizado ? usuarioAtualizado.saldo : null
+        newSaldo: usuarioAtualizado ? usuarioAtualizado.saldo : null,
+        contagemInicial
       });
 
     } catch (txErr) {
