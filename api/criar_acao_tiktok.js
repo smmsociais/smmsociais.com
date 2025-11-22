@@ -2,11 +2,140 @@
 import connectDB from "./db.js";
 import { User, Action } from './schema.js';
 import mongoose from "mongoose";
+import axios from "axios";
 
 const SMM_API_KEY = process.env.SMM_API_KEY;
 const GANHESOCIAL_URL = process.env.GANHESOCIAL_URL || "https://ganhesocialtest.com/api/smm_acao";
 const SEND_TIMEOUT_MS = process.env.SEND_TIMEOUT_MS ? Number(process.env.SEND_TIMEOUT_MS) : 10000;
+const RAPIDAPI_TIMEOUT_MS = process.env.RAPIDAPI_TIMEOUT_MS ? Number(process.env.RAPIDAPI_TIMEOUT_MS) : 8000;
 
+// RapidAPI keys (tenta nomes diferentes de env)
+const SCRAPTIK_KEY = process.env.SCRAPTIK_KEY || process.env.RAPIDAPI_KEY || process.env.RAPIDAPI || process.env.rapidapi_key || "";
+const INSTAGRAM_RAPIDAPI_KEY = process.env.INSTAGRAM_RAPIDAPI_KEY || SCRAPTIK_KEY;
+
+// cache global simples por processo (evita flood em chamadas rápidas)
+global.__rapidapi_cache__ = global.__rapidapi_cache__ || new Map();
+const rapidapiCache = global.__rapidapi_cache__;
+
+// util: sleep
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// util: extrair username de vários formatos (instagram/tiktok)
+function extractUsernameFromLink(link) {
+  if (!link || typeof link !== "string") return null;
+  let s = link.trim();
+  // remove query/hash
+  s = s.split("?")[0].split("#")[0];
+  // se contém @username
+  const atMatch = s.match(/@([A-Za-z0-9._-]+)/);
+  if (atMatch && atMatch[1]) return atMatch[1];
+  // tentar extrair depois de domain/ (instagram.com/username, tiktok.com/@username)
+  const m = s.match(/(?:instagram\.com|tiktok\.com)\/(?:@?([^\/?#&]+))/i);
+  if (m && m[1]) return m[1].replace(/\/$/, "");
+  // fallback: último segmento
+  s = s.replace(/\/+$/, "");
+  const parts = s.split("/");
+  const last = parts[parts.length - 1] || "";
+  if (last.length > 0) return last.replace(/^@/, "");
+  return null;
+}
+
+// fetcher para Scraptik (TikTok)
+async function fetchTikTokUser(username) {
+  if (!username) return null;
+  const cacheKey = `tiktok:${username.toLowerCase()}`;
+  const cached = rapidapiCache.get(cacheKey);
+  if (cached && (Date.now() - cached.fetchedAt) < (60 * 1000)) return cached.data; // 60s cache
+
+  if (!SCRAPTIK_KEY) {
+    // sem chave, não tente
+    rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
+    return null;
+  }
+
+  const url = "https://scraptik.p.rapidapi.com/get-user";
+  const axiosCfg = {
+    method: "get",
+    url,
+    params: { username },
+    headers: {
+      "x-rapidapi-key": SCRAPTIK_KEY,
+      "x-rapidapi-host": "scraptik.p.rapidapi.com"
+    },
+    timeout: RAPIDAPI_TIMEOUT_MS
+  };
+
+  let lastErr = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const resp = await axios(axiosCfg);
+      const data = resp?.data ?? null;
+      rapidapiCache.set(cacheKey, { data, fetchedAt: Date.now() });
+      return data;
+    } catch (err) {
+      lastErr = err;
+      const status = err?.response?.status;
+      // 400/404 -> não retry
+      if (status === 400 || status === 404) {
+        rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
+        return null;
+      }
+      // backoff leve
+      await sleep(150 * attempt);
+    }
+  }
+  console.warn("fetchTikTokUser final error for", username, lastErr?.message || lastErr);
+  rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
+  return null;
+}
+
+// fetcher para Instagram Social API
+async function fetchInstagramUser(username) {
+  if (!username) return null;
+  const cacheKey = `instagram:${username.toLowerCase()}`;
+  const cached = rapidapiCache.get(cacheKey);
+  if (cached && (Date.now() - cached.fetchedAt) < (60 * 1000)) return cached.data; // 60s cache
+
+  if (!INSTAGRAM_RAPIDAPI_KEY) {
+    rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
+    return null;
+  }
+
+  const url = "https://instagram-social-api.p.rapidapi.com/v1/info";
+  const axiosCfg = {
+    method: "get",
+    url,
+    params: { username_or_id_or_url: username },
+    headers: {
+      "x-rapidapi-key": INSTAGRAM_RAPIDAPI_KEY,
+      "x-rapidapi-host": "instagram-social-api.p.rapidapi.com"
+    },
+    timeout: RAPIDAPI_TIMEOUT_MS
+  };
+
+  let lastErr = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const resp = await axios(axiosCfg);
+      const data = resp?.data ?? null;
+      rapidapiCache.set(cacheKey, { data, fetchedAt: Date.now() });
+      return data;
+    } catch (err) {
+      lastErr = err;
+      const status = err?.response?.status;
+      if (status === 400 || status === 404) {
+        rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
+        return null;
+      }
+      await sleep(150 * attempt);
+    }
+  }
+  console.warn("fetchInstagramUser final error for", username, lastErr?.message || lastErr);
+  rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
+  return null;
+}
+
+// enviar para ganhesocial (mantido da sua versão)
 async function enviarParaGanheSocial(payload) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
@@ -25,7 +154,6 @@ async function enviarParaGanheSocial(payload) {
 
     clearTimeout(timeout);
 
-    // Ler o corpo com segurança
     const raw = await resp.text().catch(() => null);
     let json = null;
     try { json = raw ? JSON.parse(raw) : null; } catch (e) { json = null; }
@@ -117,6 +245,35 @@ const handler = async (req, res) => {
     console.log("   ➤ Valor unitário:", valorNum);
     console.log("   ➤ Quantidade:", quantidadeNum);
 
+    // tenta enriquecer com dados do RapidAPI (tiktok / instagram) - não é obrigatório
+    let providerData = null;
+    try {
+      const username = extractUsernameFromLink(link || nome || "");
+      if (username && (String(rede || "").toLowerCase() === "tiktok")) {
+        console.log("🔎 Tentando buscar dados TikTok via Scraptik para:", username);
+        const info = await fetchTikTokUser(username);
+        if (info) {
+          providerData = { provider: "scraptik", user: info.user ?? info };
+          console.log("✅ Scraptik info found:", providerData.user?.unique_id ?? providerData.user?.secUid ?? providerData.user?.follower_count);
+        } else {
+          console.log("⚠ Scraptik: sem dados para", username);
+        }
+      } else if (username && (String(rede || "").toLowerCase() === "instagram")) {
+        console.log("🔎 Tentando buscar dados Instagram via RapidAPI para:", username);
+        const info = await fetchInstagramUser(username);
+        if (info) {
+          // API retorna .data e dentro .data.username etc
+          providerData = { provider: "instagram_social_api", user: info.data ?? info };
+          console.log("✅ Instagram info found:", providerData.user?.username ?? providerData.user?.profile_pic_url_hd);
+        } else {
+          console.log("⚠ Instagram API: sem dados para", username);
+        }
+      }
+    } catch (e) {
+      console.warn("⚠ Erro ao buscar dados RapidAPI (não bloqueante):", e?.message || e);
+      providerData = providerData ?? null;
+    }
+
     // Inicia sessão / transação
     const session = await mongoose.startSession();
 
@@ -125,7 +282,7 @@ const handler = async (req, res) => {
 
       console.log("💳 Saldo do usuário (antes do débito):", usuario.saldo);
 
-      // ⚠️ Conforme pedido: débito APENAS do valor unitário (não multiplicar pela quantidade)
+      // débito APENAS do valor unitário
       const custoATerDebitado = valorNum;
       console.log("💰 Valor que será debitado (unitário):", custoATerDebitado);
 
@@ -146,7 +303,7 @@ const handler = async (req, res) => {
 
       await novaAcao.save({ session });
 
-      // Tenta debitar (condicional: saldo >= custo)
+      // debitar saldo
       console.log("🧮 Tentando debitar...");
       const debitResult = await User.updateOne(
         { _id: usuario._id, saldo: { $gte: custoATerDebitado } },
@@ -156,7 +313,6 @@ const handler = async (req, res) => {
 
       console.log("📊 Resultado do débito:", debitResult);
 
-      // checar resultado (compatível com diferentes drivers)
       const modified = debitResult.modifiedCount ?? debitResult.nModified ?? debitResult.n ?? 0;
       const matched = debitResult.matchedCount ?? debitResult.n ?? 0;
 
@@ -178,13 +334,13 @@ const handler = async (req, res) => {
       const usuarioAtualizado = await User.findById(usuario._id).select("saldo");
       console.log("💳 Saldo após o débito:", usuarioAtualizado ? usuarioAtualizado.saldo : "(não encontrado)");
 
-      // montar payload para ganhesocial
+      // montar payload para ganhesocial (mantendo compatibilidade)
       const nome_usuario = (link && link.includes("@")) ? link.split("@")[1].trim() : (link ? link.trim() : "");
       const quantidade_pontos = +(valorNum * 0.001).toFixed(6);
       let tipo_acao = "Outro";
       const tipoLower = (tipo || "").toLowerCase();
-      if (tipoLower === "seguidores") tipo_acao = "Seguir";
-      else if (tipoLower === "curtidas") tipo_acao = "Curtir";
+      if (tipoLower === "seguidores" || tipoLower === "seguir") tipo_acao = "Seguir";
+      else if (tipoLower === "curtidas" || tipoLower === "curtir") tipo_acao = "Curtir";
 
       const payloadGanheSocial = {
         tipo_acao,
@@ -194,13 +350,14 @@ const handler = async (req, res) => {
         valor: valorNum,
         url_dir: link,
         id_pedido,
+        meta: {
+          provider_data: providerData // pode ser null
+        }
       };
 
-      // === Envia para ganhesocial e AWAIT (para evitar vazamento entre requests) ===
+      // Envia para ganhesocial e tenta atualizar id_acao_smm
       try {
         console.log("📤 Enviando ação para ganhesocial ->", GANHESOCIAL_URL);
-        console.log("📤 Payload:", JSON.stringify(payloadGanheSocial));
-
         const sendResult = await enviarParaGanheSocial(payloadGanheSocial);
 
         console.log("📩 Resposta ganhesocial:", sendResult.status, sendResult.statusText);
@@ -218,7 +375,6 @@ const handler = async (req, res) => {
           console.warn("⚠️ ganhesocial retornou erro:", sendResult.status, sendResult.json ?? sendResult.raw);
         }
       } catch (errSend) {
-        // log detalhado — mas não rollback (já commitamos o débito)
         if (errSend.name === "AbortError") {
           console.error(`❌ ERRO FETCH: Abort devido a timeout (${SEND_TIMEOUT_MS}ms)`);
         } else {
@@ -226,7 +382,7 @@ const handler = async (req, res) => {
         }
       }
 
-      // resposta final para o frontend (sempre retorna 201 se action criada e débito OK)
+      // resposta final
       return res.status(201).json({
         message: "Ação criada com sucesso",
         id_pedido,
