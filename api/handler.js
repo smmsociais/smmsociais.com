@@ -408,224 +408,6 @@ if (url.startsWith("/api/incrementar-validadas")) {
   }
 }
 
-// Rota: /api/orders
-if (url.startsWith("/api/orders")) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Método não permitido" });
-  }
-
-  try {
-    await connectDB();
-
-    const { authorization } = req.headers;
-    if (!authorization || !authorization.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Token não fornecido" });
-    }
-
-    const token = authorization.split(" ")[1];
-    const usuario = await User.findOne({ token });
-
-    if (!usuario) {
-      return res.status(401).json({ error: "Token inválido ou usuário não encontrado!" });
-    }
-
-    // 🔄 Atualizar status automaticamente
-    await Action.updateMany(
-      { status: "pendente", validadas: { $gt: 0 } },
-      { $set: { status: "progress" } }
-    );
-
-    await Action.updateMany(
-      { status: { $in: ["pendente", "progress"] }, $expr: { $eq: ["$validadas", "$quantidade"] } },
-      { $set: { status: "completed" } }
-    );
-
-    // ---------- Helpers locais ----------
-    function extractUsernameFromUrl(urlDir) {
-      if (!urlDir || typeof urlDir !== "string") return null;
-      let s = urlDir.replace(/[\r\n]/g, "").trim();
-      s = s.split("?")[0].split("#")[0];
-      const m = s.match(/@([A-Za-z0-9_.-]+)/);
-      if (m && m[1]) return m[1].toLowerCase();
-      s = s.replace(/^\/+|\/+$/g, "");
-      if (s.includes("/")) {
-        const parts = s.split("/");
-        s = parts[parts.length - 1];
-      }
-      if (s.startsWith("@")) s = s.slice(1);
-      s = s.trim().toLowerCase();
-      return s === "" ? null : s;
-    }
-
-    // Scraptik helper com cache simples e retry
-    const SCRAPTIK_KEY = process.env.RAPIDAPI_KEY || process.env.RAPIDAPI || "";
-    // manter cache no global para reuso entre requests no mesmo processo
-    const scraptikCache = global.__scraptik_cache__ || new Map();
-    global.__scraptik_cache__ = scraptikCache;
-    const SCRAPTIK_CACHE_TTL = 60 * 1000; // 60s (ajuste se necessário)
-    const SCRAPTIK_TIMEOUT_MS = 10000;
-
-    async function fetchFollowerCount(username) {
-      if (!username) return null;
-
-      const cached = scraptikCache.get(username);
-      if (cached && (Date.now() - cached.fetchedAt) < SCRAPTIK_CACHE_TTL) {
-        return cached.count;
-      }
-
-      if (!SCRAPTIK_KEY) {
-        console.warn("SCRAPTIK_KEY não definido — não será possível buscar contagem de seguidores.");
-        scraptikCache.set(username, { count: null, fetchedAt: Date.now() });
-        return null;
-      }
-
-      const axiosConfig = {
-        method: "get",
-        url: "https://scraptik.p.rapidapi.com/get-user",
-        params: { username },
-        headers: {
-          "x-rapidapi-key": SCRAPTIK_KEY,
-          "x-rapidapi-host": "scraptik.p.rapidapi.com"
-        },
-        timeout: SCRAPTIK_TIMEOUT_MS
-      };
-
-      let lastErr = null;
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          const resp = await axios(axiosConfig);
-          const data = resp?.data;
-          const count = Number(data?.user?.follower_count ?? data?.user?.followerCount ?? null);
-          const normalized = Number.isFinite(count) ? count : null;
-          scraptikCache.set(username, { count: normalized, fetchedAt: Date.now() });
-          return normalized;
-        } catch (err) {
-          lastErr = err;
-          const status = err?.response?.status;
-          // se 400 ou 404, é non-retryable (usuário privado ou inexistente)
-          if (status === 400 || status === 404) {
-            console.warn(`scraptik get-user: non-retryable for ${username} ->`, err?.response?.data || err.message);
-            scraptikCache.set(username, { count: null, fetchedAt: Date.now() });
-            return null;
-          }
-          console.warn(`scraptik get-user falhou (tentativa ${attempt}) para ${username}:`, err.message || status || err);
-          await new Promise(r => setTimeout(r, 200 * attempt));
-        }
-      }
-      console.error("scraptik get-user erro final:", lastErr?.message || lastErr);
-      scraptikCache.set(username, { count: null, fetchedAt: Date.now() });
-      return null;
-    }
-
-    // ---------- Buscar ações e serviços ----------
-    const statusQuery = req.query.status;
-    const filtro = { userId: usuario._id };
-
-    if (statusQuery && statusQuery !== "todos") {
-      if (statusQuery === "pending") {
-        filtro.validadas = 0;
-      } else if (statusQuery === "progress") {
-        filtro.validadas = { $gt: 0 };
-        filtro.status = "progress";
-      } else {
-        filtro.status = statusQuery;
-      }
-    }
-
-    const acoes = await Action.find(filtro).sort({ dataCriacao: -1 });
-
-    const idsServico = [...new Set(acoes.map(a => a.id_servico))].filter(Boolean);
-    const servicos = idsServico.length > 0 ? await Servico.find({ id_servico: { $in: idsServico } }) : [];
-
-    // ---------- Montar retorno com contagem inicial (e salvar no DB se ausente) ----------
-    const CONCURRENCY = 5;
-    const queue = [...acoes];
-    const acoesComDetalhes = [];
-
-    while (queue.length > 0) {
-      const batch = queue.splice(0, CONCURRENCY);
-      const promises = batch.map(async acao => {
-        const obj = acao.toObject();
-        obj.id = obj.id_acao_smm || obj._id.toString();
-        obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
-
-        // Se contagemInicial já está no documento (não nulo/undefined), reutiliza sem chamar Scraptik
-        if (obj.contagemInicial !== undefined && obj.contagemInicial !== null) {
-          // já tem valor no DB -> só garante que seja número inteiro (fallback)
-          obj.contagemInicial = Number.isFinite(Number(obj.contagemInicial)) ? Number(obj.contagemInicial) : 0;
-          return obj;
-        }
-
-        // extrair username do link
-        const username = extractUsernameFromUrl(obj.link || obj.url || "");
-        if (!username) {
-          obj.contagemInicial = 0;
-          // grava contagemInicial 0 no documento (somente se ainda não existir)
-          try {
-            await Action.updateOne(
-              { _id: acao._id, $or: [{ contagemInicial: { $exists: false } }, { contagemInicial: null }] },
-              { $set: { contagemInicial: 0 } }
-            );
-          } catch (e) {
-            console.warn("Falha ao gravar contagemInicial=0 para action", acao._id, e?.message || e);
-          }
-          return obj;
-        }
-
-        // buscar follower_count (cache + retry)
-        let count = null;
-        try {
-          count = await fetchFollowerCount(username);
-        } catch (e) {
-          console.warn("Erro ao buscar follower_count para", username, e?.message || e);
-          count = null;
-        }
-
-        // normalizar (null ou número)
-        const normalized = Number.isFinite(Number(count)) ? Number(count) : null;
-        obj.contagemInicial = (normalized !== null) ? normalized : 0; // frontend espera número; pode ser 0 se não encontrado
-
-        // salvar no documento actions apenas se não existir contagemInicial
-        try {
-          const filter = { _id: acao._id, $or: [{ contagemInicial: { $exists: false } }, { contagemInicial: null }] };
-          const update = { $set: { contagemInicial: normalized } }; // grava `null` quando não encontrado, ou número
-          const resUpdate = await Action.updateOne(filter, update);
-          if (resUpdate.modifiedCount === 1) {
-            console.log(`[orders] contagemInicial salva para action ${acao._id}:`, normalized);
-          } else {
-            // modifiedCount === 0 => outro processo gravou antes, ou já tinha valor
-            if (resUpdate.matchedCount === 0) {
-              // sem match — possivelmente id incorreto (não deveria acontecer)
-              console.warn("[orders] update contagemInicial sem match para", acao._id);
-            } else {
-              // matched but not modified => contagemInicial já estava diferente
-              console.log("[orders] contagemInicial já existente para", acao._id);
-            }
-          }
-        } catch (e) {
-          console.error("[orders] erro ao gravar contagemInicial no DB para", acao._id, e?.message || e);
-        }
-
-        // se normalized for null, deixamos obj.contagemInicial = 0 para exibição (frontend já faz fallback)
-        obj.contagemInicial = (normalized !== null) ? normalized : 0;
-        return obj;
-      });
-
-      const results = await Promise.all(promises);
-      acoesComDetalhes.push(...results);
-
-      if (queue.length > 0) await new Promise(r => setTimeout(r, 150));
-    }
-
-    // Retornar
-    return res.json({ acoes: acoesComDetalhes });
-
-  } catch (error) {
-    console.error("Erro ao buscar histórico de ações:", error);
-    return res.status(500).json({ error: "Erro ao buscar histórico de ações" });
-  }
-}
-
  // Rota: /api/recover-password
 if (url.startsWith("/api/recover-password")) { 
   if (req.method !== "POST")
@@ -1112,6 +894,77 @@ if (url.startsWith("/api/listar-depositos")) {
     return res.status(500).json({ error: "Erro interno do servidor" });
   }
 }
+
+// Rota: /api/orders
+if (url.startsWith("/api/orders")) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  try {
+    await connectDB();
+
+    const { authorization } = req.headers;
+    if (!authorization || !authorization.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Token não fornecido" });
+    }
+
+    const token = authorization.split(" ")[1];
+    const usuario = await User.findOne({ token });
+
+    if (!usuario) {
+      return res.status(401).json({ error: "Token inválido ou usuário não encontrado!" });
+    }
+
+    // 🔄 Atualizar status automaticamente:
+    // De "pendente" para "progress" se validadas > 0
+    await Action.updateMany(
+      { status: "pendente", validadas: { $gt: 0 } },
+      { $set: { status: "progress" } }
+    );
+
+    // De "pendente" ou "progress" para "completed" se validadas === quantidade
+    await Action.updateMany(
+      { status: { $in: ["pendente", "progress"] }, $expr: { $eq: ["$validadas", "$quantidade"] } },
+      { $set: { status: "completed" } }
+    );
+
+    // 🔎 Filtro dinâmico conforme status da query
+    const status = req.query.status;
+    const filtro = { userId: usuario._id };
+
+    if (status && status !== "todos") {
+      if (status === "pending") {
+        filtro.validadas = 0;
+      } else if (status === "progress") {
+        filtro.validadas = { $gt: 0 };
+        filtro.status = "progress";
+      } else {
+        filtro.status = status;
+      }
+    }
+
+    // 🔍 Buscar ações do usuário
+    const acoes = await Action.find(filtro).sort({ dataCriacao: -1 });
+
+    // 🔗 Buscar os serviços relacionados
+    const idsServico = [...new Set(acoes.map(a => a.id_servico))];
+    const servicos = await Servico.find({ id_servico: { $in: idsServico } });
+
+    // 🧩 Anexar detalhes dos serviços a cada ação
+    const acoesComDetalhes = acoes.map(acao => {
+      const obj = acao.toObject();
+      obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
+      return obj;
+    });
+
+    return res.json({ acoes: acoesComDetalhes });
+
+  } catch (error) {
+    console.error("Erro ao buscar histórico de ações:", error);
+    return res.status(500).json({ error: "Erro ao buscar histórico de ações" });
+  }
+};
 
     return res.status(404).json({ error: "Rota não encontrada." });
 }
