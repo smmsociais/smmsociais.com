@@ -18,6 +18,25 @@ const rapidapiCache = global.__rapidapi_cache__;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// extrai username de link/nomes variados (instagram)
+function extractInstagramUsernameFromLink(link) {
+  if (!link || typeof link !== "string") return null;
+  let s = link.trim();
+  s = s.split("?")[0].split("#")[0];
+  // @user
+  const atMatch = s.match(/@([A-Za-z0-9._-]+)/);
+  if (atMatch && atMatch[1]) return atMatch[1];
+  // instagram.com/username
+  const m = s.match(/(?:instagram\.com\/(?:@)?)([^\/?#&]+)/i);
+  if (m && m[1]) return m[1].replace(/\/$/, "");
+  // fallback: último segmento
+  s = s.replace(/\/+$/, "");
+  const parts = s.split("/");
+  const last = parts[parts.length - 1] || "";
+  if (last.length > 0) return last.replace(/^@/, "");
+  return null;
+}
+
 // extrai post code/id de link do Instagram (p/ /p/ , /reel/ , /tv/ etc)
 // agora: só aceita quando encontra explicitamente /p/ /reel/ /tv/ OU quando a entrada
 // for um código standalone (sem http, sem instagram.com, sem @).
@@ -39,22 +58,6 @@ function extractInstagramPostCodeFromLink(link) {
   const standalone = s.match(/^([A-Za-z0-9_-]{4,64})$/);
   if (standalone && standalone[1]) return standalone[1];
 
-  return null;
-}
-
-// extrai post code/id de link do Instagram (p/ /p/ , /reel/ , /tv/ etc)
-function extractInstagramPostCodeFromLink(link) {
-  if (!link || typeof link !== "string") return null;
-  const s = link.trim();
-  // /p/CODE/   /reel/CODE/   /tv/CODE/
-  const match = s.match(/(?:\/(?:p|reel|tv)\/)([A-Za-z0-9_-]{4,64})/i);
-  if (match && match[1]) return match[1];
-  // às vezes codigos estão no fim como /CODE ou ?utm_source=...
-  const general = s.match(/\b([A-Za-z0-9_-]{4,64})\b/);
-  if (general && general[1]) {
-    // evita pegar usernames curtos (best effort) — se contém letras e números é provável ser code
-    return general[1];
-  }
   return null;
 }
 
