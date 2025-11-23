@@ -9,9 +9,8 @@ const GANHESOCIAL_URL = process.env.GANHESOCIAL_URL || "https://ganhesocialtest.
 const SEND_TIMEOUT_MS = process.env.SEND_TIMEOUT_MS ? Number(process.env.SEND_TIMEOUT_MS) : 10000;
 const RAPIDAPI_TIMEOUT_MS = process.env.RAPIDAPI_TIMEOUT_MS ? Number(process.env.RAPIDAPI_TIMEOUT_MS) : 8000;
 
-// RapidAPI keys
+// RapidAPI key (Scraptik)
 const SCRAPTIK_KEY = process.env.SCRAPTIK_KEY || process.env.RAPIDAPI_KEY || process.env.RAPIDAPI || process.env.rapidapi_key || "";
-const INSTAGRAM_RAPIDAPI_KEY = process.env.INSTAGRAM_RAPIDAPI_KEY || SCRAPTIK_KEY;
 
 // cache global simples por processo
 global.__rapidapi_cache__ = global.__rapidapi_cache__ || new Map();
@@ -19,7 +18,7 @@ const rapidapiCache = global.__rapidapi_cache__;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// extrai username de link/nomes variados
+// extrai username de link/nomes variados (mantido para casos que precisem do username)
 function extractUsernameFromLink(link) {
   if (!link || typeof link !== "string") return null;
   let s = link.trim();
@@ -27,8 +26,8 @@ function extractUsernameFromLink(link) {
   // @user
   const atMatch = s.match(/@([A-Za-z0-9._-]+)/);
   if (atMatch && atMatch[1]) return atMatch[1];
-  // tiktok.com/@user or instagram.com/user
-  const m = s.match(/(?:tiktok\.com\/(?:@)?|instagram\.com\/(?:@)?)([^\/?#&]+)/i);
+  // tiktok.com/@user
+  const m = s.match(/(?:tiktok\.com\/(?:@)?)([^\/?#&]+)/i);
   if (m && m[1]) return m[1].replace(/\/$/, "");
   // fallback: último segmento
   s = s.replace(/\/+$/, "");
@@ -38,10 +37,26 @@ function extractUsernameFromLink(link) {
   return null;
 }
 
-// fetcher Scraptik (TikTok) retorna objeto ou null
+// extrai aweme_id (id do post/video) de um link do TikTok ou de uma string contendo o id
+function extractAwemeIdFromLink(link) {
+  if (!link || typeof link !== "string") return null;
+  const s = link.trim();
+
+  // padrão tiktok.com/.../video/1234567890123456789 ou /photo/ID
+  const matchVideo = s.match(/(?:video|photo)\/(\d{6,30})/i);
+  if (matchVideo && matchVideo[1]) return matchVideo[1];
+
+  // às vezes o id aparece como query ou somente números longos no fim
+  const generalMatch = s.match(/\b(\d{6,30})\b/);
+  if (generalMatch && generalMatch[1]) return generalMatch[1];
+
+  return null;
+}
+
+// fetcher Scraptik (TikTok) — dados do usuário (seguidores), retorna objeto ou null
 async function fetchTikTokUser(username) {
   if (!username) return null;
-  const cacheKey = `tiktok:${username.toLowerCase()}`;
+  const cacheKey = `tiktok_user:${username.toLowerCase()}`;
   const cached = rapidapiCache.get(cacheKey);
   if (cached && (Date.now() - cached.fetchedAt) < (60 * 1000)) return cached.data;
 
@@ -84,26 +99,26 @@ async function fetchTikTokUser(username) {
   return null;
 }
 
-// fetcher Instagram Social API retorna objeto ou null
-async function fetchInstagramUser(username) {
-  if (!username) return null;
-  const cacheKey = `instagram:${username.toLowerCase()}`;
+// fetcher Scraptik (TikTok) — dados do post (get-post) retorna objeto ou null
+async function fetchTikTokPost(awemeId) {
+  if (!awemeId) return null;
+  const cacheKey = `tiktok_post:${awemeId}`;
   const cached = rapidapiCache.get(cacheKey);
-  if (cached && (Date.now() - cached.fetchedAt) < (60 * 1000)) return cached.data;
+  if (cached && (Date.now() - cached.fetchedAt) < (30 * 1000)) return cached.data; // cache mais curto
 
-  if (!INSTAGRAM_RAPIDAPI_KEY) {
+  if (!SCRAPTIK_KEY) {
     rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
     return null;
   }
 
-  const url = "https://instagram-social-api.p.rapidapi.com/v1/info";
+  const url = "https://scraptik.p.rapidapi.com/get-post";
   const cfg = {
     method: "get",
     url,
-    params: { username_or_id_or_url: username },
+    params: { aweme_id: awemeId },
     headers: {
-      "x-rapidapi-key": INSTAGRAM_RAPIDAPI_KEY,
-      "x-rapidapi-host": "instagram-social-api.p.rapidapi.com"
+      "x-rapidapi-key": SCRAPTIK_KEY,
+      "x-rapidapi-host": "scraptik.p.rapidapi.com"
     },
     timeout: RAPIDAPI_TIMEOUT_MS
   };
@@ -125,46 +140,68 @@ async function fetchInstagramUser(username) {
       await sleep(150 * attempt);
     }
   }
+
   rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
-  console.warn("fetchInstagramUser erro:", lastErr?.message || lastErr);
+  console.warn("fetchTikTokPost erro:", lastErr?.message || lastErr);
   return null;
 }
 
-// obtém contagem inicial (number|null) baseado na rede/link
-async function getInitialCount(rede, link) {
+// obtém contagem inicial (number|null) baseado na rede/link e tipo (tipo opcional)
+// agora dá prioridade a: se for curtidas e houver aweme_id -> buscar digg_count do post
+async function getInitialCount(rede, link, tipo) {
   try {
-    const username = extractUsernameFromLink(link || "");
-    if (!username) {
-      console.log("[contagemInicial] Username não extraído de link:", link);
-      return null;
-    }
+    const redeLower = String(rede || "").toLowerCase();
+    const tipoLower = String(tipo || "").toLowerCase();
 
-    // Tenta Scraptik primeiro (índice preferencial para TikTok)
-    if (String(rede || "").toLowerCase() === "tiktok") {
+    // extrair aweme_id primeiro (se existir)
+    const awemeId = extractAwemeIdFromLink(link || "");
+    if (redeLower === "tiktok") {
+      // se for pedido de curtidas ou tiver aweme id, buscar contagem de curtidas do post
+      if (tipoLower === "curtidas" || tipoLower === "curtir" || awemeId) {
+        const postData = await fetchTikTokPost(awemeId);
+        // o caminho esperado: data.aweme_detail.statistics.digg_count ou aweme_detail.statistics.digg_count
+        const digg =
+          postData?.aweme_detail?.statistics?.digg_count ??
+          postData?.statistics?.digg_count ??
+          postData?.aweme_detail?.statistics?.diggCount ??
+          postData?.statistics?.diggCount ??
+          null;
+
+        const normalized = Number.isFinite(Number(digg)) ? Number(digg) : null;
+        console.log(`[contagemInicial][tiktok:post] awemeId=${awemeId} =>`, normalized);
+        return normalized;
+      }
+
+      // caso não seja curtidas nem aweme id — tentamos buscar dados do usuário (followers)
+      const username = extractUsernameFromLink(link || "");
+      if (!username) {
+        console.log("[contagemInicial] Username não extraído de link:", link);
+        return null;
+      }
       const info = await fetchTikTokUser(username);
       const count = info?.user?.follower_count ?? info?.user?.followerCount ?? null;
       const normalized = Number.isFinite(Number(count)) ? Number(count) : null;
-      console.log(`[contagemInicial][tiktok] ${username} =>`, normalized);
+      console.log(`[contagemInicial][tiktok:user] ${username} =>`, normalized);
       return normalized;
     }
 
-    // Para Instagram, tentar a API do instagram-social-api
-    if (String(rede || "").toLowerCase() === "instagram") {
-      const info = await fetchInstagramUser(username);
-      // a API retorna em data: {...} ou diretamente; tenta vários caminhos
-      const maybe = info?.data ?? info;
-      const count = maybe?.follower_count ?? maybe?.followerCount ?? maybe?.followers ?? null;
-      const normalized = Number.isFinite(Number(count)) ? Number(count) : null;
-      console.log(`[contagemInicial][instagram] ${username} =>`, normalized);
+    // fallback simples: tentar extrair aweme e consultar post
+    const fallbackAweme = extractAwemeIdFromLink(link || "");
+    if (fallbackAweme) {
+      const postData = await fetchTikTokPost(fallbackAweme);
+      const digg =
+        postData?.aweme_detail?.statistics?.digg_count ??
+        postData?.statistics?.digg_count ??
+        postData?.aweme_detail?.statistics?.diggCount ??
+        postData?.statistics?.diggCount ??
+        null;
+      const normalized = Number.isFinite(Number(digg)) ? Number(digg) : null;
+      console.log(`[contagemInicial][fallback post] awemeId=${fallbackAweme} =>`, normalized);
       return normalized;
     }
 
-    // fallback: tentar Scraptik genérico
-    const fallback = await fetchTikTokUser(username);
-    const count = fallback?.user?.follower_count ?? fallback?.user?.followerCount ?? null;
-    const normalized = Number.isFinite(Number(count)) ? Number(count) : null;
-    console.log(`[contagemInicial][fallback] ${username} =>`, normalized);
-    return normalized;
+    console.log("[contagemInicial] Nenhuma contagem inicial obtida (sem regras aplicáveis)");
+    return null;
   } catch (e) {
     console.warn("Erro em getInitialCount:", e?.message || e);
     return null;
@@ -284,7 +321,8 @@ const handler = async (req, res) => {
     // tenta obter contagem inicial (não bloqueante: mas aqui vamos aguardar para gravar no documento)
     let contagemInicial = null;
     try {
-      contagemInicial = await getInitialCount(rede, link || nome || "");
+      // PASSAMOS o tipo para que, se for curtidas, o fetchBusque o digg_count do post
+      contagemInicial = await getInitialCount(rede, link || nome || "", tipo);
       // contagemInicial pode ser number ou null
       console.log("📥 contagemInicial obtida:", contagemInicial);
     } catch (e) {
