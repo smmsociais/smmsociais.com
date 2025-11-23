@@ -18,22 +18,27 @@ const rapidapiCache = global.__rapidapi_cache__;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// extrai username de link/nomes variados (instagram)
-function extractInstagramUsernameFromLink(link) {
+// extrai post code/id de link do Instagram (p/ /p/ , /reel/ , /tv/ etc)
+// agora: só aceita quando encontra explicitamente /p/ /reel/ /tv/ OU quando a entrada
+// for um código standalone (sem http, sem instagram.com, sem @).
+function extractInstagramPostCodeFromLink(link) {
   if (!link || typeof link !== "string") return null;
-  let s = link.trim();
-  s = s.split("?")[0].split("#")[0];
-  // @user
-  const atMatch = s.match(/@([A-Za-z0-9._-]+)/);
-  if (atMatch && atMatch[1]) return atMatch[1];
-  // instagram.com/username
-  const m = s.match(/(?:instagram\.com\/(?:@)?)([^\/?#&]+)/i);
-  if (m && m[1]) return m[1].replace(/\/$/, "");
-  // fallback: último segmento
-  s = s.replace(/\/+$/, "");
-  const parts = s.split("/");
-  const last = parts[parts.length - 1] || "";
-  if (last.length > 0) return last.replace(/^@/, "");
+  const s = link.trim();
+
+  // 1) padrão explícito em URLs: /p/CODE/   /reel/CODE/   /tv/CODE/
+  const match = s.match(/(?:\/(?:p|reel|tv)\/)([A-Za-z0-9_-]{4,64})/i);
+  if (match && match[1]) return match[1];
+
+  // 2) se a string parece ser uma URL de instagram (ou qualquer URL) mas não contém /p|/reel|/tv
+  // então não vamos tentar "adivinhar" o código (evita pegar 'https', 'instagram', etc).
+  if (/^https?:\/\//i.test(s) || /instagram\.com/i.test(s)) {
+    return null;
+  }
+
+  // 3) se for um código standalone (ex: "DQjyfO3gDO6") — sem http e sem @ — aceitável
+  const standalone = s.match(/^([A-Za-z0-9_-]{4,64})$/);
+  if (standalone && standalone[1]) return standalone[1];
+
   return null;
 }
 
@@ -145,15 +150,20 @@ async function fetchInstagramPost(codeOrUrl) {
   return null;
 }
 
-// obtém contagem inicial (number|null) para Instagram (followers ou likes)
 async function getInitialCountInstagram(link, tipo) {
   try {
     const tipoLower = String(tipo || "").toLowerCase();
 
-    // tenta extrair post code (se for curtidas ou se houver código no link)
+    // detecta se a URL contém caminho de post (/p/ /reel/ /tv/)
+    const hasPostPath = typeof link === 'string' && /\/(?:p|reel|tv)\/[A-Za-z0-9_-]{4,64}/i.test(link);
     const postCode = extractInstagramPostCodeFromLink(link || "");
-    if (tipoLower === "curtidas" || tipoLower === "curtir" || postCode) {
-      const postData = await fetchInstagramPost(postCode || link);
+
+    // Só chama fetchInstagramPost quando temos certeza de que é um post:
+    // - existe postCode (standalone ou extraído do path) OR
+    // - o tipo é curtidas **e** o link contém explicitamente /p/|/reel/|/tv/
+    if ( (tipoLower === "curtidas" || tipoLower === "curtir") && (postCode || hasPostPath) ) {
+      const codeOrUrl = postCode ? postCode : link; // se postCode for null mas hasPostPath=true, passamos a URL inteira
+      const postData = await fetchInstagramPost(codeOrUrl);
       // caminho esperado: data.metrics.like_count ou data.like_count
       const likeCount =
         postData?.data?.metrics?.like_count ??
@@ -161,12 +171,12 @@ async function getInitialCountInstagram(link, tipo) {
         postData?.like_count ??
         null;
 
-      const normalized = Number.isFinite(Number(likeCount)) ? Number(likeCount) : null;
-      console.log(`[contagemInicial][instagram:post] postCode=${postCode} =>`, normalized);
-      return normalized;
+      const normalizedLikes = Number.isFinite(Number(likeCount)) ? Number(likeCount) : null;
+      console.log(`[contagemInicial][instagram:post] postCode=${postCode || '(url)'} =>`, normalizedLikes);
+      return normalizedLikes;
     }
 
-    // caso contrário, buscar follower_count do usuário
+    // caso contrário, buscar follower_count do usuário (perfil)
     const username = extractInstagramUsernameFromLink(link || "") || link;
     if (!username) {
       console.log("[contagemInicial][instagram] Username não extraído de link:", link);
@@ -181,9 +191,9 @@ async function getInitialCountInstagram(link, tipo) {
       info?.data?.followers ??
       null;
 
-    const normalized = Number.isFinite(Number(followerCount)) ? Number(followerCount) : null;
-    console.log(`[contagemInicial][instagram:user] ${username} =>`, normalized);
-    return normalized;
+    const normalizedFollowers = Number.isFinite(Number(followerCount)) ? Number(followerCount) : null;
+    console.log(`[contagemInicial][instagram:user] ${username} =>`, normalizedFollowers);
+    return normalizedFollowers;
   } catch (e) {
     console.warn("Erro em getInitialCountInstagram:", e?.message || e);
     return null;
