@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Mass order</title>
+    <title>Pedidos em Massa</title>
 
     <!-- CSS para controle de visibilidade da página -->
     <style>
@@ -28,6 +28,57 @@
             justify-content: center;
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
+        }
+
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            min-width: 300px;
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .service-info {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .service-info h5 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .instructions h6 {
+            margin-bottom: 10px;
+            color: #0056b3;
+        }
+
+        .instructions ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 
@@ -92,6 +143,229 @@
             }
         }
 
+        // Função para carregar serviços (necessária para o Promise.all)
+        async function loadServices() {
+            try {
+                const token = loadToken();
+
+                if (!token) {
+                    console.error("Token não encontrado para carregar serviços.");
+                    return [];
+                }
+
+                const response = await fetch('https://smmsociais.com/api/servico', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar serviços');
+                }
+
+                const servicesData = await response.json();
+                console.log('Serviços carregados:', servicesData);
+
+                return servicesData;
+            } catch (error) {
+                console.error('Erro ao carregar serviços:', error);
+                return [];
+            }
+        }
+
+        // Função para mostrar notificações
+        function showNotification(message, type = 'success') {
+            const notifyWrapper = document.getElementById('notify-wrapper');
+            if (!notifyWrapper) return;
+
+            notifyWrapper.className = `alert alert-${type} mb-3`;
+            notifyWrapper.innerHTML = message;
+            notifyWrapper.style.display = 'block';
+
+            // Auto esconder após 5 segundos
+            setTimeout(() => {
+                notifyWrapper.style.display = 'none';
+            }, 5000);
+        }
+
+        // Função para processar pedidos em massa
+        async function processMassOrder(event) {
+            event.preventDefault();
+            
+            const token = loadToken();
+            if (!token) {
+                showNotification('Erro: Token de autenticação não encontrado. Faça login novamente.', 'danger');
+                return;
+            }
+
+            const ordersTextarea = document.getElementById('links');
+            const orders = ordersTextarea.value.trim();
+            
+            if (!orders) {
+                showNotification('Por favor, insira os pedidos no formato correto.', 'warning');
+                return;
+            }
+
+            // Validar formato básico
+            const lines = orders.split('\n').filter(line => line.trim());
+            let isValidFormat = true;
+            
+            for (const line of lines) {
+                const parts = line.split('|').map(part => part.trim());
+                if (parts.length < 3) {
+                    isValidFormat = false;
+                    break;
+                }
+            }
+
+            if (!isValidFormat) {
+                showNotification('Formato inválido. Use: ID_SERVICO | link | quantidade (um por linha)', 'danger');
+                return;
+            }
+
+            // Obter tipo de serviço selecionado
+            const serviceType = document.getElementById('service_type').value;
+            const valorUnitario = document.getElementById('valor_unitario').value;
+
+            if (!serviceType) {
+                showNotification('Por favor, selecione o tipo de serviço.', 'warning');
+                return;
+            }
+
+            if (!valorUnitario || parseFloat(valorUnitario) <= 0) {
+                showNotification('Por favor, informe um valor unitário válido.', 'warning');
+                return;
+            }
+
+            // Mostrar loading
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Processando...';
+            submitBtn.disabled = true;
+
+            try {
+                const payload = {
+                    bulk: orders,
+                    tipo: serviceType,
+                    valor: parseFloat(valorUnitario)
+                };
+
+                console.log('Enviando pedidos em massa:', payload);
+
+                const response = await fetch('https://smmsociais.com/api/criar_acao_instagram', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showNotification(
+                        `✅ ${result.pedidos.length} pedidos criados com sucesso! Saldo atual: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.newSaldo || 0)}`,
+                        'success'
+                    );
+                    
+                    // Limpar formulário
+                    ordersTextarea.value = '';
+                    document.getElementById('valor_unitario').value = '';
+                    
+                    // Atualizar saldo na navbar
+                    await loadUserBalance();
+                    
+                    console.log('Pedidos criados:', result.pedidos);
+                } else {
+                    throw new Error(result.error || 'Erro ao processar pedidos');
+                }
+
+            } catch (error) {
+                console.error('Erro ao processar pedidos em massa:', error);
+                showNotification(`❌ Erro: ${error.message}`, 'danger');
+            } finally {
+                // Restaurar botão
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Função para carregar informações do serviço selecionado
+        async function loadServiceInfo() {
+            const serviceType = document.getElementById('service_type').value;
+            const serviceInfoDiv = document.getElementById('service_info');
+            
+            if (!serviceType) {
+                serviceInfoDiv.classList.add('hidden');
+                return;
+            }
+
+            const services = await loadServices();
+            const service = services.find(s => 
+                s.nome && s.nome.toLowerCase().includes(serviceType.toLowerCase())
+            );
+
+            if (service) {
+                serviceInfoDiv.classList.remove('hidden');
+                serviceInfoDiv.innerHTML = `
+                    <h5>Informações do Serviço</h5>
+                    <p><strong>Nome:</strong> ${service.nome}</p>
+                    <p><strong>Taxa Mínima:</strong> ${service.taxa_minima || 'N/A'}</p>
+                    <p><strong>Taxa Máxima:</strong> ${service.taxa_maxima || 'N/A'}</p>
+                    ${service.descricao ? `<p><strong>Descrição:</strong> ${service.descricao}</p>` : ''}
+                `;
+            } else {
+                serviceInfoDiv.classList.add('hidden');
+            }
+        }
+
+        // Função para atualizar instruções baseadas no tipo de serviço
+        function updateInstructions() {
+            const serviceType = document.getElementById('service_type').value;
+            const instructionsDiv = document.getElementById('instructions');
+            
+            let examples = '';
+            
+            switch(serviceType) {
+                case 'seguidores':
+                    examples = `
+                        <li><code>12345 | https://instagram.com/usuario | 1000</code></li>
+                        <li><code>12345 | @nomeusuario | 500</code></li>
+                        <li><code>12345 | usuario | 2000</code></li>
+                    `;
+                    break;
+                case 'curtidas':
+                    examples = `
+                        <li><code>67890 | https://instagram.com/p/CodigoPost | 500</code></li>
+                        <li><code>67890 | CodigoPost | 1000</code></li>
+                        <li><code>67890 | https://instagram.com/reel/CodigoReel | 800</code></li>
+                    `;
+                    break;
+                default:
+                    examples = `
+                        <li><code>ID_SERVICO | link_ou_usuario | quantidade</code></li>
+                        <li><code>12345 | https://instagram.com/usuario | 1000</code></li>
+                        <li><code>67890 | @usuario | 500</code></li>
+                    `;
+            }
+            
+            instructionsDiv.innerHTML = `
+                <h6>Instruções para ${serviceType || 'o serviço'}:</h6>
+                <ul>
+                    ${examples}
+                </ul>
+                <p><strong>Observações:</strong></p>
+                <ul>
+                    <li>Quantidade mínima: 10 por pedido</li>
+                    <li>Use links completos ou apenas o username (com ou sem @)</li>
+                    <li>Para curtidas: use link do post ou código do post</li>
+                </ul>
+            `;
+        }
+
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
         }
@@ -128,8 +402,12 @@
 </head>
 
 <body class="body  body-internal">
+    <!-- Notifications wrapper -->
+    <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
+
     <div class="wrapper  wrapper-sidebar-navbar ">
         <div id="block_52" class="component_private_navbar">
+            <!-- Navbar content remains the same -->
             <span class="component_private_navbar ">
                 <div class="component-navbar-private__wrapper component_private_sidebar ">
                     <div
@@ -288,24 +566,48 @@
                                 <div class="col-lg-12">
                                     <div class="component_card">
                                         <div class="card">
-                                            <form method="post" action="/massorder">
+                                            <form id="massOrderForm" method="post">
                                                 <div class="component_form_group">
-                                                    <div class="">
-                                                        <div class="form-group">
-                                                            <label for="links" class="control-label">Um pedido por
-                                                                linha, no formato:</label>
-                                                            <textarea class="form-control" name="MassOrderForm[orders]"
-                                                                rows="15" id="links"
-                                                                placeholder="ID do serviço | link | quantidade"></textarea>
-                                                        </div>
+                                                    <div class="form-group">
+                                                        <label for="service_type" class="control-label">Tipo de Serviço *</label>
+                                                        <select class="form-control" id="service_type" name="service_type" required onchange="updateInstructions(); loadServiceInfo();">
+                                                            <option value="">Selecione o tipo de serviço</option>
+                                                            <option value="seguidores">Seguidores Instagram</option>
+                                                            <option value="curtidas">Curtidas Instagram</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label for="valor_unitario" class="control-label">Valor Unitário (R$) *</label>
+                                                        <input type="number" class="form-control" id="valor_unitario" name="valor_unitario" step="0.01" min="0.01" required placeholder="0.00">
+                                                    </div>
+
+                                                    <div id="instructions" class="instructions">
+                                                        <h6>Instruções:</h6>
+                                                        <ul>
+                                                            <li><code>ID_SERVICO | link_ou_usuario | quantidade</code></li>
+                                                            <li><code>12345 | https://instagram.com/usuario | 1000</code></li>
+                                                            <li><code>67890 | @usuario | 500</code></li>
+                                                        </ul>
+                                                        <p><strong>Observações:</strong></p>
+                                                        <ul>
+                                                            <li>Quantidade mínima: 10 por pedido</li>
+                                                            <li>Use links completos ou apenas o username (com ou sem @)</li>
+                                                        </ul>
+                                                    </div>
+
+                                                    <div id="service_info" class="service-info hidden">
+                                                        <!-- Informações do serviço serão carregadas aqui -->
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label for="links" class="control-label">Pedidos em Massa (um por linha) *</label>
+                                                        <textarea class="form-control" name="MassOrderForm[orders]" rows="15" id="links" placeholder="ID do serviço | link | quantidade&#10;Exemplo:&#10;12345 | https://instagram.com/usuario | 1000&#10;67890 | @nomeusuario | 500" required></textarea>
                                                     </div>
                                                 </div>
-                                                <input type="hidden" name="_csrf"
-                                                    value="pYM2WJymLUEeV-CRdOnRTmXKZ2fgE0cAm9v6vW9iaIHD23Qh9-1IKFsv0skyopMCXPwPKoxMM1j9iMzXKSgp5Q==">
                                                 <div class="component_button_submit">
                                                     <div class="">
-                                                        <button type="submit"
-                                                            class="btn btn-block btn-big-primary">Enviar</button>
+                                                        <button type="submit" class="btn btn-block btn-big-primary">Enviar Pedidos em Massa</button>
                                                     </div>
                                                 </div>
                                             </form>
@@ -321,8 +623,6 @@
             </div>
         </div>
     </div>
-    <!-- Notifications wrapper -->
-    <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
 
     <!-- ======= Navbar toggle fallback (vanilla JS) - torna o "hamburger" funcional em dispositivos móveis ======= -->
     <script>
@@ -402,6 +702,14 @@
     </script>
 
     <script>
+        // Adicionar event listener para o formulário
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('massOrderForm');
+            if (form) {
+                form.addEventListener('submit', processMassOrder);
+            }
+        });
+
         /* script para garantir que a página apareça apenas após todas as APIs terminarem */
         (function () {
             // mostra um overlay loader enquanto aguarda
