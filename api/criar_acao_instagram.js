@@ -1,4 +1,4 @@
-// /api/criar_acao_instagram.js
+// /api/criar_acao_instagram.js (ajustada para suportar pedidos em massa)
 import connectDB from "./db.js";
 import { User, Action } from './schema.js';
 import mongoose from "mongoose";
@@ -8,8 +8,6 @@ const SMM_API_KEY = process.env.SMM_API_KEY;
 const GANHESOCIAL_URL = process.env.GANHESOCIAL_URL || "https://ganhesocialtest.com/api/smm_acao";
 const SEND_TIMEOUT_MS = process.env.SEND_TIMEOUT_MS ? Number(process.env.SEND_TIMEOUT_MS) : 10000;
 const RAPIDAPI_TIMEOUT_MS = process.env.RAPIDAPI_TIMEOUT_MS ? Number(process.env.RAPIDAPI_TIMEOUT_MS) : 8000;
-
-// RapidAPI key for instagram-social-api
 const INSTAGRAM_RAPIDAPI_KEY = process.env.INSTAGRAM_RAPIDAPI_KEY || process.env.RAPIDAPI_KEY || process.env.RAPIDAPI || process.env.rapidapi_key || "";
 
 // cache global simples por processo
@@ -18,18 +16,14 @@ const rapidapiCache = global.__rapidapi_cache__;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// extrai username de link/nomes variados (instagram)
 function extractInstagramUsernameFromLink(link) {
   if (!link || typeof link !== "string") return null;
   let s = link.trim();
   s = s.split("?")[0].split("#")[0];
-  // @user
   const atMatch = s.match(/@([A-Za-z0-9._-]+)/);
   if (atMatch && atMatch[1]) return atMatch[1];
-  // instagram.com/username
   const m = s.match(/(?:instagram\.com\/(?:@)?)([^\/?#&]+)/i);
   if (m && m[1]) return m[1].replace(/\/$/, "");
-  // fallback: último segmento
   s = s.replace(/\/+$/, "");
   const parts = s.split("/");
   const last = parts[parts.length - 1] || "";
@@ -37,42 +31,26 @@ function extractInstagramUsernameFromLink(link) {
   return null;
 }
 
-// extrai post code/id de link do Instagram (p/ /p/ , /reel/ , /tv/ etc)
-// agora: só aceita quando encontra explicitamente /p/ /reel/ /tv/ OU quando a entrada
-// for um código standalone (sem http, sem instagram.com, sem @).
 function extractInstagramPostCodeFromLink(link) {
   if (!link || typeof link !== "string") return null;
   const s = link.trim();
-
-  // 1) padrão explícito em URLs: /p/CODE/   /reel/CODE/   /tv/CODE/
   const match = s.match(/(?:\/(?:p|reel|tv)\/)([A-Za-z0-9_-]{4,64})/i);
   if (match && match[1]) return match[1];
-
-  // 2) se a string parece ser uma URL de instagram (ou qualquer URL) mas não contém /p|/reel|/tv
-  // então não vamos tentar "adivinhar" o código (evita pegar 'https', 'instagram', etc).
-  if (/^https?:\/\//i.test(s) || /instagram\.com/i.test(s)) {
-    return null;
-  }
-
-  // 3) se for um código standalone (ex: "DQjyfO3gDO6") — sem http e sem @ — aceitável
+  if (/^https?:\/\//i.test(s) || /instagram\.com/i.test(s)) return null;
   const standalone = s.match(/^([A-Za-z0-9_-]{4,64})$/);
   if (standalone && standalone[1]) return standalone[1];
-
   return null;
 }
 
-// consulta followers via instagram-social-api /v1/info
 async function fetchInstagramUser(usernameOrUrl) {
   if (!usernameOrUrl) return null;
   const cacheKey = `ig_user:${String(usernameOrUrl).toLowerCase()}`;
   const cached = rapidapiCache.get(cacheKey);
   if (cached && (Date.now() - cached.fetchedAt) < (60 * 1000)) return cached.data;
-
   if (!INSTAGRAM_RAPIDAPI_KEY) {
     rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
     return null;
   }
-
   const url = "https://instagram-social-api.p.rapidapi.com/v1/info";
   const cfg = {
     method: "get",
@@ -107,18 +85,15 @@ async function fetchInstagramUser(usernameOrUrl) {
   return null;
 }
 
-// consulta likes do post via instagram-social-api /v1/post_info
 async function fetchInstagramPost(codeOrUrl) {
   if (!codeOrUrl) return null;
   const cacheKey = `ig_post:${String(codeOrUrl)}`;
   const cached = rapidapiCache.get(cacheKey);
   if (cached && (Date.now() - cached.fetchedAt) < (30 * 1000)) return cached.data;
-
   if (!INSTAGRAM_RAPIDAPI_KEY) {
     rapidapiCache.set(cacheKey, { data: null, fetchedAt: Date.now() });
     return null;
   }
-
   const url = "https://instagram-social-api.p.rapidapi.com/v1/post_info";
   const cfg = {
     method: "get",
@@ -156,38 +131,26 @@ async function fetchInstagramPost(codeOrUrl) {
 async function getInitialCountInstagram(link, tipo) {
   try {
     const tipoLower = String(tipo || "").toLowerCase();
-
-    // detecta se a URL contém caminho de post (/p/ /reel/ /tv/)
     const hasPostPath = typeof link === 'string' && /\/(?:p|reel|tv)\/[A-Za-z0-9_-]{4,64}/i.test(link);
     const postCode = extractInstagramPostCodeFromLink(link || "");
-
-    // Só chama fetchInstagramPost quando temos certeza de que é um post:
-    // - existe postCode (standalone ou extraído do path) OR
-    // - o tipo é curtidas **e** o link contém explicitamente /p/|/reel/|/tv/
     if ( (tipoLower === "curtidas" || tipoLower === "curtir") && (postCode || hasPostPath) ) {
-      const codeOrUrl = postCode ? postCode : link; // se postCode for null mas hasPostPath=true, passamos a URL inteira
+      const codeOrUrl = postCode ? postCode : link;
       const postData = await fetchInstagramPost(codeOrUrl);
-      // caminho esperado: data.metrics.like_count ou data.like_count
       const likeCount =
         postData?.data?.metrics?.like_count ??
         postData?.data?.like_count ??
         postData?.like_count ??
         null;
-
       const normalizedLikes = Number.isFinite(Number(likeCount)) ? Number(likeCount) : null;
       console.log(`[contagemInicial][instagram:post] postCode=${postCode || '(url)'} =>`, normalizedLikes);
       return normalizedLikes;
     }
-
-    // caso contrário, buscar follower_count do usuário (perfil)
     const username = extractInstagramUsernameFromLink(link || "") || link;
     if (!username) {
       console.log("[contagemInicial][instagram] Username não extraído de link:", link);
       return null;
     }
-
     const info = await fetchInstagramUser(username);
-    // caminho esperado: data.follower_count
     const followerCount =
       info?.data?.follower_count ??
       info?.follower_count ??
@@ -203,11 +166,9 @@ async function getInitialCountInstagram(link, tipo) {
   }
 }
 
-// enviar para ganhesocial (mantido)
 async function enviarParaGanheSocial(payload) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
-
   try {
     const resp = await fetch(GANHESOCIAL_URL, {
       method: "POST",
@@ -221,16 +182,30 @@ async function enviarParaGanheSocial(payload) {
     });
 
     clearTimeout(timeout);
-
     const raw = await resp.text().catch(() => null);
     let json = null;
     try { json = raw ? JSON.parse(raw) : null; } catch (e) { json = null; }
-
     return { ok: resp.ok, status: resp.status, statusText: resp.statusText, raw, json };
   } catch (err) {
     clearTimeout(timeout);
     throw err;
   }
+}
+
+// Helpers de parsing para pedidos em massa
+function parseBulkLines(bulkString) {
+  // aceita linhas no formato: ID_SERVICO | LINK | QUANTIDADE
+  // separador é o caractere '|' (barra vertical). espaços serão .trim().
+  if (!bulkString || typeof bulkString !== 'string') return [];
+  const lines = bulkString.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const items = [];
+  for (const line of lines) {
+    const parts = line.split('|').map(p => p.trim());
+    if (parts.length < 3) continue; // ignorar linhas inválidas
+    const [id_servico, link, quantidade] = parts;
+    items.push({ id_servico: id_servico || undefined, link: link || undefined, quantidade: quantidade || undefined });
+  }
+  return items;
 }
 
 const handler = async (req, res) => {
@@ -258,7 +233,6 @@ const handler = async (req, res) => {
     } else if (authorization.startsWith('Bearer ')) {
       const token = authorization.split(' ')[1].trim();
       console.log("🔐 Token recebido (criar_acao_instagram):", token);
-
       usuario = await User.findOne({ token });
       if (!usuario) {
         console.warn("🔒 Token de usuário não encontrado:", token);
@@ -270,16 +244,12 @@ const handler = async (req, res) => {
       return res.status(401).json({ error: "Não autorizado" });
     }
 
-    const {
-      rede,
-      tipo,
-      nome,
-      valor,
-      quantidade,
-      link,
-      userId: bodyUserId,
-      id_servico
-    } = req.body || {};
+    // suporte a duas formas de envio:
+    // 1) singular (compatível com versão anterior): id_servico, link, quantidade, valor, tipo, nome
+    // 2) massiva: campo 'bulk' contendo múltiplas linhas "ID_SERVICO | Link | Quantidade" (1 pedido por linha)
+
+    const body = req.body || {};
+    const { bulk, tipo, nome, valor: valorBody, userId: bodyUserId } = body;
 
     // se chamada interna, usa userId do body
     if (isInternalCall) {
@@ -293,76 +263,102 @@ const handler = async (req, res) => {
       console.log("🟣 Chamada interna para usuário:", usuario.email);
     }
 
-    // validações
-    if (id_servico && typeof id_servico !== "string") {
-      return res.status(400).json({ error: "id_servico inválido" });
+    // Parse bulk
+    let items = [];
+    if (bulk && typeof bulk === 'string' && bulk.trim().length > 0) {
+      items = parseBulkLines(bulk);
+      if (items.length === 0) return res.status(400).json({ error: "Formato de bulk inválido. Use: ID_SERVICO | Link | Quantidade (uma linha por pedido)" });
+    } else {
+      // tentativa de ler um pedido singular (compatível com rota original)
+      const { id_servico, link, quantidade, valor } = body;
+      items = [{ id_servico: id_servico ? String(id_servico) : undefined, link: link ? String(link) : undefined, quantidade: quantidade, valor }];
     }
 
-    const valorNum = parseFloat(valor);
-    const quantidadeNum = Number(quantidade);
-
-    if (isNaN(valorNum) || valorNum <= 0) {
-      return res.status(400).json({ error: "Valor inválido" });
+    // valida e normaliza items: quantidade (int), id_servico string
+    for (const it of items) {
+      it.quantidade = Number(it.quantidade);
+      if (it.id_servico && typeof it.id_servico !== 'string') it.id_servico = String(it.id_servico);
     }
 
-    if (!Number.isInteger(quantidadeNum) || quantidadeNum < 10 || quantidadeNum > 10000000000) {
-      return res.status(400).json({ error: "A quantidade minima para este pedido é de 10" });
+    // determine valor unitario: prioriza valor por item (se presente em cada linha como 'valor' no objeto), senão top-level valorBody
+    // PARA PEDIDOS EM MASSA: É OBRIGATÓRIO enviar `valor` top-level ou em cada item. Caso contrário, retornamos erro para evitar criar pedidos sem preço.
+
+    const valorTop = (valorBody !== undefined && valorBody !== null) ? parseFloat(valorBody) : undefined;
+    const missingValor = items.some(it => (it.valor === undefined || it.valor === null) && (valorTop === undefined));
+    if (missingValor) {
+      return res.status(400).json({ error: "Para pedidos em massa é obrigatório enviar 'valor' (unitário) no corpo ou em cada linha." });
     }
 
-    console.log("📌 Dados recebidos:");
-    console.log("   ➤ Valor unitário:", valorNum);
-    console.log("   ➤ Quantidade:", quantidadeNum);
-
-    // tenta obter contagem inicial (espera o resultado para gravar no documento)
-    let contagemInicial = null;
-    try {
-      // chama função específica do Instagram
-      contagemInicial = await getInitialCountInstagram(link || nome || "", tipo);
-      console.log("📥 contagemInicial obtida (instagram):", contagemInicial);
-    } catch (e) {
-      console.warn("⚠ Erro ao obter contagemInicial (continuando):", e?.message || e);
-      contagemInicial = null;
+    // normaliza valor por item
+    for (const it of items) {
+      const v = (it.valor !== undefined && it.valor !== null) ? parseFloat(it.valor) : valorTop;
+      it.valor = Number.isFinite(Number(v)) ? Number(v) : null;
+      if (it.valor === null) {
+        return res.status(400).json({ error: "Valor inválido em um dos pedidos" });
+      }
     }
 
-    // Inicia sessão / transação
+    // valida quantidade minima (mesma regra antiga)
+    for (const it of items) {
+      if (!Number.isInteger(it.quantidade) || it.quantidade < 10 || it.quantidade > 10000000000) {
+        return res.status(400).json({ error: `Quantidade inválida para o pedido (id_servico=${it.id_servico || ''}, quantidade=${it.quantidade}). A quantidade mínima é 10.` });
+      }
+    }
+
+    console.log("📌 Pedidos a processar (count =", items.length, ")");
+
+    // obter contagens iniciais para cada item (chamada serial para reduzir pressão no RapidAPI)
+    for (const it of items) {
+      try {
+        it.contagemInicial = await getInitialCountInstagram(it.link || nome || "", tipo);
+        console.log("📥 contagemInicial obtida (instagram):", it.contagemInicial, "for", it.link);
+      } catch (e) {
+        console.warn("⚠ Erro ao obter contagemInicial (continuando):", e?.message || e);
+        it.contagemInicial = null;
+      }
+    }
+
+    // iniciar transação: criar Actions e debitar SALDO total (valor unitário POR ITEM cobra-se apenas valor unitário por pedido, conforme comportamento anterior)
     const session = await mongoose.startSession();
-
     try {
       session.startTransaction();
 
       console.log("💳 Saldo do usuário (antes do débito):", usuario.saldo);
 
-      // débito APENAS do valor unitário
-      const custoATerDebitado = valorNum;
-      console.log("💰 Valor que será debitado (unitário):", custoATerDebitado);
+      // calcular custo total a debitar: soma dos valores unitários (mantendo comportamento antigo que debita apenas 'valor' e não 'valor * quantidade')
+      // OBS: comportamento original debitava apenas o valor unitário uma vez por pedido — para massa, debitamos soma dos valores unitários de cada pedido.
+      // Se quiser outro comportamento (ex: debitar valor * quantidade), ajuste aqui.
 
-      // Criar a action (na transação) incluindo contagemInicial
-      const novaAcao = new Action({
-        userId: usuario._id,
-        id_servico: id_servico ? String(id_servico) : undefined,
-        rede,
-        tipo,
-        nome,
-        valor: valorNum,
-        quantidade: quantidadeNum,
-        validadas: 0,
-        link,
-        status: "pendente",
-        dataCriacao: new Date(),
-        contagemInicial: contagemInicial // number | null
-      });
+      const custoTotal = items.reduce((acc, it) => acc + Number(it.valor || 0), 0);
+      console.log("💰 Custo total a ser debitado (soma dos valores unitários):", custoTotal);
 
-      await novaAcao.save({ session });
+      // criar documentos Action (um por linha) com status pendente
+      const createdActions = [];
+      for (const it of items) {
+        const novaAcao = new Action({
+          userId: usuario._id,
+          id_servico: it.id_servico ? String(it.id_servico) : undefined,
+          rede: 'instagram',
+          tipo,
+          nome: it.link || nome,
+          valor: Number(it.valor),
+          quantidade: it.quantidade,
+          validadas: 0,
+          link: it.link,
+          status: "pendente",
+          dataCriacao: new Date(),
+          contagemInicial: it.contagemInicial
+        });
+        await novaAcao.save({ session });
+        createdActions.push(novaAcao);
+      }
 
-      // debitar saldo
-      console.log("🧮 Tentando debitar...");
+      // debitar saldo do usuário
       const debitResult = await User.updateOne(
-        { _id: usuario._id, saldo: { $gte: custoATerDebitado } },
-        { $inc: { saldo: -custoATerDebitado } },
+        { _id: usuario._id, saldo: { $gte: custoTotal } },
+        { $inc: { saldo: -custoTotal } },
         { session }
       );
-
-      console.log("📊 Resultado do débito:", debitResult);
 
       const modified = debitResult.modifiedCount ?? debitResult.nModified ?? debitResult.n ?? 0;
       const matched = debitResult.matchedCount ?? debitResult.n ?? 0;
@@ -374,78 +370,69 @@ const handler = async (req, res) => {
         return res.status(402).json({ error: "Saldo insuficiente" });
       }
 
-      // commit da transação
       await session.commitTransaction();
       session.endSession();
 
-      const id_pedido = novaAcao._id.toString();
-      console.log("🆔 Ação criada com ID:", id_pedido);
-
-      // buscar novo saldo (fora da transação)
+      // atualizar saldo atual
       const usuarioAtualizado = await User.findById(usuario._id).select("saldo");
       console.log("💳 Saldo após o débito:", usuarioAtualizado ? usuarioAtualizado.saldo : "(não encontrado)");
 
-      // montar payload para ganhesocial (mantendo compatibilidade)
-      const nome_usuario = (link && link.includes("@")) ? link.split("@")[1].trim() : (link ? link.trim() : "");
-      const quantidade_pontos = +(valorNum * 0.001).toFixed(6);
-      let tipo_acao = "Outro";
-      const tipoLower = (tipo || "").toLowerCase();
-      if (tipoLower === "seguidores" || tipoLower === "seguir") tipo_acao = "Seguir";
-      else if (tipoLower === "curtidas" || tipoLower === "curtir") tipo_acao = "Curtir";
+      // enviar cada ação para ganhesocial (fora da transação)
+      const resultadosEnvio = [];
+      for (const ac of createdActions) {
+        const id_pedido = ac._id.toString();
+        const nome_usuario = (ac.link && ac.link.includes("@")) ? ac.link.split("@")[1].trim() : (ac.link ? ac.link.trim() : "");
+        const quantidade_pontos = +(Number(ac.valor) * 0.001).toFixed(6);
+        let tipo_acao = "Outro";
+        const tipoLower = (tipo || "").toLowerCase();
+        if (tipoLower === "seguidores" || tipoLower === "seguir") tipo_acao = "Seguir";
+        else if (tipoLower === "curtidas" || tipoLower === "curtir") tipo_acao = "Curtir";
 
-      const payloadGanheSocial = {
-        tipo_acao,
-        nome_usuario,
-        quantidade_pontos,
-        quantidade: quantidadeNum,
-        valor: valorNum,
-        url_dir: link,
-        id_pedido,
-        meta: {
-          contagemInicial: contagemInicial,
-        }
-      };
-
-      // Envia para ganhesocial (tenta atualizar id_acao_smm)
-      try {
-        console.log("📤 Enviando ação para ganhesocial ->", GANHESOCIAL_URL);
-        const sendResult = await enviarParaGanheSocial(payloadGanheSocial);
-
-        console.log("📩 Resposta ganhesocial:", sendResult.status, sendResult.statusText);
-        if (sendResult.json) console.log("📩 JSON:", sendResult.json);
-        else if (sendResult.raw) console.log("📩 Raw:", sendResult.raw);
-
-        if (sendResult.ok && sendResult.json && sendResult.json.id_acao_smm) {
-          try {
-            await Action.findByIdAndUpdate(id_pedido, { id_acao_smm: sendResult.json.id_acao_smm });
-            console.log("🔁 Action atualizado com id_acao_smm:", sendResult.json.id_acao_smm);
-          } catch (errUpdate) {
-            console.error("❌ Falha ao atualizar Action com id_acao_smm:", errUpdate);
+        const payloadGanheSocial = {
+          tipo_acao,
+          nome_usuario,
+          quantidade_pontos,
+          quantidade: ac.quantidade,
+          valor: ac.valor,
+          url_dir: ac.link,
+          id_pedido,
+          meta: {
+            contagemInicial: ac.contagemInicial,
           }
-        } else if (!sendResult.ok) {
-          console.warn("⚠️ ganhesocial retornou erro:", sendResult.status, sendResult.json ?? sendResult.raw);
-        }
-      } catch (errSend) {
-        if (errSend.name === "AbortError") {
-          console.error(`❌ ERRO FETCH: Abort devido a timeout (${SEND_TIMEOUT_MS}ms)`);
-        } else {
-          console.error("❌ ERRO FETCH:", errSend && errSend.message ? errSend.message : errSend);
+        };
+
+        try {
+          console.log("📤 Enviando ação para ganhesocial ->", GANHESOCIAL_URL, "id_pedido:", id_pedido);
+          const sendResult = await enviarParaGanheSocial(payloadGanheSocial);
+          console.log("📩 Resposta ganhesocial:", sendResult.status, sendResult.statusText);
+          if (sendResult.json && sendResult.json.id_acao_smm) {
+            try {
+              await Action.findByIdAndUpdate(id_pedido, { id_acao_smm: sendResult.json.id_acao_smm });
+              console.log("🔁 Action atualizado com id_acao_smm:", sendResult.json.id_acao_smm);
+            } catch (errUpdate) {
+              console.error("❌ Falha ao atualizar Action com id_acao_smm:", errUpdate);
+            }
+          }
+          resultadosEnvio.push({ id_pedido, ok: sendResult.ok, status: sendResult.status, json: sendResult.json, raw: sendResult.raw });
+        } catch (errSend) {
+          console.error("❌ ERRO ao enviar para ganhesocial:", errSend && errSend.message ? errSend.message : errSend);
+          resultadosEnvio.push({ id_pedido, ok: false, error: errSend?.message || String(errSend) });
         }
       }
 
-      // resposta final
+      // resposta final (201) com lista de ids criados
       return res.status(201).json({
-        message: "Ação criada com sucesso",
-        id_pedido,
-        newSaldo: usuarioAtualizado ? usuarioAtualizado.saldo : null,
-        contagemInicial
+        message: "Ações criadas com sucesso",
+        pedidos: createdActions.map(a => ({ id_pedido: a._id.toString(), link: a.link, quantidade: a.quantidade, valor: a.valor, contagemInicial: a.contagemInicial })),
+        resultadosEnvio,
+        newSaldo: usuarioAtualizado ? usuarioAtualizado.saldo : null
       });
 
     } catch (txErr) {
       try { await session.abortTransaction(); } catch (e2) { console.error("Erro abortando transação:", e2); }
       session.endSession();
       console.error("❌ Erro durante transação:", txErr);
-      return res.status(500).json({ error: "Erro ao criar ação (transação)." });
+      return res.status(500).json({ error: "Erro ao criar ações (transação)." });
     }
 
   } catch (error) {
