@@ -1,6 +1,6 @@
-// /api/criar_acao_instagram.js (ajustada para suportar pedidos em massa)
+// /api/criar_acao_instagram.js (ajustada para calcular valor automaticamente)
 import connectDB from "./db.js";
-import { User, Action } from './schema.js';
+import { User, Action, Servico } from './schema.js';
 import mongoose from "mongoose";
 import axios from "axios";
 
@@ -13,6 +13,14 @@ const INSTAGRAM_RAPIDAPI_KEY = process.env.INSTAGRAM_RAPIDAPI_KEY || process.env
 // cache global simples por processo
 global.__rapidapi_cache__ = global.__rapidapi_cache__ || new Map();
 const rapidapiCache = global.__rapidapi_cache__;
+
+// Preços unitários por tipo de serviço (em centavos)
+const PRECOS_UNITARIOS = {
+  'seguidores': 0.50,   // R$ 0,50 por 1000 seguidores
+  'curtidas': 0.30,     // R$ 0,30 por 1000 curtidas
+  'seguir': 0.50,       // R$ 0,50 por 1000 seguidores
+  'curtir': 0.30        // R$ 0,30 por 1000 curtidas
+};
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -192,19 +200,88 @@ async function enviarParaGanheSocial(payload) {
   }
 }
 
+// Função para determinar o tipo de serviço baseado no ID do serviço
+async function determinarTipoServico(id_servico) {
+  if (!id_servico) return null;
+  
+  try {
+    // Buscar serviço no banco de dados
+    const servico = await Servico.findOne({ id_servico: String(id_servico) });
+    if (servico && servico.nome) {
+      const nomeLower = servico.nome.toLowerCase();
+      if (nomeLower.includes('seguidor') || nomeLower.includes('follow')) {
+        return 'seguidores';
+      } else if (nomeLower.includes('curtida') || nomeLower.includes('like')) {
+        return 'curtidas';
+      }
+    }
+    
+    // Fallback: tentar determinar pelo ID
+    const idStr = String(id_servico);
+    if (idStr.startsWith('S') || idStr.includes('follow')) {
+      return 'seguidores';
+    } else if (idStr.startsWith('C') || idStr.includes('like')) {
+      return 'curtidas';
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn("Erro ao determinar tipo do serviço:", error?.message || error);
+    return null;
+  }
+}
+
+// Função para calcular valor baseado na quantidade e tipo de serviço
+function calcularValor(quantidade, tipo) {
+  if (!tipo || !PRECOS_UNITARIOS[tipo.toLowerCase()]) {
+    // Preço padrão caso não consiga determinar o tipo
+    return (quantidade * 0.001).toFixed(2); // R$ 0,001 por unidade
+  }
+  
+  const precoUnitario = PRECOS_UNITARIOS[tipo.toLowerCase()];
+  // Calcula: (quantidade / 1000) * preco_unitario_por_mil
+  const valor = (quantidade / 1000) * precoUnitario;
+  return Math.max(valor, 0.01).toFixed(2); // Mínimo de R$ 0,01
+}
+
 // Helpers de parsing para pedidos em massa
 function parseBulkLines(bulkString) {
-  // aceita linhas no formato: ID_SERVICO | LINK | QUANTIDADE
-  // separador é o caractere '|' (barra vertical). espaços serão .trim().
+  // aceita linhas no formato: ID_SERVICO LINK QUANTIDADE (separados por espaços)
   if (!bulkString || typeof bulkString !== 'string') return [];
   const lines = bulkString.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const items = [];
+  
   for (const line of lines) {
-    const parts = line.split(' ').map(p => p.trim());
-    if (parts.length < 3) continue; // ignorar linhas inválidas
-    const [id_servico, link, quantidade] = parts;
-    items.push({ id_servico: id_servico || undefined, link: link || undefined, quantidade: quantidade || undefined });
+    // Dividir por espaços, mas considerar que a URL pode conter espaços
+    const parts = line.split(/\s+/).filter(part => part.trim());
+    
+    if (parts.length < 3) {
+      console.warn(`Linha ignorada (formato inválido): ${line}`);
+      continue;
+    }
+    
+    // O ID do serviço é a primeira parte
+    const id_servico = parts[0];
+    
+    // A quantidade é a última parte
+    const quantidade = parts[parts.length - 1];
+    
+    // O link é tudo que está no meio
+    const link = parts.slice(1, parts.length - 1).join(' ');
+    
+    // Validar se quantidade é número
+    if (isNaN(quantidade) || parseInt(quantidade) < 10) {
+      console.warn(`Linha ignorada (quantidade inválida): ${line}`);
+      continue;
+    }
+    
+    items.push({ 
+      id_servico: id_servico || undefined, 
+      link: link || undefined, 
+      quantidade: parseInt(quantidade) 
+    });
   }
+  
   return items;
 }
 
@@ -244,12 +321,8 @@ const handler = async (req, res) => {
       return res.status(401).json({ error: "Não autorizado" });
     }
 
-    // suporte a duas formas de envio:
-    // 1) singular (compatível com versão anterior): id_servico, link, quantidade, valor, tipo, nome
-    // 2) massiva: campo 'bulk' contendo múltiplas linhas "ID_SERVICO | Link | Quantidade" (1 pedido por linha)
-
     const body = req.body || {};
-    const { bulk, tipo, nome, valor: valorBody, userId: bodyUserId } = body;
+    const { bulk, userId: bodyUserId } = body;
 
     // se chamada interna, usa userId do body
     if (isInternalCall) {
@@ -267,38 +340,26 @@ const handler = async (req, res) => {
     let items = [];
     if (bulk && typeof bulk === 'string' && bulk.trim().length > 0) {
       items = parseBulkLines(bulk);
-      if (items.length === 0) return res.status(400).json({ error: "Formato de bulk inválido. Use: ID_SERVICO | Link | Quantidade (uma linha por pedido)" });
+      if (items.length === 0) return res.status(400).json({ error: "Formato de bulk inválido. Use: ID_SERVICO link quantidade (uma linha por pedido, separado por espaços)" });
     } else {
       // tentativa de ler um pedido singular (compatível com rota original)
-      const { id_servico, link, quantidade, valor } = body;
-      items = [{ id_servico: id_servico ? String(id_servico) : undefined, link: link ? String(link) : undefined, quantidade: quantidade, valor }];
+      const { id_servico, link, quantidade } = body;
+      items = [{ 
+        id_servico: id_servico ? String(id_servico) : undefined, 
+        link: link ? String(link) : undefined, 
+        quantidade: quantidade 
+      }];
     }
 
     // valida e normaliza items: quantidade (int), id_servico string
     for (const it of items) {
       it.quantidade = Number(it.quantidade);
-      if (it.id_servico && typeof it.id_servico !== 'string') it.id_servico = String(it.id_servico);
-    }
-
-    // determine valor unitario: prioriza valor por item (se presente em cada linha como 'valor' no objeto), senão top-level valorBody
-    // PARA PEDIDOS EM MASSA: É OBRIGATÓRIO enviar `valor` top-level ou em cada item. Caso contrário, retornamos erro para evitar criar pedidos sem preço.
-
-    const valorTop = (valorBody !== undefined && valorBody !== null) ? parseFloat(valorBody) : undefined;
-    const missingValor = items.some(it => (it.valor === undefined || it.valor === null) && (valorTop === undefined));
-    if (missingValor) {
-      return res.status(400).json({ error: "Para pedidos em massa é obrigatório enviar 'valor' (unitário) no corpo ou em cada linha." });
-    }
-
-    // normaliza valor por item
-    for (const it of items) {
-      const v = (it.valor !== undefined && it.valor !== null) ? parseFloat(it.valor) : valorTop;
-      it.valor = Number.isFinite(Number(v)) ? Number(v) : null;
-      if (it.valor === null) {
-        return res.status(400).json({ error: "Valor inválido em um dos pedidos" });
+      if (it.id_servico && typeof it.id_servico !== 'string') {
+        it.id_servico = String(it.id_servico);
       }
     }
 
-    // valida quantidade minima (mesma regra antiga)
+    // valida quantidade minima
     for (const it of items) {
       if (!Number.isInteger(it.quantidade) || it.quantidade < 10 || it.quantidade > 10000000000) {
         return res.status(400).json({ error: `Quantidade inválida para o pedido (id_servico=${it.id_servico || ''}, quantidade=${it.quantidade}). A quantidade mínima é 10.` });
@@ -307,30 +368,40 @@ const handler = async (req, res) => {
 
     console.log("📌 Pedidos a processar (count =", items.length, ")");
 
-    // obter contagens iniciais para cada item (chamada serial para reduzir pressão no RapidAPI)
+    // Determinar tipo de serviço e calcular valor para cada item
     for (const it of items) {
       try {
-        it.contagemInicial = await getInitialCountInstagram(it.link || nome || "", tipo);
+        // Determinar tipo baseado no ID do serviço
+        it.tipo = await determinarTipoServico(it.id_servico);
+        
+        // Calcular valor automaticamente
+        it.valor = parseFloat(calcularValor(it.quantidade, it.tipo));
+        
+        console.log(`💰 Pedido calculado: ID=${it.id_servico}, Tipo=${it.tipo || 'desconhecido'}, Quantidade=${it.quantidade}, Valor=R$ ${it.valor}`);
+        
+        // Obter contagem inicial
+        it.contagemInicial = await getInitialCountInstagram(it.link || "", it.tipo);
         console.log("📥 contagemInicial obtida (instagram):", it.contagemInicial, "for", it.link);
+        
       } catch (e) {
-        console.warn("⚠ Erro ao obter contagemInicial (continuando):", e?.message || e);
+        console.warn("⚠ Erro ao processar pedido (continuando):", e?.message || e);
+        // Valores padrão em caso de erro
+        it.tipo = it.tipo || 'seguidores';
+        it.valor = it.valor || parseFloat(calcularValor(it.quantidade, 'seguidores'));
         it.contagemInicial = null;
       }
     }
 
-    // iniciar transação: criar Actions e debitar SALDO total (valor unitário POR ITEM cobra-se apenas valor unitário por pedido, conforme comportamento anterior)
+    // iniciar transação
     const session = await mongoose.startSession();
     try {
       session.startTransaction();
 
       console.log("💳 Saldo do usuário (antes do débito):", usuario.saldo);
 
-      // calcular custo total a debitar: soma dos valores unitários (mantendo comportamento antigo que debita apenas 'valor' e não 'valor * quantidade')
-      // OBS: comportamento original debitava apenas o valor unitário uma vez por pedido — para massa, debitamos soma dos valores unitários de cada pedido.
-      // Se quiser outro comportamento (ex: debitar valor * quantidade), ajuste aqui.
-
+      // calcular custo total a debitar
       const custoTotal = items.reduce((acc, it) => acc + Number(it.valor || 0), 0);
-      console.log("💰 Custo total a ser debitado (soma dos valores unitários):", custoTotal);
+      console.log("💰 Custo total a ser debitado:", custoTotal);
 
       // criar documentos Action (um por linha) com status pendente
       const createdActions = [];
@@ -339,8 +410,8 @@ const handler = async (req, res) => {
           userId: usuario._id,
           id_servico: it.id_servico ? String(it.id_servico) : undefined,
           rede: 'instagram',
-          tipo,
-          nome: it.link || nome,
+          tipo: it.tipo,
+          nome: it.link || `Pedido ${it.id_servico}`,
           valor: Number(it.valor),
           quantidade: it.quantidade,
           validadas: 0,
@@ -384,7 +455,7 @@ const handler = async (req, res) => {
         const nome_usuario = (ac.link && ac.link.includes("@")) ? ac.link.split("@")[1].trim() : (ac.link ? ac.link.trim() : "");
         const quantidade_pontos = +(Number(ac.valor) * 0.001).toFixed(6);
         let tipo_acao = "Outro";
-        const tipoLower = (tipo || "").toLowerCase();
+        const tipoLower = (ac.tipo || "").toLowerCase();
         if (tipoLower === "seguidores" || tipoLower === "seguir") tipo_acao = "Seguir";
         else if (tipoLower === "curtidas" || tipoLower === "curtir") tipo_acao = "Curtir";
 
@@ -423,9 +494,17 @@ const handler = async (req, res) => {
       // resposta final (201) com lista de ids criados
       return res.status(201).json({
         message: "Ações criadas com sucesso",
-        pedidos: createdActions.map(a => ({ id_pedido: a._id.toString(), link: a.link, quantidade: a.quantidade, valor: a.valor, contagemInicial: a.contagemInicial })),
+        pedidos: createdActions.map(a => ({ 
+          id_pedido: a._id.toString(), 
+          link: a.link, 
+          quantidade: a.quantidade, 
+          valor: a.valor, 
+          tipo: a.tipo,
+          contagemInicial: a.contagemInicial 
+        })),
         resultadosEnvio,
-        newSaldo: usuarioAtualizado ? usuarioAtualizado.saldo : null
+        newSaldo: usuarioAtualizado ? usuarioAtualizado.saldo : null,
+        custoTotal: custoTotal
       });
 
     } catch (txErr) {
