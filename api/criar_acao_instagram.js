@@ -200,7 +200,7 @@ function parseBulkLines(bulkString) {
   const lines = bulkString.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const items = [];
   for (const line of lines) {
-    const parts = line.split('|').map(p => p.trim());
+    const parts = line.split(' ').map(p => p.trim());
     if (parts.length < 3) continue; // ignorar linhas inválidas
     const [id_servico, link, quantidade] = parts;
     items.push({ id_servico: id_servico || undefined, link: link || undefined, quantidade: quantidade || undefined });
