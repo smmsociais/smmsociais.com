@@ -1,4 +1,4 @@
-// /api/criar_acao_instagram.js (ajustada para calcular valor automaticamente)
+// /api/criar_acao_instagram.js (ajustada para calcular valor baseado no preco_1000 do banco)
 import connectDB from "./db.js";
 import { User, Action, Servico } from './schema.js';
 import mongoose from "mongoose";
@@ -13,14 +13,6 @@ const INSTAGRAM_RAPIDAPI_KEY = process.env.INSTAGRAM_RAPIDAPI_KEY || process.env
 // cache global simples por processo
 global.__rapidapi_cache__ = global.__rapidapi_cache__ || new Map();
 const rapidapiCache = global.__rapidapi_cache__;
-
-// Preços unitários por tipo de serviço (em centavos)
-const PRECOS_UNITARIOS = {
-  'seguidores': 0.50,   // R$ 0,50 por 1000 seguidores
-  'curtidas': 0.30,     // R$ 0,30 por 1000 curtidas
-  'seguir': 0.50,       // R$ 0,50 por 1000 seguidores
-  'curtir': 0.30        // R$ 0,30 por 1000 curtidas
-};
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -200,47 +192,28 @@ async function enviarParaGanheSocial(payload) {
   }
 }
 
-// Função para determinar o tipo de serviço baseado no ID do serviço
-async function determinarTipoServico(id_servico) {
+// Função para buscar serviço no banco de dados
+async function buscarServico(id_servico) {
   if (!id_servico) return null;
   
   try {
-    // Buscar serviço no banco de dados
     const servico = await Servico.findOne({ id_servico: String(id_servico) });
-    if (servico && servico.nome) {
-      const nomeLower = servico.nome.toLowerCase();
-      if (nomeLower.includes('seguidor') || nomeLower.includes('follow')) {
-        return 'seguidores';
-      } else if (nomeLower.includes('curtida') || nomeLower.includes('like')) {
-        return 'curtidas';
-      }
-    }
-    
-    // Fallback: tentar determinar pelo ID
-    const idStr = String(id_servico);
-    if (idStr.startsWith('S') || idStr.includes('follow')) {
-      return 'seguidores';
-    } else if (idStr.startsWith('C') || idStr.includes('like')) {
-      return 'curtidas';
-    }
-    
-    return null;
+    return servico;
   } catch (error) {
-    console.warn("Erro ao determinar tipo do serviço:", error?.message || error);
+    console.warn("Erro ao buscar serviço:", error?.message || error);
     return null;
   }
 }
 
-// Função para calcular valor baseado na quantidade e tipo de serviço
-function calcularValor(quantidade, tipo) {
-  if (!tipo || !PRECOS_UNITARIOS[tipo.toLowerCase()]) {
-    // Preço padrão caso não consiga determinar o tipo
+// Função para calcular valor baseado no preco_1000 do serviço
+function calcularValor(quantidade, preco_1000) {
+  if (!preco_1000 || preco_1000 <= 0) {
+    // Preço padrão caso não tenha preco_1000 definido
     return (quantidade * 0.001).toFixed(2); // R$ 0,001 por unidade
   }
   
-  const precoUnitario = PRECOS_UNITARIOS[tipo.toLowerCase()];
-  // Calcula: (quantidade / 1000) * preco_unitario_por_mil
-  const valor = (quantidade / 1000) * precoUnitario;
+  // Calcula: (quantidade / 1000) * preco_1000
+  const valor = (quantidade / 1000) * preco_1000;
   return Math.max(valor, 0.01).toFixed(2); // Mínimo de R$ 0,01
 }
 
@@ -359,36 +332,49 @@ const handler = async (req, res) => {
       }
     }
 
-    // valida quantidade minima
-    for (const it of items) {
-      if (!Number.isInteger(it.quantidade) || it.quantidade < 10 || it.quantidade > 10000000000) {
-        return res.status(400).json({ error: `Quantidade inválida para o pedido (id_servico=${it.id_servico || ''}, quantidade=${it.quantidade}). A quantidade mínima é 10.` });
-      }
-    }
-
     console.log("📌 Pedidos a processar (count =", items.length, ")");
 
-    // Determinar tipo de serviço e calcular valor para cada item
+    // Buscar informações dos serviços e calcular valores
     for (const it of items) {
       try {
-        // Determinar tipo baseado no ID do serviço
-        it.tipo = await determinarTipoServico(it.id_servico);
+        // Buscar serviço no banco de dados
+        const servico = await buscarServico(it.id_servico);
         
-        // Calcular valor automaticamente
-        it.valor = parseFloat(calcularValor(it.quantidade, it.tipo));
+        if (!servico) {
+          throw new Error(`Serviço com ID ${it.id_servico} não encontrado`);
+        }
+
+        // Validar quantidade mínima e máxima do serviço
+        if (it.quantidade < (servico.minimo || 10)) {
+          throw new Error(`Quantidade mínima para este serviço é ${servico.minimo || 10}`);
+        }
+
+        if (servico.maximo && it.quantidade > servico.maximo) {
+          throw new Error(`Quantidade máxima para este serviço é ${servico.maximo}`);
+        }
+
+        // Definir tipo e calcular valor baseado no preco_1000
+        it.tipo = servico.tipo || 'seguidores';
+        it.valor = parseFloat(calcularValor(it.quantidade, servico.preco_1000));
+        it.servico_nome = servico.nome;
         
-        console.log(`💰 Pedido calculado: ID=${it.id_servico}, Tipo=${it.tipo || 'desconhecido'}, Quantidade=${it.quantidade}, Valor=R$ ${it.valor}`);
+        console.log(`💰 Pedido calculado: ID=${it.id_servico}, Tipo=${it.tipo}, Quantidade=${it.quantidade}, Preço_1000=R$ ${servico.preco_1000}, Valor=R$ ${it.valor}`);
         
         // Obter contagem inicial
         it.contagemInicial = await getInitialCountInstagram(it.link || "", it.tipo);
         console.log("📥 contagemInicial obtida (instagram):", it.contagemInicial, "for", it.link);
         
       } catch (e) {
-        console.warn("⚠ Erro ao processar pedido (continuando):", e?.message || e);
-        // Valores padrão em caso de erro
-        it.tipo = it.tipo || 'seguidores';
-        it.valor = it.valor || parseFloat(calcularValor(it.quantidade, 'seguidores'));
-        it.contagemInicial = null;
+        console.warn("⚠ Erro ao processar pedido:", e?.message || e);
+        // Rejeitar o pedido específico em caso de erro
+        throw new Error(`Erro no pedido ID ${it.id_servico}: ${e.message}`);
+      }
+    }
+
+    // Validar quantidade mínima geral (após validações individuais)
+    for (const it of items) {
+      if (!Number.isInteger(it.quantidade) || it.quantidade < 10 || it.quantidade > 10000000000) {
+        return res.status(400).json({ error: `Quantidade inválida para o pedido (id_servico=${it.id_servico || ''}, quantidade=${it.quantidade}). A quantidade mínima é 10.` });
       }
     }
 
@@ -411,7 +397,7 @@ const handler = async (req, res) => {
           id_servico: it.id_servico ? String(it.id_servico) : undefined,
           rede: 'instagram',
           tipo: it.tipo,
-          nome: it.link || `Pedido ${it.id_servico}`,
+          nome: it.servico_nome || it.link || `Pedido ${it.id_servico}`,
           valor: Number(it.valor),
           quantidade: it.quantidade,
           validadas: 0,
@@ -516,7 +502,7 @@ const handler = async (req, res) => {
 
   } catch (error) {
     console.error("❌ Erro interno ao criar ação:", error);
-    return res.status(500).json({ error: "Erro ao criar ação" });
+    return res.status(500).json({ error: error.message || "Erro ao criar ação" });
   }
 };
 
