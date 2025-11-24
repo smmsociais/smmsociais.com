@@ -170,7 +170,8 @@
                             <nav class="navbar navbar-expand-lg navbar-light">
                                 <div class="navbar-private__header">
                                     <div class="sidebar-block__top-brand">
-                                        <a href="/painel" class="component-navbar-brand component-navbar-public-brand">
+                                        <a href="/painel.html"
+                                            class="component-navbar-brand component-navbar-public-brand">
                                             <h3><strong style="font-weight: bold"></strong><span
                                                     style="color: var(--color-id-117)"><strong
                                                         style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
@@ -192,7 +193,7 @@
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/">
-                                                    Novo pedido
+                                                    Novo Pedido
                                                 </a>
                                             </li>
                                             <li
@@ -215,32 +216,26 @@
                                                     href="/addfunds">
                                                     Adicionar Saldo
                                                 </a>
-                                                class="nav-item component-navbar-nav-item
-                                                component-navbar-private-nav-item">
+                                            </li>
+                                            <li
+                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/affiliates">
-                                                    Meus indicados
+                                                    Meus Indicados
                                                 </a>
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
                                                     href="/massorder">
-                                                    Mass order
-                                                </a>
-                                            </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/suporte">
-                                                    Suporte
+                                                    Pedido em Massa
                                                 </a>
                                             </li>
                                         </ul>
                                         <ul class="navbar-nav navbar-nav-currencies">
                                             <li
                                                 class="nav-item d-flex align-items-center component-navbar-nav-item component-navbar-private-nav-item component-navbar-balance-wrap__navbar-private">
-                                                <a class="component-navbar-balance-item__navbar-private">R$ 0,00</a>
+                                                <a class="component-navbar-balance-item__navbar-private">R$ 0</a>
                                             </li>
                                         </ul>
                                         <ul class="navbar-nav">
@@ -275,8 +270,8 @@
                             </div>
                             <ul class="sidebar-block__left-menu editor__component-wrapper">
                                 <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/">
-                                        Novo pedido
+                                    <a class="component-sidebar__menu-item-link" href="/painel.html">
+                                        Novo Pedido
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item ">
@@ -293,20 +288,18 @@
                                     <a class="component-sidebar__menu-item-link" href="/addfunds">
                                         Adicionar Saldo
                                     </a>
+                                </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/affiliates">
-                                        Meus indicados
+                                        Meus Indicados
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
                                     <a class="component-sidebar__menu-item-link" href="/massorder">
-                                        Mass order
+                                        Pedido em Massa
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/suporte">
-                                        Suporte
-                                    </a>
+                                </a>
                                 </li>
                             </ul>
                         </div>
@@ -363,20 +356,83 @@
     <!-- Notifications wrapper -->
     <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
 
-    <script type="text/javascript" src="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js">
-    </script>
-    <script type="text/javascript" src="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js">
-    </script>
-    <script type="text/javascript" src="https://storage.perfectcdn.com/global/2t0wrbkqkg6p2yz4.js">
-    </script>
-    <script type="text/javascript" src="https://storage.perfectcdn.com/global/zfq5snh4og5je3zk.js">
-    </script>
-    <script type="text/javascript">
-        window.modules.layouts = { "theme_id": 23, "auth": 1, "live": true, "csrftoken": "pYM2WJymLUEeV-CRdOnRTmXKZ2fgE0cAm9v6vW9iaIHD23Qh9-1IKFsv0skyopMCXPwPKoxMM1j9iMzXKSgp5Q==" };   </script>
-    <script type="text/javascript">
-        window.modules.alerts = { "alerts": [] };   </script>
+    <!-- ======= Navbar toggle fallback (vanilla JS) - torna o "hamburger" funcional em dispositivos móveis ======= -->
+    <script>
+        (function () {
+            // Função utilitária para encontrar o alvo do botão (data-target ou aria-controls)
+            function resolveTarget(button) {
+                const targetSelector = button.getAttribute('data-target') || button.getAttribute('data-bs-target') || ('#' + (button.getAttribute('aria-controls') || ''));
+                if (!targetSelector) return null;
+                try {
+                    return document.querySelector(targetSelector);
+                } catch (e) {
+                    return null;
+                }
+            }
 
-    <!-- Script para controle de carregamento da página -->
+            // Inicializa todos os togglers de navbar existentes
+            function initNavTogglers() {
+                const togglers = document.querySelectorAll('.navbar-toggler');
+                togglers.forEach(btn => {
+                    const target = resolveTarget(btn);
+                    if (!target) return;
+
+                    // Garantir que o botão tenha type="button" para evitar submit acidental
+                    if (!btn.hasAttribute('type')) btn.setAttribute('type', 'button');
+
+                    // Evitar duplicar event listeners
+                    if (btn.__nav_init) return;
+                    btn.__nav_init = true;
+
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const isShown = target.classList.contains('show');
+                        if (isShown) {
+                            target.classList.remove('show');
+                            btn.classList.remove('collapsed');
+                            btn.setAttribute('aria-expanded', 'false');
+                        } else {
+                            target.classList.add('show');
+                            btn.classList.add('collapsed');
+                            btn.setAttribute('aria-expanded', 'true');
+                        }
+                    });
+
+                    // Fechar ao clicar fora (somente se estiver aberto)
+                    document.addEventListener('click', function (ev) {
+                        if (!target.classList.contains('show')) return;
+                        if (btn.contains(ev.target) || target.contains(ev.target)) return;
+                        target.classList.remove('show');
+                        btn.setAttribute('aria-expanded', 'false');
+                    });
+
+                    // Fechar ao pressionar ESC
+                    document.addEventListener('keydown', function (ev) {
+                        if (ev.key === 'Escape' && target.classList.contains('show')) {
+                            target.classList.remove('show');
+                            btn.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+
+                    // Ao redimensionar para telas grandes, garantir menu fechado
+                    window.addEventListener('resize', function () {
+                        if (window.innerWidth >= 992 && target.classList.contains('show')) {
+                            target.classList.remove('show');
+                            btn.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                });
+            }
+
+            // Inicializar no DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initNavTogglers);
+            } else {
+                initNavTogglers();
+            }
+        })();
+    </script>
+
     <script>
         /* script para garantir que a página apareça apenas após todas as APIs terminarem */
         (function () {
