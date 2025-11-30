@@ -1,4 +1,4 @@
-// /api/criar_acao_tiktok.js (ajustada para calcular valor baseado no preco_1000 do banco)
+// /api/criar_acao_tiktok.js (ajustada para normalizar links do TikTok)
 import connectDB from "./db.js";
 import { User, Action, Servico } from './schema.js';
 import mongoose from "mongoose";
@@ -17,6 +17,25 @@ global.__rapidapi_cache__ = global.__rapidapi_cache__ || new Map();
 const rapidapiCache = global.__rapidapi_cache__;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// FUNÇÃO ADICIONADA: Normaliza qualquer formato de username/link para URL completa do TikTok
+function normalizarLinkTikTok(link) {
+  if (!link || typeof link !== "string") return null;
+  
+  let input = link.trim();
+  
+  // Se já é uma URL completa do TikTok, retorna como está
+  if (input.startsWith('https://www.tiktok.com/@')) {
+    return input;
+  }
+  
+  // Extrai o username de qualquer formato
+  const username = extractUsernameFromLink(input);
+  if (!username) return null;
+  
+  // Retorna a URL completa formatada
+  return `https://www.tiktok.com/@${username}`;
+}
 
 // extrai username de link/nomes variados
 function extractUsernameFromLink(link) {
@@ -359,6 +378,20 @@ const handler = async (req, res) => {
       }];
     }
 
+    // AJUSTE PRINCIPAL: Normalizar todos os links para o formato padrão do TikTok
+    console.log("🔗 Normalizando links do TikTok...");
+    for (const it of items) {
+      if (it.link) {
+        const linkNormalizado = normalizarLinkTikTok(it.link);
+        if (linkNormalizado) {
+          console.log(`  → "${it.link}" → "${linkNormalizado}"`);
+          it.link = linkNormalizado;
+        } else {
+          console.warn(`  ⚠ Não foi possível normalizar o link: "${it.link}"`);
+        }
+      }
+    }
+
     // valida e normaliza items: quantidade (int), id_servico string
     for (const it of items) {
       it.quantidade = Number(it.quantidade);
@@ -436,7 +469,7 @@ const handler = async (req, res) => {
           valor: Number(it.valor),
           quantidade: it.quantidade,
           validadas: 0,
-          link: it.link,
+          link: it.link, // ← Agora sempre no formato normalizado
           status: "pendente",
           dataCriacao: new Date(),
           contagemInicial: it.contagemInicial
@@ -487,7 +520,7 @@ const handler = async (req, res) => {
           quantidade_pontos,
           quantidade: ac.quantidade,
           valor: ac.valor,
-          url_dir: ac.link,
+          url_dir: ac.link, // ← Agora sempre no formato normalizado
           id_pedido,
           meta: {
             contagemInicial: ac.contagemInicial,
@@ -518,7 +551,7 @@ const handler = async (req, res) => {
         message: "Ações criadas com sucesso",
         pedidos: createdActions.map(a => ({ 
           id_pedido: a._id.toString(), 
-          link: a.link, 
+          link: a.link, // ← Agora sempre no formato normalizado
           quantidade: a.quantidade, 
           valor: a.valor, 
           tipo: a.tipo,
