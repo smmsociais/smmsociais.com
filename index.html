@@ -11,81 +11,123 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- CSS personalizado para garantir exibição dos ícones -->
+
+    <!-- CSS personalizado -->
     <style>
-        /* Garantir que os ícones sejam exibidos em todos os dispositivos */
-        .feature-block__icon,
-        .card__icon-fa,
-        .faq-block__icon i {
-            display: inline-block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
+        /* Reset de estilos conflitantes */
+        .feature-block__image,
+        .card__icon-image {
+            all: initial !important;
+            display: block !important;
+            max-width: 100% !important;
+            height: auto !important;
         }
-        
-        /* Remover qualquer media query que possa estar ocultando os ícones */
+
+        /* Container para as imagens das features */
+        .feature-image-container {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 80px !important;
+            height: 80px !important;
+            background: var(--color-id-117) !important;
+            border-radius: 48px !important;
+            margin: 0 auto !important;
+        }
+
+        /* Imagens das features */
+        .feature-block__image {
+            width: 320px !important;
+            height: 302px !important;
+            object-fit: contain !important;
+        }
+
+        /* Container para imagens dos cards "Como começar?" */
+        .card-icon-container {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 80px !important;
+            height: 80px !important;
+        }
+
+        /* Imagens dos cards "Como começar?" */
+        .card__icon-image {
+            width: 100px !important;
+            height: 100px !important;
+            object-fit: contain !important;
+        }
+
+        /* Remover todos os estilos inline específicos */
+        .block-features__card-icon {
+            all: initial !important;
+        }
+
+        .card__icon-wrap {
+            all: initial !important;
+        }
+
+        /* Ajustes para mobile */
         @media (max-width: 767.98px) {
-            .feature-block__icon,
-            .card__icon-fa,
-            .faq-block__icon i {
-                display: inline-block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                font-size: inherit !important;
+            .feature-image-container {
+                width: 60px !important;
+                height: 60px !important;
+                border-radius: 30px !important;
             }
-            
-            /* Ajustar tamanho dos ícones para mobile */
-            .block-features__card-icon {
-                min-width: 60px !important;
-                min-height: 60px !important;
-                font-size: 60px !important;
+
+            .feature-block__image {
+                width: 24px !important;
+                height: 24px !important;
             }
-            
-            .feature-block__icon {
+
+            .card-icon-container {
+                width: 60px !important;
+                height: 60px !important;
+            }
+
+            .card__icon-image {
+                width: 36px !important;
+                height: 36px !important;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .feature-image-container {
+                width: 50px !important;
+                height: 50px !important;
+                border-radius: 25px !important;
+            }
+
+            .feature-block__image {
                 width: 20px !important;
                 height: 20px !important;
             }
-            
-            .card__icon-wrap {
-                min-width: 60px !important;
-                min-height: 60px !important;
+
+            .card-icon-container {
+                width: 50px !important;
+                height: 50px !important;
             }
-            
-            .card__icon-fa {
-                font-size: 40px !important;
-                width: 40px !important;
-                height: 40px !important;
-            }
-            
-            .faq-block__icon i {
-                font-size: 20px !important;
+
+            .card__icon-image {
+                width: 30px !important;
+                height: 30px !important;
             }
         }
-        
-        @media (max-width: 575.98px) {
-            .block-features__card-icon {
-                min-width: 50px !important;
-                min-height: 50px !important;
-                font-size: 50px !important;
-            }
-            
-            .feature-block__icon {
-                width: 18px !important;
-                height: 18px !important;
-            }
-            
-            .card__icon-wrap {
-                min-width: 50px !important;
-                min-height: 50px !important;
-            }
-            
-            .card__icon-fa {
-                font-size: 35px !important;
-                width: 35px !important;
-                height: 35px !important;
-            }
+
+        /* Garantir que os containers sejam visíveis */
+        .features-card__preview,
+        .card__icon {
+            all: initial !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        /* Remover sombras e efeitos que possam estar interferindo */
+        .styled-card-hover,
+        .style-text-primary {
+            all: initial !important;
+            display: contents !important;
         }
     </style>
 
@@ -319,21 +361,9 @@
                                 style="
                      background: none;                                                                                          color: inherit;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          box-shadow: none;                                             ">
                                 <div class="features-card__preview">
-                                    <div class="block-features__card-icon style-bg-primary-alpha-10 style-border-radius-default style-text-primary"
-                                        style=" height: 80px;                             width: 80px;                             font-size: 80px;                             background: var(--color-id-117);                             border-top-left-radius: 48px;                             border-bottom-left-radius: 48px;                             border-top-right-radius: 48px;                             border-bottom-right-radius: 48px;                                          ">
-                                        <span class="styled-card-hover">
-                                            <span class="feature-block__icon style-text-primary fas fa-trophy-alt"
-                                                style="
-                                  width: 24px;
-                                  height: 24px;
-                                  transform: rotate(0deg);
-                                  color: var(--color-id-118);
-                                  text-shadow: 0px 8px 16px var(--color-id-122);
-                                  border-radius: 0px;
-                                  background: none;
-                                  padding: 0px;
-                                  "></span>
-                                        </span>
+                                    <div class="feature-image-container">
+                                        <img src="https://i.imgur.com/UVGOxDe.png" alt="Qualidade Profissional"
+                                            class="feature-block__image">
                                     </div>
                                 </div>
                                 <div class="card features-card" style=" color: inherit; ">
@@ -361,22 +391,9 @@
                                 style="
                      background: none;                                                                                          color: inherit;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          box-shadow: none;                                             ">
                                 <div class="features-card__preview">
-                                    <div class="block-features__card-icon style-bg-primary-alpha-10 style-border-radius-default style-text-primary"
-                                        style=" height: 80px;                             width: 80px;                             font-size: 80px;                             background: var(--color-id-117);                             border-top-left-radius: 48px;                             border-bottom-left-radius: 48px;                             border-top-right-radius: 48px;                             border-bottom-right-radius: 48px;                                          ">
-                                        <span class="styled-card-hover">
-                                            <span
-                                                class="feature-block__icon style-text-primary fas fa-credit-card"
-                                                style="
-                                  width: 24px;
-                                  height: 24px;
-                                  transform: rotate(0deg);
-                                  color: var(--color-id-119);
-                                  text-shadow: 0px 8px 16px var(--color-id-123);
-                                  border-radius: 0px;
-                                  background: none;
-                                  padding: 0px;
-                                  "></span>
-                                        </span>
+                                    <div class="feature-image-container">
+                                        <img src="https://i.imgur.com/a0SGViW.png" alt="Pagamentos Seguros com PIX"
+                                            class="feature-block__image">
                                     </div>
                                 </div>
                                 <div class="card features-card" style=" color: inherit; ">
@@ -404,21 +421,9 @@
                                 style="
                      background: none;                                                                                          color: inherit;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          box-shadow: none;                                             ">
                                 <div class="features-card__preview">
-                                    <div class="block-features__card-icon style-bg-primary-alpha-10 style-border-radius-default style-text-primary"
-                                        style=" height: 80px;                             width: 80px;                             font-size: 80px;                             background: var(--color-id-117);                             border-top-left-radius: 48px;                             border-bottom-left-radius: 48px;                             border-top-right-radius: 48px;                             border-bottom-right-radius: 48px;                                          ">
-                                        <span class="styled-card-hover">
-                                            <span class="feature-block__icon style-text-primary fas fa-dollar-sign"
-                                                style="
-                                  width: 24px;
-                                  height: 24px;
-                                  transform: rotate(0deg);
-                                  color: var(--color-id-120);
-                                  text-shadow: 0px 8px 16px var(--color-id-124);
-                                  border-radius: 0px;
-                                  background: none;
-                                  padding: 0px;
-                                  "></span>
-                                        </span>
+                                    <div class="feature-image-container">
+                                        <img src="https://i.imgur.com/smpDaam.png" alt="Soluções Acessíveis"
+                                            class="feature-block__image">
                                     </div>
                                 </div>
                                 <div class="card features-card" style=" color: inherit; ">
@@ -447,22 +452,9 @@
                                 style="
                      background: none;                                                                                          color: inherit;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          box-shadow: none;                                             ">
                                 <div class="features-card__preview">
-                                    <div class="block-features__card-icon style-bg-primary-alpha-10 style-border-radius-default style-text-primary"
-                                        style=" height: 80px;                             width: 80px;                             font-size: 80px;                             background: var(--color-id-117);                             border-top-left-radius: 48px;                             border-bottom-left-radius: 48px;                             border-top-right-radius: 48px;                             border-bottom-right-radius: 48px;                                          ">
-                                        <span class="styled-card-hover">
-                                            <span
-                                                class="feature-block__icon style-text-primary fas fa-headset"
-                                                style="
-                                  width: 24px;
-                                  height: 24px;
-                                  transform: rotate(0deg);
-                                  color: var(--color-id-121);
-                                  text-shadow: 0px 8px 16px var(--color-id-125);
-                                  border-radius: 0px;
-                                  background: none;
-                                  padding: 0px;
-                                  "></span>
-                                        </span>
+                                    <div class="feature-image-container">
+                                        <img src="https://i.imgur.com/Yn8igK8.png" alt="Suporte Rápido e Eficiente"
+                                            class="feature-block__image">
                                     </div>
                                 </div>
                                 <div class="card features-card" style=" color: inherit; ">
@@ -526,21 +518,10 @@
 							 background: none; 							                                            				 color: inherit; 																																																																																																																																																										 box-shadow: none; 											">
                                         <div class="how-it-works__card-wrap">
                                             <div class="card__icon" style="justify-content: flex-end">
-                                                <span class="card__icon-wrap"
-                                                    style="
-												 height: 80px;                                                 	 width: 80px; 																																																																																												">
-                                                    <span class="card__icon-fa fas fa-user-plus" style="
-															font-size: 56px;
-															width: 56px;
-															height: 56px;
-															transform: rotate(0deg);
-															color: var(--color-id-118);
-															text-shadow: 0px 0px 0px var(--color-id-126);
-															border-radius: 0px;
-															background: none;
-															padding: 0px;
-															"></span>
-                                                </span>
+                                                <div class="card-icon-container">
+                                                    <img src="https://i.imgur.com/4zaA2Uh.png" alt="Crie sua conta"
+                                                        class="card__icon-image">
+                                                </div>
                                             </div>
                                             <div class="card__number-wrap">
                                                 <div class="how-it-works-number style-box-shadow-default style-bg-light style-border-radius-50 style-card-number"
@@ -565,7 +546,7 @@
                                     </div>
                                     <div class="how-it-works__card-line style-card-number-line"></div>
                                 </div>
-                                
+
                                 <!-- CARD 2 - Adicione fundos -->
                                 <div class="how-it-works__card">
                                     <div class="card"
@@ -573,21 +554,10 @@
 							 background: none; 							                                            				 color: inherit; 																																																																																																																																																										 box-shadow: none; 											">
                                         <div class="how-it-works__card-wrap">
                                             <div class="card__icon" style="justify-content: flex-start">
-                                                <span class="card__icon-wrap"
-                                                    style="
-												 height: 80px;                                                 	 width: 80px; 																																																																																												">
-                                                    <span class="card__icon-fa fas fa-credit-card" style="
-															font-size: 56px;
-															width: 56px;
-															height: 56px;
-															transform: rotate(0deg);
-															color: var(--color-id-119);
-															text-shadow: 0px 0px 0px var(--color-id-126);
-															border-radius: 0px;
-															background: none;
-															padding: 0px;
-															"></span>
-                                                </span>
+                                                <div class="card-icon-container">
+                                                    <img src="https://i.imgur.com/CVsZzNn.png" alt="Adicione fundos"
+                                                        class="card__icon-image">
+                                                </div>
                                             </div>
                                             <div class="card__number-wrap">
                                                 <div class="how-it-works-number style-box-shadow-default style-bg-light style-border-radius-50 style-card-number"
@@ -612,7 +582,7 @@
                                     </div>
                                     <div class="how-it-works__card-line style-card-number-line"></div>
                                 </div>
-                                
+
                                 <!-- CARD 3 - Escolha um serviço -->
                                 <div class="how-it-works__card">
                                     <div class="card"
@@ -620,21 +590,10 @@
 							 background: none; 							                                            				 color: inherit; 																																																																																																																																																										 box-shadow: none; 											">
                                         <div class="how-it-works__card-wrap">
                                             <div class="card__icon" style="justify-content: flex-end">
-                                                <span class="card__icon-wrap"
-                                                    style="
-												 height: 80px;                                                 	 width: 80px; 																																							 border-top-left-radius: 0px; 													 border-bottom-left-radius: 0px; 													 border-top-right-radius: 0px; 													 border-bottom-right-radius: 0px; 														">
-                                                    <span class="card__icon-fa fas fa-tasks" style="
-															font-size: 56px;
-															width: 56px;
-															height: 56px;
-															transform: rotate(0deg);
-															color: var(--color-id-120);
-															text-shadow: 0px 0px 0px var(--color-id-126);
-															border-radius: 0px;
-															background: none;
-															padding: 0px;
-															"></span>
-                                                </span>
+                                                <div class="card-icon-container">
+                                                    <img src="https://i.imgur.com/UzrCFDh.png" alt="Escolha um serviço"
+                                                        class="card__icon-image">
+                                                </div>
                                             </div>
                                             <div class="card__number-wrap">
                                                 <div class="how-it-works-number style-box-shadow-default style-bg-light style-border-radius-50 style-card-number"
@@ -659,7 +618,7 @@
                                     </div>
                                     <div class="how-it-works__card-line style-card-number-line"></div>
                                 </div>
-                                
+
                                 <!-- CARD 4 - Receba os resultados -->
                                 <div class="how-it-works__card">
                                     <div class="card"
@@ -667,21 +626,10 @@
 							 background: none; 							                                            				 color: inherit; 																																																																																																																																																										 box-shadow: none; 											">
                                         <div class="how-it-works__card-wrap">
                                             <div class="card__icon" style="justify-content: flex-start">
-                                                <span class="card__icon-wrap"
-                                                    style="
-												 height: 80px;                                                 	 width: 80px; 																																																																																												">
-                                                    <span class="card__icon-fa fas fa-chart-line" style="
-															font-size: 56px;
-															width: 56px;
-															height: 56px;
-															transform: rotate(0deg);
-															color: var(--color-id-121);
-															text-shadow: 0px 0px 0px var(--color-id-126);
-															border-radius: 0px;
-															background: none;
-															padding: 0px;
-															"></span>
-                                                </span>
+                                                <div class="card-icon-container">
+                                                    <img src="https://i.imgur.com/dONYYiB.png"
+                                                        alt="Receba os resultados" class="card__icon-image">
+                                                </div>
                                             </div>
                                             <div class="card__number-wrap">
                                                 <div class="how-it-works-number style-box-shadow-default style-bg-light style-border-radius-50 style-card-number"
@@ -916,7 +864,7 @@
                                     <div class="col-md-12">
                                         <div class="component-footer__public-copyright">
                                             <p class="text-center"><span style="text-align: CENTER">© 2025,
-                                                            SMMSociais.</span></p>
+                                                    SMMSociais.</span></p>
                                         </div>
                                     </div>
                                 </div>
@@ -936,46 +884,30 @@
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Script para forçar exibição dos ícones em mobile -->
+    <!-- Script para garantir exibição das imagens -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Garantir que os ícones sejam exibidos
-            const icons = document.querySelectorAll('.feature-block__icon, .card__icon-fa, .faq-block__icon i');
-            icons.forEach(icon => {
-                icon.style.display = 'inline-block';
-                icon.style.visibility = 'visible';
-                icon.style.opacity = '1';
+        document.addEventListener('DOMContentLoaded', function () {
+            // Remover estilos inline conflitantes
+            const containers = document.querySelectorAll('.feature-image-container, .card-icon-container');
+            containers.forEach(container => {
+                container.removeAttribute('style');
             });
-            
-            // Verificar se está em mobile e ajustar tamanhos
-            function adjustIconsForMobile() {
-                if (window.innerWidth <= 768) {
-                    // Ajustar ícones das features
-                    const featureIcons = document.querySelectorAll('.feature-block__icon');
-                    featureIcons.forEach(icon => {
-                        icon.style.width = '20px';
-                        icon.style.height = '20px';
-                    });
-                    
-                    // Ajustar ícones dos cards "Como começar"
-                    const cardIcons = document.querySelectorAll('.card__icon-fa');
-                    cardIcons.forEach(icon => {
-                        icon.style.fontSize = '40px';
-                        icon.style.width = '40px';
-                        icon.style.height = '40px';
-                    });
-                    
-                    // Ajustar ícones do FAQ
-                    const faqIcons = document.querySelectorAll('.faq-block__icon i');
-                    faqIcons.forEach(icon => {
-                        icon.style.fontSize = '20px';
-                    });
-                }
-            }
-            
-            // Executar na carga e no redimensionamento
-            adjustIconsForMobile();
-            window.addEventListener('resize', adjustIconsForMobile);
+
+            const images = document.querySelectorAll('.feature-block__image, .card__icon-image');
+            images.forEach(img => {
+                img.removeAttribute('style');
+            });
+
+            // Forçar aplicação dos estilos CSS
+            setTimeout(function () {
+                containers.forEach(container => {
+                    container.style.cssText = '';
+                });
+
+                images.forEach(img => {
+                    img.style.cssText = '';
+                });
+            }, 100);
         });
     </script>
 
