@@ -12,6 +12,9 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
 
+    <!-- Font Awesome (removendo apenas os ícones do FAQ, mantendo para possíveis outros usos) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
     <!-- CSS personalizado -->
     <style>
         /* Reset de estilos conflitantes */
@@ -67,6 +70,63 @@
             all: initial !important;
         }
 
+        /* Estilo para FAQ sem ícones */
+        .faq-block__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .faq-block__header:hover {
+            background-color: #e9ecef;
+        }
+
+        .faq-block__header.collapsed .faq-block__header-icon::after {
+            content: '+';
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--color-id-103);
+        }
+
+        .faq-block__header:not(.collapsed) .faq-block__header-icon::after {
+            content: '−';
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--color-id-103);
+        }
+
+        /* Remover ícones do FAQ */
+        .faq-block__header-icon i {
+            display: none !important;
+        }
+
+        .faq-block__header-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .faq-block__body {
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 0 0 8px 8px;
+            margin-top: -10px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+        }
+
+        .faq-block__card {
+            margin-bottom: 15px;
+        }
+
         /* Ajustes para mobile */
         @media (max-width: 767.98px) {
             .feature-image-container {
@@ -88,6 +148,14 @@
             .card__icon-image {
                 width: 36px !important;
                 height: 36px !important;
+            }
+
+            .faq-block__header {
+                padding: 12px;
+            }
+
+            .faq-block__body {
+                padding: 12px;
             }
         }
 
@@ -128,6 +196,17 @@
         .style-text-primary {
             all: initial !important;
             display: contents !important;
+        }
+
+        /* Melhorias na responsividade */
+        @media (max-width: 768px) {
+            .block-features .col-md-6 {
+                margin-bottom: 30px;
+            }
+
+            .how-it-works__card {
+                margin-bottom: 20px;
+            }
         }
     </style>
 
@@ -689,10 +768,7 @@
                                                 oferece?</strong></p>
                                     </div>
                                     <div class="faq-block__header-icon">
-                                        <div class="style-text-dark faq-block__icon"
-                                            style="color: var(--color-id-103);">
-                                            <i class="fas fa-question-circle" style="font-size: 24px;"></i>
-                                        </div>
+                                        <!-- Ícone removido - substituído por + e - via CSS -->
                                     </div>
                                 </div>
                                 <div class="faq-block__body collapse" id="faq-block-36-1">
@@ -717,10 +793,7 @@
                                                 disponíveis?</strong></p>
                                     </div>
                                     <div class="faq-block__header-icon">
-                                        <div class="style-text-dark faq-block__icon"
-                                            style="color: var(--color-id-103);">
-                                            <i class="fas fa-question-circle" style="font-size: 24px;"></i>
-                                        </div>
+                                        <!-- Ícone removido - substituído por + e - via CSS -->
                                     </div>
                                 </div>
                                 <div class="faq-block__body collapse" id="faq-block-36-2">
@@ -745,10 +818,7 @@
                                                 plataforma?</strong></p>
                                     </div>
                                     <div class="faq-block__header-icon">
-                                        <div class="style-text-dark faq-block__icon"
-                                            style="color: var(--color-id-103);">
-                                            <i class="fas fa-question-circle" style="font-size: 24px;"></i>
-                                        </div>
+                                        <!-- Ícone removido - substituído por + e - via CSS -->
                                     </div>
                                 </div>
                                 <div class="faq-block__body collapse" id="faq-block-36-3">
@@ -773,10 +843,7 @@
                                         </p>
                                     </div>
                                     <div class="faq-block__header-icon">
-                                        <div class="style-text-dark faq-block__icon"
-                                            style="color: var(--color-id-103);">
-                                            <i class="fas fa-question-circle" style="font-size: 24px;"></i>
-                                        </div>
+                                        <!-- Ícone removido - substituído por + e - via CSS -->
                                     </div>
                                 </div>
                                 <div class="faq-block__body collapse" id="faq-block-36-4">
@@ -801,10 +868,7 @@
                                                 plataforma?</strong></p>
                                     </div>
                                     <div class="faq-block__header-icon">
-                                        <div class="style-text-dark faq-block__icon"
-                                            style="color: var(--color-id-103);">
-                                            <i class="fas fa-question-circle" style="font-size: 24px;"></i>
-                                        </div>
+                                        <!-- Ícone removido - substituído por + e - via CSS -->
                                     </div>
                                 </div>
                                 <div class="faq-block__body collapse" id="faq-block-36-5">
@@ -828,10 +892,7 @@
                                                 pedidos?</strong></p>
                                     </div>
                                     <div class="faq-block__header-icon">
-                                        <div class="style-text-dark faq-block__icon"
-                                            style="color: var(--color-id-103);">
-                                            <i class="fas fa-question-circle" style="font-size: 24px;"></i>
-                                        </div>
+                                        <!-- Ícone removido - substituído por + e - via CSS -->
                                     </div>
                                 </div>
                                 <div class="faq-block__body collapse" id="faq-block-36-6">
@@ -908,6 +969,11 @@
                     img.style.cssText = '';
                 });
             }, 100);
+
+            // Remover quaisquer ícones restantes do FAQ
+            document.querySelectorAll('.faq-block__header-icon i').forEach(icon => {
+                icon.style.display = 'none';
+            });
         });
     </script>
 
