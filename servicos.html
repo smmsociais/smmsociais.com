@@ -113,7 +113,11 @@
         }
     </style>
     
+<link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
+    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <script>
+        window.modules = {};
+        
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
         }
@@ -157,148 +161,154 @@
             return emojiRegex.test(str);
         }
     </script>
+</head>
 
+<body class="body body-public">
     <!-- Script para garantir que a página apareça apenas após todas as APIs terminarem -->
     <script>
+        // Executar imediatamente após o body estar disponível
         (function () {
-            // mostra um overlay loader enquanto aguarda
-            const loader = document.createElement('div');
-            loader.id = 'page-loader';
-            loader.innerHTML = `
-                <div style="text-align:center">
-                    <div class="spinner-border" role="status" aria-hidden="true"></div>
-                    <div style="margin-top:8px">Carregando dados...</div>
-                </div>`;
-            document.body.appendChild(loader);
-
-            // --- opcional: esperar window.load para garantir recursos externos carregados ---
-            const windowLoadPromise = new Promise(resolve => {
-                if (document.readyState === 'complete') return resolve();
-                window.addEventListener('load', resolve);
-            });
-
-            // Executar fillAndHideInput imediatamente (não depende de APIs)
-            fillAndHideInput();
-
-            // Função para carregar saldo do usuário (simulação - substitua pela sua lógica real)
-            function loadUserBalance() {
-                return new Promise((resolve) => {
-                    // Simula carregamento do saldo
-                    setTimeout(resolve, 500);
-                });
+            // Garantir que o body existe
+            if (!document.body) {
+                // Se não existir ainda, esperar pelo DOM
+                document.addEventListener('DOMContentLoaded', initLoader);
+                return;
             }
+            
+            initLoader();
+            
+            function initLoader() {
+                // mostra um overlay loader enquanto aguarda
+                const loader = document.createElement('div');
+                loader.id = 'page-loader';
+                loader.innerHTML = `
+                    <div style="text-align:center">
+                        <div class="spinner-border" role="status" aria-hidden="true"></div>
+                        <div style="margin-top:8px">Carregando dados...</div>
+                    </div>`;
+                document.body.appendChild(loader);
 
-            // Função para carregar serviços
-            function loadServices() {
-                return new Promise((resolve, reject) => {
-                    fetch('https://smmsociais.com/api/servico')
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Erro ao carregar serviços da API');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            // Processar serviços e aplicar imagens/emojis
-                            processServicesWithImages(data);
-                            resolve(data);
-                        })
-                        .catch(error => {
-                            console.error('Erro ao carregar serviços:', error);
-                            reject(error);
-                        });
+                // --- opcional: esperar window.load para garantir recursos externos carregados ---
+                const windowLoadPromise = new Promise(resolve => {
+                    if (document.readyState === 'complete') return resolve();
+                    window.addEventListener('load', resolve);
                 });
-            }
 
-            // Função para processar serviços e adicionar imagens/emojis
-            function processServicesWithImages(services) {
-                // Esta função será chamada após o carregamento dos serviços
-                // Aqui você pode adicionar a lógica para aplicar imagens/emojis às categorias
-                setTimeout(() => {
-                    const categoryElements = document.querySelectorAll('.services-category');
-                    categoryElements.forEach(categoryElement => {
-                        const categoryName = categoryElement.querySelector('h4').textContent.trim();
-                        const categoryContent = categoryElement.querySelector('.w-100');
-                        
-                        if (categoryImages[categoryName]) {
-                            const imageOrEmoji = categoryImages[categoryName];
-                            
-                            if (isEmoji(imageOrEmoji)) {
-                                // É um emoji
-                                const emojiSpan = document.createElement('span');
-                                emojiSpan.className = 'category-emoji';
-                                emojiSpan.textContent = imageOrEmoji;
-                                
-                                const contentDiv = document.createElement('div');
-                                contentDiv.className = 'category-content';
-                                contentDiv.innerHTML = categoryContent.innerHTML;
-                                
-                                categoryElement.innerHTML = '';
-                                categoryElement.appendChild(emojiSpan);
-                                categoryElement.appendChild(contentDiv);
-                            } else {
-                                // É uma imagem
-                                const img = document.createElement('img');
-                                img.className = 'category-image';
-                                img.src = imageOrEmoji;
-                                img.alt = categoryName;
-                                
-                                const contentDiv = document.createElement('div');
-                                contentDiv.className = 'category-content';
-                                contentDiv.innerHTML = categoryContent.innerHTML;
-                                
-                                categoryElement.innerHTML = '';
-                                categoryElement.appendChild(img);
-                                categoryElement.appendChild(contentDiv);
-                            }
-                        }
+                // Executar fillAndHideInput imediatamente (não depende de APIs)
+                fillAndHideInput();
+
+                // Função para carregar saldo do usuário (simulação - substitua pela sua lógica real)
+                function loadUserBalance() {
+                    return new Promise((resolve) => {
+                        // Simula carregamento do saldo
+                        setTimeout(resolve, 500);
                     });
-                }, 100);
-            }
-
-            // --- Promise principal: saldo + serviços (+ window.load) ---
-            const saldoPromise = loadUserBalance();
-            const servicesPromise = loadServices();
-
-            Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
-                .then(() => {
-                    // tudo OK (ou tratamos falhas individualmente): mostrar a página
-                    document.body.classList.add('loaded');
-                })
-                .catch(err => {
-                    // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
-                    console.error('Erro ao carregar dados principais:', err);
-                    document.body.classList.add('loaded');
-                    const tbody = document.getElementById('service-tbody');
-                    if (tbody && tbody.innerHTML.trim() === '') {
-                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
-                    }
-                })
-                .finally(() => {
-                    // remover loader visual
-                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
-                });
-
-            // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
-            setTimeout(() => {
-                if (!document.body.classList.contains('loaded')) {
-                    console.warn('Fallback: exibindo página após timeout.');
-                    document.body.classList.add('loaded');
-                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
                 }
-            }, 15000); // 15s — opcional, ajuste conforme necessidade
+
+                // Função para carregar serviços
+                function loadServices() {
+                    return new Promise((resolve, reject) => {
+                        fetch('https://smmsociais.com/api/servico')
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Erro ao carregar serviços da API');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                // Processar serviços e aplicar imagens/emojis
+                                processServicesWithImages(data);
+                                resolve(data);
+                            })
+                            .catch(error => {
+                                console.error('Erro ao carregar serviços:', error);
+                                reject(error);
+                            });
+                    });
+                }
+
+                // Função para processar serviços e adicionar imagens/emojis
+                function processServicesWithImages(services) {
+                    // Esta função será chamada após o carregamento dos serviços
+                    // Aqui você pode adicionar a lógica para aplicar imagens/emojis às categorias
+                    setTimeout(() => {
+                        const categoryElements = document.querySelectorAll('.services-category');
+                        categoryElements.forEach(categoryElement => {
+                            const categoryName = categoryElement.querySelector('h4').textContent.trim();
+                            const categoryContent = categoryElement.querySelector('.w-100');
+                            
+                            if (categoryImages[categoryName]) {
+                                const imageOrEmoji = categoryImages[categoryName];
+                                
+                                if (isEmoji(imageOrEmoji)) {
+                                    // É um emoji
+                                    const emojiSpan = document.createElement('span');
+                                    emojiSpan.className = 'category-emoji';
+                                    emojiSpan.textContent = imageOrEmoji;
+                                    
+                                    const contentDiv = document.createElement('div');
+                                    contentDiv.className = 'category-content';
+                                    contentDiv.innerHTML = categoryContent.innerHTML;
+                                    
+                                    categoryElement.innerHTML = '';
+                                    categoryElement.appendChild(emojiSpan);
+                                    categoryElement.appendChild(contentDiv);
+                                } else {
+                                    // É uma imagem
+                                    const img = document.createElement('img');
+                                    img.className = 'category-image';
+                                    img.src = imageOrEmoji;
+                                    img.alt = categoryName;
+                                    
+                                    const contentDiv = document.createElement('div');
+                                    contentDiv.className = 'category-content';
+                                    contentDiv.innerHTML = categoryContent.innerHTML;
+                                    
+                                    categoryElement.innerHTML = '';
+                                    categoryElement.appendChild(img);
+                                    categoryElement.appendChild(contentDiv);
+                                }
+                            }
+                        });
+                    }, 100);
+                }
+
+                // --- Promise principal: saldo + serviços (+ window.load) ---
+                const saldoPromise = loadUserBalance();
+                const servicesPromise = loadServices();
+
+                Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
+                    .then(() => {
+                        // tudo OK (ou tratamos falhas individualmente): mostrar a página
+                        document.body.classList.add('loaded');
+                    })
+                    .catch(err => {
+                        // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
+                        console.error('Erro ao carregar dados principais:', err);
+                        document.body.classList.add('loaded');
+                        const tbody = document.getElementById('service-tbody');
+                        if (tbody && tbody.innerHTML.trim() === '') {
+                            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                        }
+                    })
+                    .finally(() => {
+                        // remover loader visual
+                        if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                    });
+
+                // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
+                setTimeout(() => {
+                    if (!document.body.classList.contains('loaded')) {
+                        console.warn('Fallback: exibindo página após timeout.');
+                        document.body.classList.add('loaded');
+                        if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                    }
+                }, 15000); // 15s — opcional, ajuste conforme necessidade
+            }
         })();
     </script>
     
-<link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
-    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
-    <script>
-        window.modules = {};
-    </script>
-</head>
-
-<body class="body  body-public">
-    <div class="wrapper  wrapper-navbar ">
+    <div class="wrapper wrapper-navbar">
         <div id="block_49">
             <div class="block-wrapper">
                 <div class="component_navbar ">
@@ -750,7 +760,8 @@
             }
 
             // Inicializar carregamento dos serviços
-            loadServices();
+            // REMOVI esta chamada porque os serviços já são carregados no script anterior
+            // loadServices();
         });
     </script>
 </body>
