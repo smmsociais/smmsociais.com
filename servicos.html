@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Serviços</title>
-     <style>
+    <style>
         /* Initial Load */
         body {
             visibility: hidden;
@@ -74,6 +74,27 @@
         .services-category h4 {
             margin: 0;
             line-height: 1.2;
+        }
+
+
+        /* NOVO: Menu hamburguer BRANCO */
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+        }
+
+        /* Ajuste para dispositivos móveis */
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                background-color: white;
+            }
+
+            .navbar-nav {
+                padding: 0;
+            }
+
+            .nav-item {
+                margin-bottom: 0.5rem;
+            }
         }
     </style>
     <script>
@@ -360,7 +381,12 @@
             window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
         }
     </script>
-<link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
+    <link href="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js" rel="preload" as="script">
+    <link href="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js" rel="preload" as="script">
+    <link href="https://storage.perfectcdn.com/global/2t0wrbkqkg6p2yz4.js" rel="preload" as="script">
+    <link href="https://storage.perfectcdn.com/global/zfq5snh4og5je3zk.js" rel="preload" as="script">
+
+    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <script>
         window.modules = {};
@@ -400,7 +426,7 @@
                                                 <li
                                                     class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
                                                     <a class="component-navbar-nav-link component-navbar-nav-link__navbar-public component-navbar-nav-link-active__navbar-public"
-                                                        href="/services"> Serviços</a>
+                                                        href="/servicos"> Serviços</a>
                                                 </li>
                                                 <li
                                                     class="nav-item component-navbar-nav-item component-navbar-public-nav-item nav-item-height">
@@ -548,8 +574,7 @@
                                         <div class="row">
                                             <div class="col-md-12">
                                                 <div class="component-footer__public-copyright">
-                                                    <p class="text-center"><span style="text-align: CENTER">© Copyright.
-                                                            All Rights Reserved</span></p>
+                                                    <p class="text-center"><span style="text-align: CENTER">© 2025, SMMSociais.</span></p>
                                                 </div>
                                             </div>
                                         </div>
@@ -564,19 +589,8 @@
     </div>
     <!-- Notifications wrapper -->
     <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
-    <script type="text/javascript" src="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js">
-    </script>
-    <script type="text/javascript">
-        window.modules.alerts = { "alerts": [] };   </script>
 
-    <script type="text/javascript">
-        window.modules.layouts = { "theme_id": 23, "auth": 1, "live": true, "csrftoken": "L1tjeQBUwXhimMFOQW-mfPQhCHSYYdNSO4lVo5RDUQtYLDsvSiSoFVvqlQ8RPukxw255E7UPoz9O3SL0-iRhXQ==" };   </script>
-    <script type="text/javascript">
-        window.modules.siteServices = { "quickOrderAction": "\/quick-order", "quickOrderUrl": "\/" };   </script>
-    <script type="text/javascript">
-        window.modules.alerts = { "alerts": [] };   </script>
-    <script type="text/javascript">
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Script para garantir que a página apareça apenas após todas as APIs terminarem -->
     <script>
