@@ -107,46 +107,6 @@
             height: 32px;
             filter: invert(1);
         }
-
-        /* Estilos para a barra de busca (ADICIONADO) */
-        .search-dropdown .input-wrapper {
-            position: relative;
-        }
-
-        .search-dropdown .input-wrapper button {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            left: 12px;
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            color: #6c757d;
-            z-index: 2;
-        }
-
-        .search-dropdown .input-wrapper input {
-            padding-left: 40px !important;
-        }
-
-        .search-dropdown .input-wrapper input:focus {
-            border-color: #80bdff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-
-        .search-dropdown .clear-button {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            right: 12px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #6c757d;
-            padding: 0;
-            z-index: 2;
-        }
     </style>
     <script>
         // Função para obter parâmetros da URL
@@ -474,99 +434,7 @@
             }
         }
 
-        // =================================================================
-        // FUNÇÕES DE BUSCA MODIFICADAS
-        // =================================================================
-
-        // Função para filtrar serviços baseado no termo de busca
-        function filterServicesBySearch(searchTerm, services) {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect || !services) return;
-
-            // Salvar todos os serviços originalmente se ainda não tiver sido feito
-            if (!serviceSelect.dataset.allServices) {
-                serviceSelect.dataset.allServices = JSON.stringify(
-                    Array.from(serviceSelect.options).map(option => ({
-                        value: option.value,
-                        text: option.textContent,
-                        element: option.outerHTML
-                    })).filter(opt => opt.value !== '')
-                );
-            }
-
-            // Limpar todas as opções exceto a primeira (selecionar serviço)
-            while (serviceSelect.options.length > 1) {
-                serviceSelect.remove(1);
-            }
-
-            // Se o termo de busca estiver vazio, restaurar todos os serviços
-            if (!searchTerm.trim()) {
-                restoreAllServices();
-                return;
-            }
-
-            // Carregar todos os serviços salvos
-            const allServices = JSON.parse(serviceSelect.dataset.allServices);
-            const term = searchTerm.toLowerCase().trim();
-
-            // Filtrar serviços que correspondem ao termo de busca
-            const filteredServices = allServices.filter(service => 
-                service.text.toLowerCase().includes(term)
-            );
-
-            // Adicionar serviços filtrados
-            filteredServices.forEach(service => {
-                const div = document.createElement('div');
-                div.innerHTML = service.element;
-                const option = div.firstChild;
-                serviceSelect.appendChild(option);
-            });
-
-            // Se houver serviços filtrados, selecionar o primeiro automaticamente
-            if (filteredServices.length > 0) {
-                serviceSelect.selectedIndex = 1;
-                const event = new Event('change');
-                serviceSelect.dispatchEvent(event);
-                showServiceFields();
-            } else {
-                // Se não encontrar resultados, mostrar mensagem
-                const noResultsOption = document.createElement('option');
-                noResultsOption.value = '';
-                noResultsOption.textContent = 'Nenhum serviço encontrado';
-                serviceSelect.appendChild(noResultsOption);
-                serviceSelect.selectedIndex = serviceSelect.options.length - 1;
-            }
-        }
-
-        // Função para restaurar todos os serviços
-        function restoreAllServices() {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect || !serviceSelect.dataset.allServices) return;
-
-            // Limpar todas as opções exceto a primeira
-            while (serviceSelect.options.length > 1) {
-                serviceSelect.remove(1);
-            }
-
-            // Restaurar todos os serviços
-            const allServices = JSON.parse(serviceSelect.dataset.allServices);
-            allServices.forEach(service => {
-                const div = document.createElement('div');
-                div.innerHTML = service.element;
-                const option = div.firstChild;
-                serviceSelect.appendChild(option);
-            });
-
-            // Selecionar o primeiro serviço automaticamente
-            if (serviceSelect.options.length > 1) {
-                serviceSelect.selectedIndex = 1;
-                const event = new Event('change');
-                serviceSelect.dispatchEvent(event);
-                showServiceFields();
-            }
-        }
-
-        // Modificar a função setupServiceEventListeners para usar o novo sistema de busca
+        // Função para configurar event listeners dos serviços
         function setupServiceEventListeners(services) {
             const categorySelect = document.getElementById('orderform-category');
             const serviceSelect = document.getElementById('orderform-service');
@@ -576,13 +444,6 @@
             if (categorySelect) {
                 categorySelect.addEventListener('change', function () {
                     filterServicesByCategory(this.value, services);
-                    // Limpar busca ao mudar categoria
-                    if (searchInput) {
-                        searchInput.value = '';
-                        serviceSelect.dataset.allServices = ''; // Resetar cache
-                        const clearButton = searchInput.parentElement.querySelector('.clear-button');
-                        if (clearButton) clearButton.style.display = 'none';
-                    }
                 });
             }
 
@@ -591,50 +452,19 @@
             }
 
             if (searchInput) {
-                // Elementos de controle da busca
-                const clearButton = searchInput.parentElement.querySelector('.clear-button');
-                const searchButton = searchInput.parentElement.querySelector('.search-button');
-
-                // Mostrar/ocultar botão de limpar
-                searchInput.addEventListener('input', function() {
-                    if (clearButton) {
-                        clearButton.style.display = this.value ? 'block' : 'none';
-                    }
-                });
-
-                // Limpar busca quando clicar no ícone de busca
-                if (searchButton) {
-                    searchButton.addEventListener('click', function() {
-                        searchInput.value = '';
-                        restoreAllServices();
-                        if (clearButton) clearButton.style.display = 'none';
-                    });
-                }
-
-                // Limpar busca com o botão de limpar
-                if (clearButton) {
-                    clearButton.addEventListener('click', function() {
-                        searchInput.value = '';
-                        restoreAllServices();
-                        clearButton.style.display = 'none';
-                    });
-                }
-
-                // Buscar ao digitar (com debounce para performance)
-                let searchTimeout;
                 searchInput.addEventListener('input', function () {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(() => {
-                        filterServicesBySearch(this.value, services);
-                    }, 300);
-                });
+                    const searchTerm = this.value.toLowerCase();
+                    const serviceSelect = document.getElementById('orderform-service');
+                    const options = serviceSelect.querySelectorAll('option');
 
-                // Buscar ao pressionar Enter
-                searchInput.addEventListener('keypress', function (e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        filterServicesBySearch(this.value, services);
-                    }
+                    options.forEach(option => {
+                        const text = option.textContent.toLowerCase();
+                        if (text.includes(searchTerm) || option.value === '') {
+                            option.style.display = '';
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    });
                 });
             }
 
@@ -643,7 +473,7 @@
             }
         }
 
-        // Modificar a função filterServicesByCategory para também salvar os serviços filtrados
+        // Função para filtrar serviços por categoria
         function filterServicesByCategory(category, services) {
             const serviceSelect = document.getElementById('orderform-service');
             if (!serviceSelect) return;
@@ -662,9 +492,6 @@
                 ? services
                 : services.filter(service => service.categoria === category);
 
-            // Salvar HTML das opções para busca futura
-            const servicesData = [];
-            
             filteredServices.forEach(service => {
                 const option = document.createElement('option');
                 option.value = service.id_servico;
@@ -676,17 +503,7 @@
                 option.setAttribute('data-rede', service.rede);
                 option.setAttribute('data-tipo', service.tipo);
                 serviceSelect.appendChild(option);
-                
-                // Salvar para cache de busca
-                servicesData.push({
-                    value: service.id_servico,
-                    text: service.nome,
-                    element: option.outerHTML
-                });
             });
-
-            // Salvar no dataset para busca
-            serviceSelect.dataset.allServices = JSON.stringify(servicesData);
 
             // Verificar se há um serviço específico na URL após o filtro
             const urlParams = getUrlParams();
@@ -706,10 +523,6 @@
                 autoSelectFirstService(filteredServices);
             }
         }
-
-        // =================================================================
-        // FIM DAS FUNÇÕES DE BUSCA MODIFICADAS
-        // =================================================================
 
         // Função para lidar com mudança de serviço
         function handleServiceChange() {
@@ -1350,16 +1163,17 @@
                                             <form action="/" method="post" id="order-form">
                                                 <div class="component_button_forms">
                                                     <div class="form-group">
-                                                        <!-- HTML da barra de busca modificado -->
-                                                        <div class="search-dropdown" id="new-order-search" style="position: relative;">
+                                                        <div class="search-dropdown" id="new-order-search"
+                                                            style="position: relative;"
+                                                            data-lang-placeholder="Procurar">
                                                             <div class="input-wrapper" style="position: relative;">
-                                                                <button type="button" class="search-button" style="position: absolute; top: 50%; transform: translateY(-50%); left: 12px; background: none; border: none; cursor: pointer;">
+                                                                <button
+                                                                    style="position: absolute;top: 50%;transform: translateY(-50%);padding: 0px 2px;background: none;border: none;left: 12px;"
+                                                                    type="button">
                                                                     <span class="fas fa-search"></span>
                                                                 </button>
-                                                                <input type="text" class="form-control" id="template-input" value="" placeholder="Procurar serviços...">
-                                                                <button type="button" class="clear-button" style="position: absolute; top: 50%; transform: translateY(-50%); right: 12px; background: none; border: none; cursor: pointer; display: none;">
-                                                                    <span class="fas fa-times"></span>
-                                                                </button>
+                                                                <input type="text" class="form-control"
+                                                                    id="template-input" value="" placeholder="Procurar">
                                                             </div>
                                                         </div>
                                                     </div>
