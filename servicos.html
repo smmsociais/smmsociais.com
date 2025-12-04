@@ -42,6 +42,77 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
 
+    <style>
+        /* Initial Load */
+        body {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 240ms ease;
+        }
+
+        body.loaded {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        #page-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
+        }
+
+        .service-action-btn {
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        /* Estilos para as imagens das categorias - AJUSTADOS */
+        .services-category {
+            position: relative;
+            overflow: hidden;
+            padding: 8px 15px;
+            min-height: 50px;
+        }
+
+        .category-image {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            width: 30px;
+            /* Diminuído de 40px para 24px */
+            height: 30px;
+            /* Diminuído de 40px para 24px */
+            object-fit: contain;
+            z-index: 1;
+        }
+
+        .category-emoji {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            font-size: 30px;
+            /* Tamanho adequado para emoji */
+            z-index: 1;
+        }
+
+        .category-content {
+            position: relative;
+            padding-left: 40px;
+            /* Espaço para a imagem/emoji */
+        }
+
+        .services-category h4 {
+            margin: 0;
+            line-height: 1.2;
+        }
+    </style>
+    
     <script>
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
@@ -71,8 +142,154 @@
             }
         }
 
-        fillAndHideInput();
+        // Mapeamento de categorias para imagens - CORRIGIDO para emoji
+        const categoryImages = {
+            'Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/9c93b12b9b4044c5e96392fbaf09bb42e74cb16a/instagram.png?raw=true',
+            'Curtidas no Instagram': '❤️', // Agora é tratado como emoji
+            'Seguidores Brasileiros no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
+            'Curtidas Brasileiras no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
+            'TikTok': 'https://github.com/smmsociais/smmsociais.com/blob/main/tiktok.png?raw=true'
+        };
+
+        // Função para verificar se é um emoji
+        function isEmoji(str) {
+            const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/gu;
+            return emojiRegex.test(str);
+        }
     </script>
+
+    <!-- Script para garantir que a página apareça apenas após todas as APIs terminarem -->
+    <script>
+        (function () {
+            // mostra um overlay loader enquanto aguarda
+            const loader = document.createElement('div');
+            loader.id = 'page-loader';
+            loader.innerHTML = `
+                <div style="text-align:center">
+                    <div class="spinner-border" role="status" aria-hidden="true"></div>
+                    <div style="margin-top:8px">Carregando dados...</div>
+                </div>`;
+            document.body.appendChild(loader);
+
+            // --- opcional: esperar window.load para garantir recursos externos carregados ---
+            const windowLoadPromise = new Promise(resolve => {
+                if (document.readyState === 'complete') return resolve();
+                window.addEventListener('load', resolve);
+            });
+
+            // Executar fillAndHideInput imediatamente (não depende de APIs)
+            fillAndHideInput();
+
+            // Função para carregar saldo do usuário (simulação - substitua pela sua lógica real)
+            function loadUserBalance() {
+                return new Promise((resolve) => {
+                    // Simula carregamento do saldo
+                    setTimeout(resolve, 500);
+                });
+            }
+
+            // Função para carregar serviços
+            function loadServices() {
+                return new Promise((resolve, reject) => {
+                    fetch('https://smmsociais.com/api/servico')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Erro ao carregar serviços da API');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            // Processar serviços e aplicar imagens/emojis
+                            processServicesWithImages(data);
+                            resolve(data);
+                        })
+                        .catch(error => {
+                            console.error('Erro ao carregar serviços:', error);
+                            reject(error);
+                        });
+                });
+            }
+
+            // Função para processar serviços e adicionar imagens/emojis
+            function processServicesWithImages(services) {
+                // Esta função será chamada após o carregamento dos serviços
+                // Aqui você pode adicionar a lógica para aplicar imagens/emojis às categorias
+                setTimeout(() => {
+                    const categoryElements = document.querySelectorAll('.services-category');
+                    categoryElements.forEach(categoryElement => {
+                        const categoryName = categoryElement.querySelector('h4').textContent.trim();
+                        const categoryContent = categoryElement.querySelector('.w-100');
+                        
+                        if (categoryImages[categoryName]) {
+                            const imageOrEmoji = categoryImages[categoryName];
+                            
+                            if (isEmoji(imageOrEmoji)) {
+                                // É um emoji
+                                const emojiSpan = document.createElement('span');
+                                emojiSpan.className = 'category-emoji';
+                                emojiSpan.textContent = imageOrEmoji;
+                                
+                                const contentDiv = document.createElement('div');
+                                contentDiv.className = 'category-content';
+                                contentDiv.innerHTML = categoryContent.innerHTML;
+                                
+                                categoryElement.innerHTML = '';
+                                categoryElement.appendChild(emojiSpan);
+                                categoryElement.appendChild(contentDiv);
+                            } else {
+                                // É uma imagem
+                                const img = document.createElement('img');
+                                img.className = 'category-image';
+                                img.src = imageOrEmoji;
+                                img.alt = categoryName;
+                                
+                                const contentDiv = document.createElement('div');
+                                contentDiv.className = 'category-content';
+                                contentDiv.innerHTML = categoryContent.innerHTML;
+                                
+                                categoryElement.innerHTML = '';
+                                categoryElement.appendChild(img);
+                                categoryElement.appendChild(contentDiv);
+                            }
+                        }
+                    });
+                }, 100);
+            }
+
+            // --- Promise principal: saldo + serviços (+ window.load) ---
+            const saldoPromise = loadUserBalance();
+            const servicesPromise = loadServices();
+
+            Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
+                .then(() => {
+                    // tudo OK (ou tratamos falhas individualmente): mostrar a página
+                    document.body.classList.add('loaded');
+                })
+                .catch(err => {
+                    // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
+                    console.error('Erro ao carregar dados principais:', err);
+                    document.body.classList.add('loaded');
+                    const tbody = document.getElementById('service-tbody');
+                    if (tbody && tbody.innerHTML.trim() === '') {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                    }
+                })
+                .finally(() => {
+                    // remover loader visual
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                });
+
+            // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
+            setTimeout(() => {
+                if (!document.body.classList.contains('loaded')) {
+                    console.warn('Fallback: exibindo página após timeout.');
+                    document.body.classList.add('loaded');
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                }
+            }, 15000); // 15s — opcional, ajuste conforme necessidade
+        })();
+    </script>
+    
 <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <script>
