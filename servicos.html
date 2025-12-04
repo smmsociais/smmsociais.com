@@ -602,7 +602,7 @@
 
             const servicesPromise = loadServices();
 
-            Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
+            Promise.all([servicesPromise, windowLoadPromise])
                 .then(() => {
                     // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
