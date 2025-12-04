@@ -47,8 +47,10 @@
             top: 50%;
             left: 15px;
             transform: translateY(-50%);
-            width: 30px; /* Diminuído de 40px para 24px */
-            height: 30px; /* Diminuído de 40px para 24px */
+            width: 30px;
+            /* Diminuído de 40px para 24px */
+            height: 30px;
+            /* Diminuído de 40px para 24px */
             object-fit: contain;
             z-index: 1;
         }
@@ -58,19 +60,84 @@
             top: 50%;
             left: 15px;
             transform: translateY(-50%);
-            font-size: 30px; /* Tamanho adequado para emoji */
+            font-size: 30px;
+            /* Tamanho adequado para emoji */
             z-index: 1;
         }
 
         .category-content {
             position: relative;
-            padding-left: 40px; /* Espaço para a imagem/emoji */
+            padding-left: 40px;
+            /* Espaço para a imagem/emoji */
         }
 
         .services-category h4 {
             margin: 0;
             line-height: 1.2;
         }
+
+/* Search results (lista de serviços sugeridos) */
+#service-search-results {
+  position: relative;
+  margin-top: 6px;
+  max-height: 360px;
+  overflow: auto;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  background: #fff;
+  border: 1px solid #eee;
+  z-index: 9998;
+  font-size: 14px;
+}
+
+.service-result-item {
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0,0,0,0.03);
+}
+
+.service-result-item:last-child { border-bottom: none; }
+
+.service-result-item:hover {
+  background: rgba(0,0,0,0.02);
+}
+
+.service-result-icon {
+  font-size: 20px;
+  width: 36px;
+  text-align: center;
+  line-height: 20px;
+}
+
+.service-result-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.service-result-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.service-result-sub {
+  font-size: 12px;
+  color: #666;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-no-results {
+  padding: 12px;
+  color: #777;
+}
+
     </style>
     <script>
         // Mapeamento de categorias para imagens - CORRIGIDO para emoji
@@ -409,6 +476,225 @@
         function redirectToPanelWithService(serviceId) {
             window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
         }
+
+// Guarda serviços carregados globalmente para o search
+window._services = window._services || [];
+
+// Debounce helper
+function debounce(fn, wait = 180) {
+    let t;
+    return function(...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
+
+// Retorna emoji/ícone por rede/tipo simples
+function getIconForService(service) {
+    const r = (service.rede || '').toLowerCase();
+    const t = (service.tipo || '').toLowerCase();
+    if (r.includes('instagram') || t.includes('instagram')) return '📷';
+    if (r.includes('tiktok') || t.includes('tiktok')) return '🙎‍♂️';
+    if (r.includes('youtube') || t.includes('youtube')) return '▶️';
+    if (r.includes('facebook') || t.includes('facebook')) return '👥';
+    return '🔧';
+}
+
+// Filtra serviços por termo (prioriza startsWith depois includes)
+function filterServicesBySearchTerm(term, services) {
+    term = String(term || '').trim().toLowerCase();
+    if (!term) return [];
+    const starts = [];
+    const contains = [];
+    services.forEach(s => {
+        const hay = `${s.nome || ''} ${s.descricao || ''} ${s.rede || ''} ${s.tipo || ''}`.toLowerCase();
+        if (hay.startsWith(term)) starts.push(s);
+        else if (hay.includes(term)) contains.push(s);
+    });
+    return starts.concat(contains);
+}
+
+// Renderiza a lista de resultados abaixo do input
+function renderSearchResults(results) {
+    let container = document.getElementById('service-search-results');
+    if (!container) {
+        const searchInput = document.getElementById('template-input');
+        container = document.createElement('div');
+        container.id = 'service-search-results';
+        if (searchInput && searchInput.parentNode) {
+            searchInput.parentNode.insertBefore(container, searchInput.nextSibling);
+        } else {
+            document.body.appendChild(container);
+        }
+    }
+
+    container.innerHTML = '';
+
+    if (!results || results.length === 0) {
+        const no = document.createElement('div');
+        no.className = 'search-no-results';
+        no.textContent = 'Nenhum serviço encontrado.';
+        container.appendChild(no);
+        return;
+    }
+
+    // limita resultados para evitar scroll gigantesco
+    const max = 25;
+    results.slice(0, max).forEach(service => {
+        const item = document.createElement('div');
+        item.className = 'service-result-item';
+        item.tabIndex = 0;
+        item.setAttribute('data-id', service.id_servico);
+
+        const icon = document.createElement('div');
+        icon.className = 'service-result-icon';
+        icon.textContent = getIconForService(service);
+
+        const body = document.createElement('div');
+        body.className = 'service-result-body';
+
+        const title = document.createElement('div');
+        title.className = 'service-result-title';
+        // Exemplo: "📷Seguidores Instagram (Menor Queda no momento)"
+        title.textContent = service.nome;
+
+        const sub = document.createElement('div');
+        sub.className = 'service-result-sub';
+        const noteParts = [];
+        if (service.rede) noteParts.push(service.rede);
+        if (service.tipo) noteParts.push(service.tipo);
+        if (service.descricao) noteParts.push(String(service.descricao).slice(0, 80));
+        sub.textContent = noteParts.join(' • ');
+
+        body.appendChild(title);
+        body.appendChild(sub);
+
+        item.appendChild(icon);
+        item.appendChild(body);
+
+        // seleção: ao clicar seleciona o serviço no select e fecha a lista
+        item.addEventListener('click', function () {
+            // tenta selecionar usando a função já existente selectServiceById
+            try {
+                selectServiceById(service.id_servico, window._services);
+            } catch (e) {
+                // fallback: seta value diretamente
+                const serviceSelect = document.getElementById('orderform-service');
+                if (serviceSelect) {
+                    for (let i = 0; i < serviceSelect.options.length; i++) {
+                        if (String(serviceSelect.options[i].value) === String(service.id_servico)) {
+                            serviceSelect.selectedIndex = i;
+                            serviceSelect.dispatchEvent(new Event('change'));
+                            break;
+                        }
+                    }
+                }
+            }
+            // esconde a lista
+            const container = document.getElementById('service-search-results');
+            if (container) container.innerHTML = '';
+        });
+
+        // keyboard support: Enter to select
+        item.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                this.click();
+            }
+        });
+
+        container.appendChild(item);
+    });
+}
+
+// Replace / enhance setupServiceEventListeners
+function setupServiceEventListeners(services) {
+    // keep global copy for other functions
+    window._services = services || window._services || [];
+
+    const categorySelect = document.getElementById('orderform-category');
+    const serviceSelect = document.getElementById('orderform-service');
+    const searchInput = document.getElementById('template-input');
+    const quantityInput = document.getElementById('orderform-quantity');
+
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function () {
+            filterServicesByCategory(this.value, services);
+            // limpa resultados do search quando categoria muda
+            const sr = document.getElementById('service-search-results');
+            if (sr) sr.innerHTML = '';
+        });
+    }
+
+    if (serviceSelect) {
+        serviceSelect.addEventListener('change', handleServiceChange);
+    }
+
+    // cria container de resultados se não existir
+    (function ensureResultContainer() {
+        if (!document.getElementById('service-search-results')) {
+            const searchInputEl = document.getElementById('template-input');
+            if (searchInputEl) {
+                const container = document.createElement('div');
+                container.id = 'service-search-results';
+                searchInputEl.parentNode.insertBefore(container, searchInputEl.nextSibling);
+                container.innerHTML = '';
+            }
+        }
+    })();
+
+    if (searchInput) {
+        // comportamento: ao digitar, filtra e exibe sugestões
+        const onInput = debounce(function () {
+            const term = this.value || '';
+            if (!term.trim()) {
+                // vazio — esconde resultados e restaura options visíveis
+                const sr = document.getElementById('service-search-results');
+                if (sr) sr.innerHTML = '';
+                // also restore option display if you used the previous option hide approach
+                const serviceSelect = document.getElementById('orderform-service');
+                if (serviceSelect) {
+                    Array.from(serviceSelect.options).forEach(opt => opt.style.display = '');
+                }
+                return;
+            }
+            const filtered = filterServicesBySearchTerm(term, window._services || []);
+            renderSearchResults(filtered);
+            // opcional: highlight matched options in select (keeps accessibility)
+            const serviceSelectEl = document.getElementById('orderform-service');
+            if (serviceSelectEl) {
+                Array.from(serviceSelectEl.options).forEach(opt => {
+                    const hay = opt.textContent.toLowerCase();
+                    opt.style.display = hay.includes(term.toLowerCase()) ? '' : 'none';
+                });
+            }
+        }, 160);
+
+        searchInput.addEventListener('input', onInput);
+
+        // limpar resultados quando input perde foco (com pequeno delay para clique funcionar)
+        searchInput.addEventListener('blur', function () {
+            setTimeout(() => {
+                const sr = document.getElementById('service-search-results');
+                if (sr) sr.innerHTML = '';
+            }, 180);
+        });
+
+        // se o usuário clicar no campo, mostra sugestões rápidas baseadas no valor atual
+        searchInput.addEventListener('focus', function () {
+            const term = this.value || '';
+            if (term.trim()) {
+                const filtered = filterServicesBySearchTerm(term, window._services || []);
+                renderSearchResults(filtered);
+            }
+        });
+    }
+
+    if (quantityInput) {
+        quantityInput.addEventListener('input', handleQuantityChange);
+    }
+}
+
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -700,21 +986,7 @@
             </div>
         </div>
     </div>
-    <!-- Notifications wrapper -->
-    <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
-    <script type="text/javascript" src="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js">
-    </script>
-    <script type="text/javascript">
-        window.modules.alerts = { "alerts": [] };   </script>
-
-    <script type="text/javascript">
-        window.modules.layouts = { "theme_id": 23, "auth": 1, "live": true, "csrftoken": "L1tjeQBUwXhimMFOQW-mfPQhCHSYYdNSO4lVo5RDUQtYLDsvSiSoFVvqlQ8RPukxw255E7UPoz9O3SL0-iRhXQ==" };   </script>
-    <script type="text/javascript">
-        window.modules.siteServices = { "quickOrderAction": "\/quick-order", "quickOrderUrl": "\/" };   </script>
-    <script type="text/javascript">
-        window.modules.alerts = { "alerts": [] };   </script>
-    <script type="text/javascript">
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Script para garantir que a página apareça apenas após todas as APIs terminarem -->
     <script>
