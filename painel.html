@@ -77,6 +77,36 @@
                 order: 3;
             }
         }
+        
+        /* Estilo do botão do WhatsApp */
+        #whatsapp-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #25d366;
+            border-radius: 50%;
+            padding: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 9999;
+            transition: transform .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            text-decoration: none;
+        }
+
+        #whatsapp-button:hover {
+            transform: scale(1.1);
+            background-color: #1da851;
+        }
+
+        #whatsapp-button img {
+            width: 32px;
+            height: 32px;
+            filter: invert(1);
+        }
     </style>
     <script>
         // Função para obter parâmetros da URL
@@ -668,62 +698,62 @@
             }
         }
 
-// --- helper: escolhe endpoint baseado na rede ---
-function getApiEndpointForRede(rede) {
-    if (!rede) return null;
-    const r = String(rede).toLowerCase();
-    if (r.includes('tiktok')) return 'https://smmsociais.com/api/criar_acao_tiktok';
-    if (r.includes('instagram')) return 'https://smmsociais.com/api/criar_acao_instagram';
-    // se quiser adicionar outras redes no futuro, acrescente aqui
-    return null;
-}
-
-// criarAcao agora aceita endpoint opcional (string com URL completa)
-async function criarAcao(formData, tokenOpcional = null, endpoint = null) {
-    const token = tokenOpcional || loadToken();
-    if (!token) {
-        throw new Error('Token de autenticação não encontrado');
-    }
-
-    // escolhe endpoint padrão se não passado
-    const url = endpoint || 'https://smmsociais.com/api/criar_acao_tiktok';
-
-    console.log('→ criarAcao endpoint:', url, ' token:', Boolean(token));
-
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        });
-
-        if (!response.ok) {
-            // tenta ler texto primeiro (mais seguro), depois JSON
-            const text = await response.text().catch(() => null);
-            let errorMsg = text || `HTTP ${response.status}`;
-            try {
-                const json = text ? JSON.parse(text) : null;
-                if (json && json.error) errorMsg = json.error;
-            } catch (e) { /* não-JSON */ }
-
-            console.error('criar_acao response NOT OK:', response.status, errorMsg);
-            if (response.status === 401) {
-                throw new Error('Não autorizado');
-            }
-            throw new Error(errorMsg || 'Erro ao criar ação');
+        // --- helper: escolhe endpoint baseado na rede ---
+        function getApiEndpointForRede(rede) {
+            if (!rede) return null;
+            const r = String(rede).toLowerCase();
+            if (r.includes('tiktok')) return 'https://smmsociais.com/api/criar_acao_tiktok';
+            if (r.includes('instagram')) return 'https://smmsociais.com/api/criar_acao_instagram';
+            // se quiser adicionar outras redes no futuro, acrescente aqui
+            return null;
         }
 
-        const result = await response.json();
-        return result;
+        // criarAcao agora aceita endpoint opcional (string com URL completa)
+        async function criarAcao(formData, tokenOpcional = null, endpoint = null) {
+            const token = tokenOpcional || loadToken();
+            if (!token) {
+                throw new Error('Token de autenticação não encontrado');
+            }
 
-    } catch (error) {
-        console.error('Erro na criação da ação:', error);
-        throw error;
-    }
-}
+            // escolhe endpoint padrão se não passado
+            const url = endpoint || 'https://smmsociais.com/api/criar_acao_tiktok';
+
+            console.log('→ criarAcao endpoint:', url, ' token:', Boolean(token));
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    // tenta ler texto primeiro (mais seguro), depois JSON
+                    const text = await response.text().catch(() => null);
+                    let errorMsg = text || `HTTP ${response.status}`;
+                    try {
+                        const json = text ? JSON.parse(text) : null;
+                        if (json && json.error) errorMsg = json.error;
+                    } catch (e) { /* não-JSON */ }
+
+                    console.error('criar_acao response NOT OK:', response.status, errorMsg);
+                    if (response.status === 401) {
+                        throw new Error('Não autorizado');
+                    }
+                    throw new Error(errorMsg || 'Erro ao criar ação');
+                }
+
+                const result = await response.json();
+                return result;
+
+            } catch (error) {
+                console.error('Erro na criação da ação:', error);
+                throw error;
+            }
+        }
 
         // --- Ao mudar de serviço, configurar min/max corretamente ---
         function handleServiceChange() {
@@ -819,119 +849,119 @@ async function criarAcao(formData, tokenOpcional = null, endpoint = null) {
             }
         }
 
-// --- Envio do formulário com validação numérica correta (ajustada para escolher rota) ---
-async function handleFormSubmit(event) {
-    event.preventDefault();
+        // --- Envio do formulário com validação numérica correta (ajustada para escolher rota) ---
+        async function handleFormSubmit(event) {
+            event.preventDefault();
 
-    const submitButton = event.target.querySelector('button[type="submit"]');
-    const originalText = submitButton ? submitButton.textContent : 'Enviar';
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const originalText = submitButton ? submitButton.textContent : 'Enviar';
 
-    try {
-        if (submitButton) {
-            submitButton.textContent = 'Enviando...';
-            submitButton.disabled = true;
-        }
-        document.body.classList.add('loading');
+            try {
+                if (submitButton) {
+                    submitButton.textContent = 'Enviando...';
+                    submitButton.disabled = true;
+                }
+                document.body.classList.add('loading');
 
-        // Obter dados do formulário
-        const serviceSelect = document.getElementById('orderform-service');
-        if (!serviceSelect || !serviceSelect.value) {
-            throw new Error('Por favor, selecione um serviço');
-        }
-        const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+                // Obter dados do formulário
+                const serviceSelect = document.getElementById('orderform-service');
+                if (!serviceSelect || !serviceSelect.value) {
+                    throw new Error('Por favor, selecione um serviço');
+                }
+                const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
 
-        const linkInput = document.getElementById('orderform-link');
-        const link = linkInput ? linkInput.value.trim() : '';
-        if (!link) throw new Error('Por favor, informe o link');
+                const linkInput = document.getElementById('orderform-link');
+                const link = linkInput ? linkInput.value.trim() : '';
+                if (!link) throw new Error('Por favor, informe o link');
 
-        const quantityInput = document.getElementById('orderform-quantity');
-        const quantityRaw = quantityInput ? quantityInput.value : '';
-        const quantity = parseInt(String(quantityRaw).replace(/[^\d]/g, ''), 10);
+                const quantityInput = document.getElementById('orderform-quantity');
+                const quantityRaw = quantityInput ? quantityInput.value : '';
+                const quantity = parseInt(String(quantityRaw).replace(/[^\d]/g, ''), 10);
 
-        const minAttr = selectedOption.getAttribute('data-min');
-        const maxAttr = selectedOption.getAttribute('data-max');
-        const minQuantity = (minAttr !== null && minAttr !== '') ? parseInt(minAttr, 10) : null;
-        const maxQuantity = (maxAttr !== null && maxAttr !== '') ? parseInt(maxAttr, 10) : null;
+                const minAttr = selectedOption.getAttribute('data-min');
+                const maxAttr = selectedOption.getAttribute('data-max');
+                const minQuantity = (minAttr !== null && minAttr !== '') ? parseInt(minAttr, 10) : null;
+                const maxQuantity = (maxAttr !== null && maxAttr !== '') ? parseInt(maxAttr, 10) : null;
 
-        // Validações numéricas
-        if (isNaN(quantity) || quantity <= 0) {
-            throw new Error('Quantidade inválida para este serviço');
-        }
-        if (minQuantity !== null && quantity < minQuantity) {
-            throw new Error(`Quantidade abaixo do mínimo (${minQuantity})`);
-        }
-        if (maxQuantity !== null && quantity > maxQuantity) {
-            throw new Error(`Quantidade acima do máximo (${maxQuantity})`);
-        }
+                // Validações numéricas
+                if (isNaN(quantity) || quantity <= 0) {
+                    throw new Error('Quantidade inválida para este serviço');
+                }
+                if (minQuantity !== null && quantity < minQuantity) {
+                    throw new Error(`Quantidade abaixo do mínimo (${minQuantity})`);
+                }
+                if (maxQuantity !== null && quantity > maxQuantity) {
+                    throw new Error(`Quantidade acima do máximo (${maxQuantity})`);
+                }
 
-        const pricePer1000 = selectedOption.getAttribute('data-price');
-        const totalValue = calculateTotal(pricePer1000, quantity);
+                const pricePer1000 = selectedOption.getAttribute('data-price');
+                const totalValue = calculateTotal(pricePer1000, quantity);
 
-        // Obter informações do usuário
-        const userInfo = await getUserInfo();
-        if (!userInfo || !(userInfo.userId || userInfo.id || userInfo._id || userInfo.token)) {
-            throw new Error('Não foi possível obter informações do usuário');
-        }
+                // Obter informações do usuário
+                const userInfo = await getUserInfo();
+                if (!userInfo || !(userInfo.userId || userInfo.id || userInfo._id || userInfo.token)) {
+                    throw new Error('Não foi possível obter informações do usuário');
+                }
 
-        // Detectar endpoint com base na rede do serviço
-        const redeAttr = selectedOption.getAttribute('data-rede') || '';
-        const apiEndpoint = getApiEndpointForRede(redeAttr);
+                // Detectar endpoint com base na rede do serviço
+                const redeAttr = selectedOption.getAttribute('data-rede') || '';
+                const apiEndpoint = getApiEndpointForRede(redeAttr);
 
-        if (!apiEndpoint) {
-            throw new Error(`Rede desconhecida ou não suportada: "${redeAttr}". Contate o suporte.`);
-        }
+                if (!apiEndpoint) {
+                    throw new Error(`Rede desconhecida ou não suportada: "${redeAttr}". Contate o suporte.`);
+                }
 
-        // Preparar dados para a API
-        const actionData = {
-            rede: redeAttr,
-            tipo: selectedOption.getAttribute('data-tipo'),
-            nome: selectedOption.textContent,
-            valor: totalValue,
-            quantidade: parseInt(quantity, 10),
-            link: link,
-            userId: userInfo.userId,
-            id_servico: serviceSelect.value
-        };
+                // Preparar dados para a API
+                const actionData = {
+                    rede: redeAttr,
+                    tipo: selectedOption.getAttribute('data-tipo'),
+                    nome: selectedOption.textContent,
+                    valor: totalValue,
+                    quantidade: parseInt(quantity, 10),
+                    link: link,
+                    userId: userInfo.userId,
+                    id_servico: serviceSelect.value
+                };
 
-        // Chamar API para criar ação no endpoint correto
-        const result = await criarAcao(actionData, null, apiEndpoint);
+                // Chamar API para criar ação no endpoint correto
+                const result = await criarAcao(actionData, null, apiEndpoint);
 
-        // Se a API retornou novo saldo, atualiza o display IMEDIATAMENTE
-        if (result && typeof result.newSaldo !== 'undefined') {
-            const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
-            if (balanceElement) {
-                const formatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.newSaldo || 0);
-                balanceElement.textContent = formatted;
+                // Se a API retornou novo saldo, atualiza o display IMEDIATAMENTE
+                if (result && typeof result.newSaldo !== 'undefined') {
+                    const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
+                    if (balanceElement) {
+                        const formatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.newSaldo || 0);
+                        balanceElement.textContent = formatted;
+                    }
+                } else {
+                    // fallback: recarrega saldo do servidor
+                    await loadUserBalance();
+                }
+
+                // Mostrar notificação e mensagem de sucesso
+                showNotification(`Pedido criado com sucesso! ID: ${result.id_pedido}`, 'success');
+                showSuccessMessage(`Pedido enviado com sucesso! ID: ${result.id_pedido}`);
+
+                // Limpar apenas os campos específicos, mantendo o container expandido
+                const chargeInput = document.getElementById('charge');
+                if (chargeInput) chargeInput.value = '';
+
+                const linkInputField = document.getElementById('orderform-link');
+                if (linkInputField) linkInputField.value = ''; // Remove apenas o valor do link
+
+                // NÃO esconder os campos para manter o container expandido
+
+            } catch (error) {
+                console.error('Erro ao processar pedido:', error);
+                showNotification(error.message || 'Erro ao processar pedido', 'danger');
+            } finally {
+                if (submitButton) {
+                    submitButton.textContent = originalText;
+                    submitButton.disabled = false;
+                }
+                document.body.classList.remove('loading');
             }
-        } else {
-            // fallback: recarrega saldo do servidor
-            await loadUserBalance();
         }
-
-        // Mostrar notificação e mensagem de sucesso
-        showNotification(`Pedido criado com sucesso! ID: ${result.id_pedido}`, 'success');
-        showSuccessMessage(`Pedido enviado com sucesso! ID: ${result.id_pedido}`);
-
-        // Limpar apenas os campos específicos, mantendo o container expandido
-        const chargeInput = document.getElementById('charge');
-        if (chargeInput) chargeInput.value = '';
-
-        const linkInputField = document.getElementById('orderform-link');
-        if (linkInputField) linkInputField.value = ''; // Remove apenas o valor do link
-
-        // NÃO esconder os campos para manter o container expandido
-
-    } catch (error) {
-        console.error('Erro ao processar pedido:', error);
-        showNotification(error.message || 'Erro ao processar pedido', 'danger');
-    } finally {
-        if (submitButton) {
-            submitButton.textContent = originalText;
-            submitButton.disabled = false;
-        }
-        document.body.classList.remove('loading');
-    }
-}
 
         // Configurar event listener para o formulário
         document.addEventListener('DOMContentLoaded', function () {
@@ -962,14 +992,15 @@ async function handleFormSubmit(event) {
     <div class="wrapper  wrapper-sidebar-navbar ">
         <div id="block_52" class="component_private_navbar">
             <span class="component_private_navbar ">
-                <div class="component-navbar-private__wrapper component_private_sidebar ">
+                <div class="component_private_navbar__wrapper component_private_sidebar ">
                     <div
                         class="sidebar-block__top component-navbar component-navbar__navbar-private editor__component-wrapper ">
                         <div>
                             <nav class="navbar navbar-expand-lg navbar-light">
                                 <div class="navbar-private__header">
                                     <div class="sidebar-block__top-brand">
-                                        <a href="/" class="component-navbar-brand component-navbar-public-brand">
+                                        <a href="/painel.html"
+                                            class="component-navbar-brand component-navbar-public-brand">
                                             <h3><strong style="font-weight: bold"></strong><span
                                                     style="color: var(--color-id-117)"><strong
                                                         style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
@@ -1451,6 +1482,11 @@ async function handleFormSubmit(event) {
             }, 15000); // 15s — opcional, ajuste conforme necessidade
         })();
     </script>
+    
+    <!-- Botão do WhatsApp para suporte -->
+    <a href="https://wa.me/5582999801112?text=Olá,%20preciso%20de%20ajuda" target="_blank" id="whatsapp-button">
+        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg" alt="WhatsApp">
+    </a>
 </body>
 
 </html>
