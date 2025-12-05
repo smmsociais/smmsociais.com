@@ -405,7 +405,7 @@
                 button.addEventListener('click', function () {
                     const serviceId = this.getAttribute('data-service-id');
                     const serviceName = this.getAttribute('data-service-name');
-{
+                    {
                         // Redirecionar para a página de painel com o parâmetro do serviço
                         window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
                     }
@@ -910,28 +910,15 @@
                     const maxOrder = service.maximo || '-';
                     const avgTime = service.tempo_medio || '-';
 
-                    const descButtons = `
-                ${service.descricao ? `
-                <div class="component_button_view" style="display:inline-block;margin-right:8px">
-                    <button class="btn btn-actions btn-view-service-description"
-                        data-toggle="modal"
-                        data-content-id="#service-description-id-55-${service.id_servico}"
-                        data-service-id="${service.id_servico}"
-                        data-service-name="${service.nome}"
-                        data-min="${minOrder}"
-                        data-max="${maxOrder}"
-                        data-target="#service-description-55">
-                </div>
-                ` : ''}
-                <div style="display:inline-block">
-                    <button class="btn btn-big-primary btn-select-service"
-                        data-service-id="${service.id_servico}"
-                        data-service-name="${service.nome}">
-                        Selecionar
-                    </button>
-                </div>
-            `;
-
+const descButtons = `
+    <div style="display:inline-block">
+        <button class="btn btn-big-primary btn-select-service"
+            data-service-id="${service.id_servico}"
+            data-service-name="${service.nome}">
+            Selecionar
+        </button>
+    </div>
+`;
                     const serviceRow = document.createElement('tr');
 
                     const currentSearchInput = document.querySelector('input[data-search-service]');
@@ -959,10 +946,13 @@
 
                 <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
 
-                <td data-label="" class="services-list__description">
-                    ${service.descricao ? `<div class="d-none" id="service-description-id-55-${service.id_servico}">${service.descricao.replace(/\n/g, "<br>")}</div>` : ''}
-                    ${descButtons}
-                </td>
+<td data-label="" class="services-list__description">
+    ${service.descricao ? `
+    <div class="d-none" id="service-description-id-55-${service.id_servico}">
+        ${service.descricao.replace(/\n/g, "<br>")}
+    </div>
+    ` : ''}
+</td>
             `;
 
                     tbody.appendChild(serviceRow);
