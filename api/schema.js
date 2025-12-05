@@ -56,49 +56,37 @@ const actionSchema = new mongoose.Schema({
 
 const ServicoSchema = new mongoose.Schema({
   id_servico: {
-    type: String, // Ex: "1254"
+    type: String,
     required: true
   },
-
   nome: {
-    type: String, // Ex: "🚀 Seguidores RÁPIDO no TikTok"
+    type: String,
     required: true
   },
-
   tipo: {
-    type: String, // Ex: "seguidores"
+    type: String,
     required: true
   },
-
   preco_1000: {
-    type: Number, // Ex: 10.00
+    type: Number,
     required: true
   },
-
   minimo: {
-    type: Number, // Ex: 50
+    type: Number,
     required: true
   },
-
   maximo: {
-    type: Number, // Ex: 1000000
+    type: Number,
     required: true
   },
-
   tempo_medio: {
-    type: String, // Ex: "10 minutos"
+    type: String,
     required: true
   },
 
   categoria: {
-    nome: {
-      type: String,      // "TikTok"
-      required: true
-    },
-    imagem: {
-      type: String,
-      required: true
-    }
+    nome: { type: String, required: true },
+    imagem: { type: String, required: true }
   },
 
   descricao: {
