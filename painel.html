@@ -685,19 +685,6 @@ categories.forEach((icon, name) => {
                     }
                 }
             }
-
-
-
-            // ligar listener para mudança e também chamar agora
-            categorySelect.addEventListener('change', refreshCategoryIcon);
-            // chama imediatamente para sincronizar (caso já tenha seleção)
-            refreshCategoryIcon();
-
-            // selecionar automaticamente a primeira categoria real (se quiser)
-            if (categorySelect.options.length > 1) {
-                categorySelect.selectedIndex = 1;
-                categorySelect.dispatchEvent(new Event('change'));
-            }
         
         // Função para selecionar automaticamente a primeira categoria
         function autoSelectFirstCategory(categories) {
