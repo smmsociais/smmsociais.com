@@ -258,11 +258,11 @@
 
         // coloque isto no topo do seu <script>, antes de qualquer função que use categoryImages
         const categoryImages = {
-            'Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/9c93b12b9b4044c5e96392fbaf09bb42e74cb16a/instagram.png?raw=true',
+            'Instagram': 'https://i.imgur.com/Z0xqxOg.png',
             'Curtidas no Instagram': '❤️',
-            'Seguidores Brasileiros no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
-            'Curtidas Brasileiras no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
-            'TikTok': 'https://github.com/smmsociais/smmsociais.com/blob/main/tiktok.png?raw=true'
+            'Seguidores Brasileiros no Instagram': 'https://i.imgur.com/hHSv4MC.png',
+            'Curtidas Brasileiras no Instagram': 'https://i.imgur.com/hHSv4MC.png',
+            'TikTok': 'https://i.imgur.com/SbNaQUY.png'
             // adicione mais mapeamentos conforme as categorias reais retornadas pela API
         };
 
@@ -412,38 +412,38 @@
         }
 
         // Função para carregar serviços da API
-function loadServices() {
-    return fetch('https://smmsociais.com/api/servico')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Erro ao carregar serviços da API');
-            }
-            return response.json();
-        })
-        .then(services => {
-            renderServices(services);
-            
-            // Garantir que a primeira categoria seja selecionada
-            setTimeout(() => {
-                const categorySelect = document.getElementById('orderform-category');
-                if (categorySelect && categorySelect.options.length > 0) {
-                    categorySelect.selectedIndex = 0;
-                    const event = new Event('change');
-                    categorySelect.dispatchEvent(event);
-                }
-            }, 100);
-            
-            return services;
-        })
-        .catch(error => {
-            console.error('Erro ao carregar serviços:', error);
-            const serviceSelect = document.getElementById('orderform-service');
-            if (serviceSelect) {
-                serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
-            }
-            return [];
-        });
-}
+        function loadServices() {
+            return fetch('https://smmsociais.com/api/servico')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar serviços da API');
+                    }
+                    return response.json();
+                })
+                .then(services => {
+                    renderServices(services);
+
+                    // Garantir que a primeira categoria seja selecionada
+                    setTimeout(() => {
+                        const categorySelect = document.getElementById('orderform-category');
+                        if (categorySelect && categorySelect.options.length > 0) {
+                            categorySelect.selectedIndex = 0;
+                            const event = new Event('change');
+                            categorySelect.dispatchEvent(event);
+                        }
+                    }, 100);
+
+                    return services;
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar serviços:', error);
+                    const serviceSelect = document.getElementById('orderform-service');
+                    if (serviceSelect) {
+                        serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+                    }
+                    return [];
+                });
+        }
         // Função para renderizar serviços no formulário
         function renderServices(services) {
             const serviceSelect = document.getElementById('orderform-service');
@@ -567,50 +567,50 @@ function loadServices() {
             return null;
         }
 
-// Na função updateCategories, modifique para carregar a primeira categoria:
-function updateCategories(services) {
-    const categorySelect = document.getElementById('orderform-category');
-    if (!categorySelect) return;
+        // Na função updateCategories, modifique para carregar a primeira categoria:
+        function updateCategories(services) {
+            const categorySelect = document.getElementById('orderform-category');
+            if (!categorySelect) return;
 
-    // Limpar categorias existentes, mantendo apenas a opção padrão
-    while (categorySelect.options.length > 1) {
-        categorySelect.remove(1);
-    }
+            // Limpar categorias existentes, mantendo apenas a opção padrão
+            while (categorySelect.options.length > 1) {
+                categorySelect.remove(1);
+            }
 
-    const categories = new Map();
+            const categories = new Map();
 
-    services.forEach(service => {
-        const name = (service.categoria || service.category_name || service.category || '').toString().trim();
-        if (!name) return;
-        if (categories.has(name)) return;
+            services.forEach(service => {
+                const name = (service.categoria || service.category_name || service.category || '').toString().trim();
+                if (!name) return;
+                if (categories.has(name)) return;
 
-        let icon = service.category_icon || getCategoryImageForName(name) || null;
-        categories.set(name, icon);
-    });
+                let icon = service.category_icon || getCategoryImageForName(name) || null;
+                categories.set(name, icon);
+            });
 
-    // --- preencher options sem duplicar emoji no texto ---
-    categories.forEach((icon, name) => {
-        const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;  // ← APENAS O NOME, sem emoji!
+            // --- preencher options sem duplicar emoji no texto ---
+            categories.forEach((icon, name) => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;  // ← APENAS O NOME, sem emoji!
 
-        // Adicionar o ícone apenas no data-icon
-        if (icon) {
-            option.setAttribute('data-icon', icon);
-        }
+                // Adicionar o ícone apenas no data-icon
+                if (icon) {
+                    option.setAttribute('data-icon', icon);
+                }
 
-        categorySelect.appendChild(option);
-    });
+                categorySelect.appendChild(option);
+            });
 
-    // --- ADICIONE ESTA PARTE PARA SELECIONAR A PRIMEIRA CATEGORIA ---
-    if (categorySelect.options.length > 1) {
-        // Seleciona a primeira categoria (índice 1, pois índice 0 era "Favorite services")
-        categorySelect.selectedIndex = 0; // Agora será índice 0 após remover "Favorite services"
-        
-        // Dispara o evento change para filtrar os serviços
-        const event = new Event('change');
-        categorySelect.dispatchEvent(event);
-    }
+            // --- ADICIONE ESTA PARTE PARA SELECIONAR A PRIMEIRA CATEGORIA ---
+            if (categorySelect.options.length > 1) {
+                // Seleciona a primeira categoria (índice 1, pois índice 0 era "Favorite services")
+                categorySelect.selectedIndex = 0; // Agora será índice 0 após remover "Favorite services"
+
+                // Dispara o evento change para filtrar os serviços
+                const event = new Event('change');
+                categorySelect.dispatchEvent(event);
+            }
 
             // ---------------- custom dropdown (substitui select visualmente) ----------------
             function createCustomCategoryDropdown(selectEl) {
@@ -901,17 +901,17 @@ function updateCategories(services) {
             // --------------------------------------------------------------------------------
         }
 
-function autoSelectFirstCategory(categories) {
-    const categorySelect = document.getElementById('orderform-category');
-    if (categorySelect && categorySelect.options.length > 0) { // Agora inicia de 0
-        // Selecionar a primeira categoria (índice 0)
-        categorySelect.selectedIndex = 0;
+        function autoSelectFirstCategory(categories) {
+            const categorySelect = document.getElementById('orderform-category');
+            if (categorySelect && categorySelect.options.length > 0) { // Agora inicia de 0
+                // Selecionar a primeira categoria (índice 0)
+                categorySelect.selectedIndex = 0;
 
-        // Disparar o evento change para filtrar os serviços
-        const event = new Event('change');
-        categorySelect.dispatchEvent(event);
-    }
-}
+                // Disparar o evento change para filtrar os serviços
+                const event = new Event('change');
+                categorySelect.dispatchEvent(event);
+            }
+        }
 
         // Função para configurar event listeners dos serviços
         function setupServiceEventListeners(services) {
@@ -953,21 +953,21 @@ function autoSelectFirstCategory(categories) {
         }
 
         // Função para filtrar serviços por categoria
-function filterServicesByCategory(category, services) {
-    const serviceSelect = document.getElementById('orderform-service');
-    if (!serviceSelect) return;
+        function filterServicesByCategory(category, services) {
+            const serviceSelect = document.getElementById('orderform-service');
+            if (!serviceSelect) return;
 
-    // Limpar opções existentes
-    serviceSelect.innerHTML = '';
+            // Limpar opções existentes
+            serviceSelect.innerHTML = '';
 
-    // Adicionar opção padrão
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = 'Selecione um serviço'; // Removida verificação de "-1"
-    serviceSelect.appendChild(defaultOption);
+            // Adicionar opção padrão
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Selecione um serviço'; // Removida verificação de "-1"
+            serviceSelect.appendChild(defaultOption);
 
-    // Filtrar e adicionar serviços
-    const filteredServices = services.filter(service => service.categoria === category);
+            // Filtrar e adicionar serviços
+            const filteredServices = services.filter(service => service.categoria === category);
             filteredServices.forEach(service => {
                 const option = document.createElement('option');
                 option.value = service.id_servico;
@@ -1717,8 +1717,8 @@ function filterServicesByCategory(category, services) {
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
-                                                    href="/">
-                                                    Novo pedido
+                                                    href="/painel">
+                                                    Novo Pedido
                                                 </a>
                                             </li>
                                             <li
@@ -1746,21 +1746,14 @@ function filterServicesByCategory(category, services) {
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/affiliates">
-                                                    Meus indicados
+                                                    Meus Indicados
                                                 </a>
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/massorder">
-                                                    Mass order
-                                                </a>
-                                            </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/suporte">
-                                                    Suporte
+                                                    Pedido em Massa
                                                 </a>
                                             </li>
                                         </ul>
@@ -1802,8 +1795,8 @@ function filterServicesByCategory(category, services) {
                             </div>
                             <ul class="sidebar-block__left-menu editor__component-wrapper">
                                 <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
-                                    <a class="component-sidebar__menu-item-link" href="/">
-                                        Novo pedido
+                                    <a class="component-sidebar__menu-item-link" href="/painel">
+                                        Novo Pedido
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item ">
@@ -1823,17 +1816,12 @@ function filterServicesByCategory(category, services) {
                                 </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/affiliates">
-                                        Meus indicados
+                                        Meus Indicados
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/massorder">
-                                        Mass order
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/suporte">
-                                        Suporte
+                                        Pedido em Massa
                                     </a>
                                 </li>
                             </ul>
@@ -1878,12 +1866,13 @@ function filterServicesByCategory(category, services) {
                                                     <div class="form-group">
                                                         <label for="orderform-category"
                                                             class="control-label">Categoria</label>
-<!-- DEPOIS: -->
-<select class="form-control" id="orderform-category" name="OrderForm[category]">
-    <!-- Categorias serão preenchidas dinamicamente -->
-</select>
-                                                            </option>
+                                                        <!-- DEPOIS: -->
+                                                        <select class="form-control" id="orderform-category"
+                                                            name="OrderForm[category]">
                                                             <!-- Categorias serão preenchidas dinamicamente -->
+                                                        </select>
+                                                        </option>
+                                                        <!-- Categorias serão preenchidas dinamicamente -->
                                                         </select>
                                                         <div id="select-category-container" class="position-relative">
                                                         </div>
