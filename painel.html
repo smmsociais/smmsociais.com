@@ -173,6 +173,17 @@
         }
     </style>
     <script>
+
+// coloque isto no topo do seu <script>, antes de qualquer função que use categoryImages
+const categoryImages = {
+  'Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/9c93b12b9b4044c5e96392fbaf09bb42e74cb16a/instagram.png?raw=true',
+  'Curtidas no Instagram': '❤️',
+  'Seguidores Brasileiros no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
+  'Curtidas Brasileiras no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
+  'TikTok': 'https://github.com/smmsociais/smmsociais.com/blob/main/tiktok.png?raw=true'
+  // adicione mais mapeamentos conforme as categorias reais retornadas pela API
+};
+
         // Função para obter parâmetros da URL
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
