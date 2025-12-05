@@ -316,7 +316,6 @@
                                     data-service-name="${service.nome}"
                                     data-min="${minOrder}"
                                     data-max="${maxOrder}"
-                                    data-target="#service-description-55">
                             </div>
                             ` : ''}
                             ${service.descricao ? `
@@ -406,8 +405,7 @@
                     const serviceId = this.getAttribute('data-service-id');
                     const serviceName = this.getAttribute('data-service-name');
 
-                    // Confirmar seleção (opcional)
-                    if (confirm(`Deseja selecionar o serviço "${serviceName}"?`)) {
+                     {
                         // Redirecionar para a página de painel com o parâmetro do serviço
                         window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
                     }
@@ -922,7 +920,6 @@
                         data-service-name="${service.nome}"
                         data-min="${minOrder}"
                         data-max="${maxOrder}"
-                        data-target="#service-description-55">
                 </div>
                 ` : ''}
                 <div style="display:inline-block">
@@ -961,9 +958,6 @@
 
                 <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
 
-                <td data-label="" class="services-list__description">
-                    ${service.descricao ? `<div class="d-none" id="service-description-id-55-${service.id_servico}">${service.descricao.replace(/\n/g, "<br>")}</div>` : ''}
-                    ${descButtons}
                 </td>
             `;
 
