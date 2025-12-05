@@ -200,55 +200,59 @@
             display: inline-block;
         }
 
-/* Estilos para o botão de busca (lupa) */
-.input-wrapper button {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 0px 2px;
-    background: none;
-    border: none;
-    left: 12px;
-    z-index: 10; /* Adicione esta linha */
-    color: #666; /* Adicione cor para melhor visibilidade */
-}
+        /* Estilos para o botão de busca (lupa) */
+        .input-wrapper button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 0px 2px;
+            background: none;
+            border: none;
+            left: 12px;
+            z-index: 10;
+            /* Adicione esta linha */
+            color: #666;
+            /* Adicione cor para melhor visibilidade */
+        }
 
-.input-wrapper button .fas.fa-search {
-    font-size: 16px; /* Tamanho adequado */
-}
+        .input-wrapper button .fas.fa-search {
+            font-size: 16px;
+            /* Tamanho adequado */
+        }
 
-/* Ajuste para o input de busca */
-#template-input {
-    padding-left: 40px !important; /* Garante espaço para o ícone */
-    width: 100%;
-}
+        /* Ajuste para o input de busca */
+        #template-input {
+            padding-left: 40px !important;
+            /* Garante espaço para o ícone */
+            width: 100%;
+        }
 
-/* Ajuste específico para dispositivos móveis */
-@media (max-width: 768px) {
-    .input-wrapper button {
-        left: 10px;
-    }
-    
-    .input-wrapper button .fas.fa-search {
-        font-size: 14px;
-    }
-    
-    #template-input {
-        padding-left: 36px !important;
-    }
-}
+        /* Ajuste específico para dispositivos móveis */
+        @media (max-width: 768px) {
+            .input-wrapper button {
+                left: 10px;
+            }
 
-/* Forçar exibição do ícone em todos os dispositivos */
-#new-order-search .fa-search {
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
+            .input-wrapper button .fas.fa-search {
+                font-size: 14px;
+            }
 
-/* Garantir que o botão seja clicável */
-.input-wrapper button {
-    pointer-events: auto !important;
-}
+            #template-input {
+                padding-left: 36px !important;
+            }
+        }
+
+        /* Forçar exibição do ícone em todos os dispositivos */
+        #new-order-search .fa-search {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Garantir que o botão seja clicável */
+        .input-wrapper button {
+            pointer-events: auto !important;
+        }
     </style>
     <script>
 
@@ -1661,6 +1665,7 @@
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script>
         window.modules = {};
     </script>
@@ -1845,13 +1850,15 @@
                                                             style="position: relative;"
                                                             data-lang-placeholder="Procurar">
                                                             <div class="input-wrapper" style="position: relative;">
-<button
-    style="position: absolute;top: 50%;transform: translateY(-50%);padding: 0px 2px;background: none;border: none;left: 12px;z-index: 10 !important;"
-    type="button">
-    <span class="fas fa-search"></span>
-</button>
+                                                                <i class="fas fa-search" style="position: absolute;
+                  top: 50%;
+                  left: 15px;
+                  transform: translateY(-50%);
+                  color: #666;
+                  z-index: 2;"></i>
                                                                 <input type="text" class="form-control"
-                                                                    id="template-input" value="" placeholder="Procurar">
+                                                                    id="template-input" value="" placeholder="Procurar"
+                                                                    style="padding-left: 40px;">
                                                             </div>
                                                         </div>
                                                     </div>
