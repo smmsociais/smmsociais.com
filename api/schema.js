@@ -55,42 +55,57 @@ const actionSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const ServicoSchema = new mongoose.Schema({
-    id_servico: {
+  id_servico: {
     type: String, // Ex: "1254"
     required: true
   },
+
   nome: {
     type: String, // Ex: "🚀 Seguidores RÁPIDO no TikTok"
     required: true
   },
-   tipo: {
-    type: String, // Ex: "seguindores"
+
+  tipo: {
+    type: String, // Ex: "seguidores"
     required: true
   },
+
   preco_1000: {
     type: Number, // Ex: 10.00
     required: true
   },
+
   minimo: {
     type: Number, // Ex: 50
     required: true
   },
+
   maximo: {
     type: Number, // Ex: 1000000
     required: true
   },
+
   tempo_medio: {
     type: String, // Ex: "10 minutos"
     required: true
   },
+
   categoria: {
-    type: String, // Ex: "TikTok"
-    required: true
+    nome: {
+      type: String,      // "TikTok"
+      required: true
+    },
+    imagem: {
+      type: String,
+      required: true
+    }
   },
-      descricao: {
+
+  descricao: {
     type: String,
     required: true
   }
+
 }, { _id: false });
 
 /* 🔹 Depósitos via PIX (Mercado Pago) */
