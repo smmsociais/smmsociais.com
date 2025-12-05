@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>New order</title>
+    <title>Services</title>
     <style>
         /* Initial Load */
         body {
@@ -29,158 +29,75 @@
             z-index: 9999;
         }
 
-        .hidden {
-            display: none !important;
+        .service-action-btn {
+            margin-top: 8px;
+            width: 100%;
         }
 
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        .alert {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            min-width: 300px;
-        }
-
-        /* Estilo para a mensagem de sucesso */
-        .success-message {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 12px 20px;
-            border-radius: 4px;
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        /* Ajustes para dispositivos pequenos */
-        @media (max-width: 991.98px) {
-            .success-message-mobile {
-                margin: 20px 0;
-                order: 1;
-            }
-
-            .new_order-block .row {
-                display: flex;
-                flex-direction: column;
-            }
-
-            .new_order-block .col-lg-7 {
-                order: 2;
-            }
-
-            .new_order-block .col-lg-5 {
-                order: 3;
-            }
-        }
-
-        /* Estilo do botão do WhatsApp */
-        #whatsapp-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #25d366;
-            border-radius: 50%;
-            padding: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            z-index: 9999;
-            transition: transform .2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 56px;
-            height: 56px;
-            text-decoration: none;
-        }
-
-        #whatsapp-button:hover {
-            transform: scale(1.1);
-            background-color: #1da851;
-        }
-
-        #whatsapp-button img {
-            width: 32px;
-            height: 32px;
-            filter: invert(1);
-        }
-
-        /* Search results (lista de serviços sugeridos) */
-        #service-search-results {
+        /* Estilos para as imagens das categorias - AJUSTADOS */
+        .services-category {
             position: relative;
-            margin-top: 6px;
-            max-height: 360px;
-            overflow: auto;
-            border-radius: 6px;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-            background: #fff;
-            border: 1px solid #eee;
-            z-index: 9998;
-            font-size: 14px;
-        }
-
-        .service-result-item {
-            padding: 10px 12px;
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-            cursor: pointer;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.03);
-        }
-
-        .service-result-item:last-child {
-            border-bottom: none;
-        }
-
-        .service-result-item:hover {
-            background: rgba(0, 0, 0, 0.02);
-        }
-
-        .service-result-icon {
-            font-size: 20px;
-            width: 36px;
-            text-align: center;
-            line-height: 20px;
-        }
-
-        .service-result-body {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .service-result-title {
-            font-weight: 600;
-            white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis;
+            padding: 8px 15px;
+            min-height: 50px;
         }
 
-        .service-result-sub {
-            font-size: 12px;
-            color: #666;
-            margin-top: 3px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .category-image {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            width: 30px;
+            /* Diminuído de 40px para 24px */
+            height: 30px;
+            /* Diminuído de 40px para 24px */
+            object-fit: contain;
+            z-index: 1;
         }
 
-        .search-no-results {
-            padding: 12px;
-            color: #777;
+        .category-emoji {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            font-size: 30px;
+            /* Tamanho adequado para emoji */
+            z-index: 1;
+        }
+
+        .category-content {
+            position: relative;
+            padding-left: 40px;
+            /* Espaço para a imagem/emoji */
+        }
+
+        .services-category h4 {
+            margin: 0;
+            line-height: 1.2;
+        }
+
+
+        /* Highlight simples para termo buscado */
+        .service-highlight {
+            background: rgba(255, 230, 0, 0.35);
+            padding: 0 3px;
+            border-radius: 2px;
         }
     </style>
     <script>
-        // Função para obter parâmetros da URL
-        function getUrlParams() {
-            const params = new URLSearchParams(window.location.search);
-            const paramsObj = {};
-            for (const [key, value] of params) {
-                paramsObj[key] = value;
-            }
-            return paramsObj;
+        // Mapeamento de categorias para imagens - CORRIGIDO para emoji
+        const categoryImages = {
+            'Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/9c93b12b9b4044c5e96392fbaf09bb42e74cb16a/instagram.png?raw=true',
+            'Curtidas no Instagram': '❤️', // Agora é tratado como emoji
+            'Seguidores Brasileiros no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
+            'Curtidas Brasileiras no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
+            'TikTok': 'https://github.com/smmsociais/smmsociais.com/blob/main/tiktok.png?raw=true'
+        };
+
+        // Função para verificar se é um emoji
+        function isEmoji(str) {
+            const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/gu;
+            return emojiRegex.test(str);
         }
 
         // Função para obter o token do localStorage
@@ -247,49 +164,6 @@
             }
         }
 
-        // Função para obter informações do usuário
-        async function getUserInfo() {
-            const token = loadToken();
-
-            if (!token) {
-                console.error("Token não encontrado.");
-                return null;
-            }
-
-            try {
-                const response = await fetch('https://smmsociais.com/api/account', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    // mostra o status e corpo para debug
-                    const txt = await response.text().catch(() => null);
-                    console.error('Erro ao carregar informações do usuário. status:', response.status, txt);
-                    throw new Error('Erro ao carregar informações do usuário');
-                }
-
-                const userData = await response.json();
-                console.log('getUserInfo response:', userData);
-
-                // Normaliza campos esperados
-                const normalized = {
-                    userId: userData.userId || userData.id || userData._id || null,
-                    nome_usuario: userData.nome_usuario || userData.nome || null,
-                    email: userData.email || null,
-                    token: userData.token || token
-                };
-
-                return normalized;
-            } catch (error) {
-                console.error('Erro ao carregar informações do usuário:', error);
-                return null;
-            }
-        }
-
         function generateRandomNumber() {
             return Math.floor(Math.random() * 90000) + 10000;
         }
@@ -327,1022 +201,288 @@
                     }
                     return response.json();
                 })
-                .then(services => {
-                    renderServices(services);
-                    return services;
+                .then(data => {
+                    renderServices(data);
+                    renderCategories(data);
+                    return data;
                 })
                 .catch(error => {
-                    console.error('Erro ao carregar serviços:', error);
-                    const serviceSelect = document.getElementById('orderform-service');
-                    if (serviceSelect) {
-                        serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+                    console.error('Erro:', error);
+                    const tbody = document.getElementById('service-tbody');
+                    if (tbody) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
                     }
                     return [];
                 });
         }
 
-        // Função para renderizar serviços no formulário
+        // Função para renderizar os serviços na tabela - ATUALIZADA
         function renderServices(services) {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect) return;
+            const tbody = document.getElementById('service-tbody');
+            const loadingRow = document.getElementById('loading-row');
 
-            // Limpar opções existentes
-            serviceSelect.innerHTML = '';
+            if (loadingRow) loadingRow.remove();
+            tbody.innerHTML = '';
 
-            // Adicionar opção padrão
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.textContent = 'Selecione um serviço';
-            serviceSelect.appendChild(defaultOption);
+            if (!services || services.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
+                return;
+            }
 
-            // Adicionar serviços da API
+            // AGRUPAR POR CATEGORIA REAL DA API
+            const servicesByCategory = {};
             services.forEach(service => {
-                const option = document.createElement('option');
-                option.value = service.id_servico;
-                option.textContent = service.nome;
-                option.setAttribute('data-price', service.preco_1000);
-                option.setAttribute('data-min', service.minimo);
-                option.setAttribute('data-max', service.maximo);
-                option.setAttribute('data-description', service.descricao);
-                option.setAttribute('data-rede', service.rede);
-                option.setAttribute('data-tipo', service.tipo);
-                serviceSelect.appendChild(option);
+                const categoryName = service.categoria || "Outros";
+
+                if (!servicesByCategory[categoryName]) {
+                    servicesByCategory[categoryName] = [];
+                }
+                servicesByCategory[categoryName].push(service);
             });
 
-            // Verificar se há um serviço específico na URL
-            const urlParams = getUrlParams();
-            const serviceIdFromUrl = urlParams.service;
+            // RENDERIZAR POR CATEGORIA
+            Object.keys(servicesByCategory).forEach(categoryName => {
+                const categoryServices = servicesByCategory[categoryName];
+                const categoryImage = categoryImages[categoryName];
 
-            if (serviceIdFromUrl) {
-                // Tentar selecionar o serviço da URL
-                selectServiceById(serviceIdFromUrl, services);
-            } else {
-                // Preencher automaticamente com o primeiro serviço se não houver parâmetro
-                if (services.length > 0) {
-                    autoSelectFirstService(services);
-                }
-            }
+                // Linha de título da categoria
+                const categoryRow = document.createElement('tr');
+                categoryRow.className = 'services-list-category-title';
 
-            // Atualizar categorias com base nos serviços
-            updateCategories(services);
+                let categoryContent = `
+                    <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
+                        <div class="category-content">
+                            <h4>${categoryName}</h4>
+                        </div>
+                `;
 
-            // Configurar event listeners
-            setupServiceEventListeners(services);
-        }
-
-        // Função para selecionar serviço por ID
-        function selectServiceById(serviceId, services) {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect) return;
-
-            // Encontrar o serviço pelo ID
-            const service = services.find(s => s.id_servico == serviceId);
-
-            if (service) {
-                // Encontrar a opção correspondente no select
-                for (let i = 0; i < serviceSelect.options.length; i++) {
-                    if (serviceSelect.options[i].value == serviceId) {
-                        serviceSelect.selectedIndex = i;
-
-                        // Disparar o evento change para atualizar todos os campos
-                        const event = new Event('change');
-                        serviceSelect.dispatchEvent(event);
-
-                        // Garantir que os campos sejam exibidos
-                        showServiceFields();
-
-                        console.log(`Serviço selecionado automaticamente: ${service.nome} (ID: ${serviceId})`);
-                        return;
+                // Adicionar imagem ou emoji se existir para esta categoria
+                if (categoryImage) {
+                    if (isEmoji(categoryImage)) {
+                        // Se for emoji, usar span em vez de img
+                        categoryContent += `
+                            <span class="category-emoji">${categoryImage}</span>
+                        `;
+                    } else {
+                        // Se for URL de imagem, usar img
+                        categoryContent += `
+                            <img src="${categoryImage}" alt="${categoryName}" class="category-image">
+                        `;
                     }
                 }
-            }
 
-            // Se não encontrou o serviço, usar o primeiro disponível
-            console.warn(`Serviço com ID ${serviceId} não encontrado. Selecionando primeiro serviço disponível.`);
-            if (services.length > 0) {
-                autoSelectFirstService(services);
-            }
+                categoryContent += `</td>`;
+
+                categoryRow.innerHTML = categoryContent;
+                tbody.appendChild(categoryRow);
+
+                // Serviços da categoria
+                categoryServices.forEach(service => {
+                    const pricePer1000 = service.preco_1000 ? `R$ ${parseFloat(service.preco_1000).toFixed(2)}` : '-';
+                    const minOrder = service.minimo || '-';
+                    const maxOrder = service.maximo || '-';
+                    const avgTime = service.tempo_medio || '-';
+
+                    const serviceRow = document.createElement('tr');
+
+                    serviceRow.innerHTML = `
+                        <td data-label="Favorite services">
+                            <a href="#" data-favorite-service-id="${service.id_servico}">
+                                <span data-favorite-icon class="far fa-star"></span>
+                            </a>
+                        </td>
+
+                        <td data-label="ID">${service.id_servico}</td>
+
+                        <td data-label="Serviço" class="table-service">
+                            ${service.nome}
+                        </td>
+
+                        <td data-label="Preço por 1000">${pricePer1000}</td>
+
+                        <td data-label="Pedido mínimo">${minOrder}</td>
+
+                        <td data-label="Pedido máximo">${maxOrder}</td>
+
+                        <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
+
+                        <td data-label="" class="services-list__description">
+                            ${service.descricao ? `
+                            <div class="component_button_view">
+                                <button class="btn btn-actions btn-view-service-description"
+                                    data-toggle="modal"
+                                    data-content-id="#service-description-id-55-${service.id_servico}"
+                                    data-service-id="${service.id_servico}"
+                                    data-service-name="${service.nome}"
+                                    data-min="${minOrder}"
+                                    data-max="${maxOrder}"
+                                    data-target="#service-description-55">
+                            </div>
+                            ` : ''}
+                            ${service.descricao ? `
+                            <div class="d-none" id="service-description-id-55-${service.id_servico}">
+                                ${service.descricao.replace(/\n/g, "<br>")}
+                            </div>
+                            ` : ''}
+                        </td>
+                    `;
+
+                    tbody.appendChild(serviceRow);
+                });
+            });
+
+            initializeServiceDescriptionButtons();
+            initializeServiceSelectionButtons();
         }
 
-        // Função para preencher automaticamente o primeiro serviço
-        function autoSelectFirstService(services) {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (serviceSelect && serviceSelect.options.length > 1) {
-                // Selecionar o primeiro serviço (índice 1, pois o índice 0 é a opção padrão)
-                serviceSelect.selectedIndex = 1;
-
-                // Disparar o evento change para atualizar todos os campos
-                const event = new Event('change');
-                serviceSelect.dispatchEvent(event);
-
-                // Garantir que os campos sejam exibidos
-                showServiceFields();
-            }
+        // helper: transforma "Seguidores Instagram" -> "seguidores-instagram"
+        function slugify(str) {
+            return String(str || '')
+                .normalize('NFKD')               // normaliza acentos
+                .replace(/[\u0300-\u036f]/g, '') // remove diacríticos
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9]+/g, '-')     // não alfanum -> -
+                .replace(/^-+|-+$/g, '');
         }
 
-        // Função para mostrar campos do serviço
-        function showServiceFields() {
-            const linkField = document.getElementById('link_field');
-            const quantityField = document.getElementById('quantity_field');
-            const serviceDescription = document.getElementById('service_description');
-
-            if (linkField) linkField.classList.remove('hidden');
-            if (quantityField) quantityField.classList.remove('hidden');
-            if (serviceDescription) serviceDescription.classList.remove('hidden');
-        }
-
-// helper: procura ícone/emoji no map categoryImages (case-insensitive)
+        // helper: procura ícone/emoji no map categoryImages (case-insensitive)
 function getCategoryImageForName(name) {
   if (!name) return null;
-  const keys = Object.keys(categoryImages || {});
+  const imagesMap = window.categoryImages || {}; // evita ReferenceError
+  const keys = Object.keys(imagesMap);
   for (let k of keys) {
-    if (String(k).toLowerCase() === String(name).toLowerCase()) return categoryImages[k];
+    if (String(k).toLowerCase() === String(name).toLowerCase()) return imagesMap[k];
   }
   for (let k of keys) {
-    if (String(name).toLowerCase().includes(String(k).toLowerCase())) return categoryImages[k];
+    if (String(name).toLowerCase().includes(String(k).toLowerCase())) return imagesMap[k];
   }
   return null;
 }
 
-// Substitua sua updateCategories por esta versão que cria data-icon em cada option
-function updateCategories(services) {
-  const categorySelect = document.getElementById('orderform-category');
-  if (!categorySelect) return;
+        // Substitua sua função renderCategories por esta
+        function renderCategories(services) {
+            const categoryMenu = document.getElementById('category-filter-menu');
+            if (!categoryMenu) return;
 
-  // Limpar categorias existentes, mantendo apenas a opção padrão
-  while (categorySelect.options.length > 1) {
-    categorySelect.remove(1);
-  }
-
-  const categories = new Map(); // use Map pra guardar também o icon
-
-  services.forEach(service => {
-    const name = (service.categoria || service.category_name || service.category || '').toString().trim();
-    if (!name) return;
-    if (categories.has(name)) return;
-
-    // prioridade: icon enviado pelo serviço, senão tenta mapear pelo nome
-    let icon = service.category_icon || getCategoryImageForName(name) || null;
-
-    // se icon for emoji curto (ex.: "❤️"), mantemos como texto; se for URL, mantemos a URL
-    categories.set(name, icon);
-  });
-
-  // criar img/span que exibirá o ícone da categoria selecionada (se ainda não existir)
-  let iconEl = document.getElementById('orderform-category-icon');
-  if (!iconEl) {
-    // cria wrapper para suportar emoji ou img
-    const wrapper = document.createElement('span');
-    wrapper.id = 'orderform-category-icon-wrapper';
-    wrapper.style.display = 'inline-flex';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.marginRight = '8px';
-    // cria elemento img (por padrão escondido)
-    const img = document.createElement('img');
-    img.id = 'orderform-category-icon';
-    img.style.width = '22px';
-    img.style.height = '22px';
-    img.style.objectFit = 'contain';
-    img.style.display = 'none';
-    // cria elemento span para emoji fallback
-    const emoji = document.createElement('span');
-    emoji.id = 'orderform-category-icon-emoji';
-    emoji.style.fontSize = '18px';
-    emoji.style.display = 'none';
-    wrapper.appendChild(img);
-    wrapper.appendChild(emoji);
-    // inserir antes do select
-    categorySelect.parentNode.insertBefore(wrapper, categorySelect);
-    iconEl = img;
-  }
-
-  // Preencher options com atributo data-icon
-  categories.forEach((icon, name) => {
-    const option = document.createElement('option');
-    option.value = name;
-    option.textContent = name;
-    if (icon) option.setAttribute('data-icon', icon);
-    categorySelect.appendChild(option);
-  });
-
-  // Atualiza ícone com base na categoria selecionada atualmente
-  function refreshCategoryIcon() {
-    const sel = categorySelect.options[categorySelect.selectedIndex];
-    const iconVal = sel ? sel.getAttribute('data-icon') : null;
-    const imgEl = document.getElementById('orderform-category-icon');
-    const emojiEl = document.getElementById('orderform-category-icon-emoji');
-
-    if (!iconVal) {
-      if (imgEl) imgEl.style.display = 'none';
-      if (emojiEl) { emojiEl.style.display = 'none'; emojiEl.textContent = ''; }
-      return;
-    }
-
-    // detecta emoji simples (1 ou 2 chars) — se for emoji, mostra no <span>
-    const maybeEmoji = iconVal.length <= 3 && /\p{Emoji}/u.test(iconVal);
-    if (maybeEmoji) {
-      if (imgEl) imgEl.style.display = 'none';
-      if (emojiEl) { emojiEl.style.display = 'inline'; emojiEl.textContent = iconVal; }
-    } else {
-      // trata como URL de imagem
-      if (emojiEl) { emojiEl.style.display = 'none'; emojiEl.textContent = ''; }
-      if (imgEl) {
-        imgEl.src = iconVal;
-        imgEl.style.display = 'inline-block';
-      }
-    }
-  }
-
-  // ligar listener para mudança e também chamar agora
-  categorySelect.addEventListener('change', refreshCategoryIcon);
-  // chama imediatamente para sincronizar (caso já tenha seleção)
-  refreshCategoryIcon();
-
-  // selecionar automaticamente a primeira categoria real (se quiser)
-  if (categorySelect.options.length > 1) {
-    categorySelect.selectedIndex = 1;
-    categorySelect.dispatchEvent(new Event('change'));
-  }
-}
-        // Função para selecionar automaticamente a primeira categoria
-        function autoSelectFirstCategory(categories) {
-            const categorySelect = document.getElementById('orderform-category');
-            if (categorySelect && categorySelect.options.length > 1) {
-                // Pular a primeira opção (índice 0) que é "Favorite services"
-                // e selecionar a primeira categoria real (índice 1)
-                categorySelect.selectedIndex = 1;
-
-                // Disparar o evento change para filtrar os serviços
-                const event = new Event('change');
-                categorySelect.dispatchEvent(event);
-            }
-        }
-
-        // Função para configurar event listeners dos serviços
-        function setupServiceEventListeners(services) {
-            const categorySelect = document.getElementById('orderform-category');
-            const serviceSelect = document.getElementById('orderform-service');
-            const searchInput = document.getElementById('template-input');
-            const quantityInput = document.getElementById('orderform-quantity');
-
-            if (categorySelect) {
-                categorySelect.addEventListener('change', function () {
-                    filterServicesByCategory(this.value, services);
-                });
-            }
-
-            if (serviceSelect) {
-                serviceSelect.addEventListener('change', handleServiceChange);
-            }
-
-            if (searchInput) {
-                searchInput.addEventListener('input', function () {
-                    const searchTerm = this.value.toLowerCase();
-                    const serviceSelect = document.getElementById('orderform-service');
-                    const options = serviceSelect.querySelectorAll('option');
-
-                    options.forEach(option => {
-                        const text = option.textContent.toLowerCase();
-                        if (text.includes(searchTerm) || option.value === '') {
-                            option.style.display = '';
-                        } else {
-                            option.style.display = 'none';
-                        }
-                    });
-                });
-            }
-
-            if (quantityInput) {
-                quantityInput.addEventListener('input', handleQuantityChange);
-            }
-        }
-
-        // Função para filtrar serviços por categoria
-        function filterServicesByCategory(category, services) {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect) return;
-
-            // Limpar opções existentes
-            serviceSelect.innerHTML = '';
-
-            // Adicionar opção padrão
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.textContent = category === '-1' ? 'Todos os serviços' : 'Selecione um serviço';
-            serviceSelect.appendChild(defaultOption);
-
-            // Filtrar e adicionar serviços
-            const filteredServices = category === '-1'
-                ? services
-                : services.filter(service => service.categoria === category);
-
-            filteredServices.forEach(service => {
-                const option = document.createElement('option');
-                option.value = service.id_servico;
-                option.textContent = service.nome;
-                option.setAttribute('data-price', service.preco_1000);
-                option.setAttribute('data-min', service.minimo);
-                option.setAttribute('data-max', service.maximo);
-                option.setAttribute('data-description', service.descricao);
-                option.setAttribute('data-rede', service.rede);
-                option.setAttribute('data-tipo', service.tipo);
-                serviceSelect.appendChild(option);
+            // limpa as categorias dinâmicas (mantém o item "Todas as categorias" se existir)
+            const preserve = [];
+            // coleta itens que já existem com data-filter-category-id="all" ou "favorites"
+            categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => {
+                const id = (el.getAttribute('data-filter-category-id') || '').toLowerCase();
+                if (id === 'all' || id === 'favorites') preserve.push(el);
             });
+            categoryMenu.innerHTML = '';
+            // re-insere preserve no topo (mantém "Todas as categorias")
+            preserve.forEach(el => categoryMenu.appendChild(el));
 
-            // Verificar se há um serviço específico na URL após o filtro
-            const urlParams = getUrlParams();
-            const serviceIdFromUrl = urlParams.service;
+            const seen = new Set();
+            services.forEach(service => {
+                // obtém nome da categoria (prioriza campos existentes)
+                const rawName = service.category_name || service.categoria || service.category || 'Outros';
+                const name = String(rawName).trim();
+                if (!name) return;
+                const slug = slugify(name);
+                if (seen.has(slug)) return;
+                seen.add(slug);
 
-            if (serviceIdFromUrl) {
-                // Tentar selecionar o serviço da URL mesmo após o filtro
-                const serviceExists = filteredServices.some(s => s.id_servico == serviceIdFromUrl);
-                if (serviceExists) {
-                    selectServiceById(serviceIdFromUrl, filteredServices);
-                } else if (filteredServices.length > 0) {
-                    // Se o serviço da URL não está na categoria filtrada, usar o primeiro disponível
-                    autoSelectFirstService(filteredServices);
-                }
-            } else if (filteredServices.length > 0) {
-                // Preencher automaticamente com o primeiro serviço após filtro
-                autoSelectFirstService(filteredServices);
-            }
-        }
+                // determina ícone/emoji: primeiro campo service.category_icon, depois map categoryImages
+                let icon = service.category_icon || getCategoryImageForName(name) || null;
 
-        // Função para lidar com mudança de serviço
-        function handleServiceChange() {
-            const selectedOption = this.options[this.selectedIndex];
-            const price = selectedOption.getAttribute('data-price');
-            const description = selectedOption.getAttribute('data-description');
-            const minQuantity = selectedOption.getAttribute('data-min');
-            const maxQuantity = selectedOption.getAttribute('data-max');
+                const categoryItem = document.createElement('a');
+                categoryItem.className = 'dropdown-item d-flex align-items-center text-decoration-none';
+                categoryItem.href = '#';
+                categoryItem.setAttribute('data-filter-category-id', slug); // ex.: 'seguidores-instagram'
+                categoryItem.setAttribute('data-filter-category-name', name);
 
-            // Atualizar preço
-            const quantityInput = document.getElementById('orderform-quantity');
-            const currentQuantity = quantityInput ? quantityInput.value || minQuantity || 0 : 0;
-            updateChargeField(price, currentQuantity);
-
-            // Atualizar descrição
-            const descriptionPanel = document.querySelector('.panel-description');
-            if (description && descriptionPanel) {
-                descriptionPanel.innerHTML = description.replace(/\n/g, '<br>');
-                const serviceDescription = document.getElementById('service_description');
-                if (serviceDescription) {
-                    serviceDescription.classList.remove('hidden');
-                }
-            } else if (descriptionPanel) {
-                descriptionPanel.innerHTML = '';
-                const serviceDescription = document.getElementById('service_description');
-                if (serviceDescription) {
-                    serviceDescription.classList.add('hidden');
-                }
-            }
-
-            // Mostrar/ocultar campos de link e quantidade
-            const linkField = document.getElementById('link_field');
-            const quantityField = document.getElementById('quantity_field');
-
-            if (selectedOption.value) {
-                if (linkField) linkField.classList.remove('hidden');
-                if (quantityField) quantityField.classList.remove('hidden');
-
-                // Configurar limites da quantidade
-                if (quantityInput) {
-                    if (minQuantity) {
-                        quantityInput.min = minQuantity;
-                        quantityInput.placeholder = `Mínimo: ${minQuantity}`;
-                    }
-                    if (maxQuantity) {
-                        quantityInput.max = maxQuantity;
-                        quantityInput.placeholder = `Mínimo: ${minQuantity || 0}, Máximo: ${maxQuantity}`;
-                    }
-
-                    // Preencher quantidade mínima automaticamente
-                    if (minQuantity && !quantityInput.value) {
-                        quantityInput.value = minQuantity;
-                        updateChargeField(price, minQuantity);
-                    }
-                }
-            } else {
-                if (linkField) linkField.classList.add('hidden');
-                if (quantityField) quantityField.classList.add('hidden');
-            }
-        }
-
-        // Função para lidar com mudança de quantidade
-        function handleQuantityChange() {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect) return;
-
-            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-            const price = selectedOption ? selectedOption.getAttribute('data-price') : null;
-
-            if (price) {
-                updateChargeField(price, this.value);
-            }
-        }
-
-        // --- Calcular total (robusto) ---
-        function calculateTotal(pricePer1000, quantity) {
-            const price = parseFloat(pricePer1000);
-            const qty = parseInt(String(quantity).replace(/[^\d]/g, ''), 10);
-
-            if (isNaN(price) || isNaN(qty) || qty <= 0) return 0;
-            return (price * qty) / 1000;
-        }
-
-        function updateChargeField(pricePer1000, quantity) {
-            const chargeInput = document.getElementById('charge');
-            if (!chargeInput) return;
-
-            const qty = parseInt(String(quantity).replace(/[^\d]/g, ''), 10);
-
-            if (pricePer1000 && !isNaN(qty) && qty > 0) {
-                const total = calculateTotal(pricePer1000, qty);
-                chargeInput.value = `R$ ${total.toFixed(2)} (R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000)`;
-            } else if (pricePer1000) {
-                chargeInput.value = `R$ ${parseFloat(pricePer1000).toFixed(2)} por 1000`;
-            } else {
-                chargeInput.value = '';
-            }
-        }
-
-        // Função para inicializar todos os campos com valores padrão
-        function initializeDefaultFields() {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (serviceSelect && serviceSelect.selectedIndex > 0) {
-                // Garantir que os campos estejam visíveis
-                showServiceFields();
-
-                // Disparar evento change para preencher todos os campos
-                const event = new Event('change');
-                serviceSelect.dispatchEvent(event);
-            }
-        }
-
-        // Função para mostrar notificação
-        function showNotification(message, type = 'success') {
-            const notifyWrapper = document.getElementById('notify-wrapper');
-            if (!notifyWrapper) return;
-
-            notifyWrapper.textContent = message;
-            notifyWrapper.className = `alert alert-${type} mb-3`;
-            notifyWrapper.style.display = 'block';
-
-            setTimeout(() => {
-                notifyWrapper.style.display = 'none';
-            }, 5000);
-        }
-
-        // Função para mostrar mensagem de sucesso abaixo do container dos serviços
-        function showSuccessMessage(message) {
-            // Remover mensagem anterior se existir
-            const existingMessage = document.getElementById('success-message');
-            if (existingMessage) {
-                existingMessage.remove();
-            }
-
-            // Criar nova mensagem
-            const successMessage = document.createElement('div');
-            successMessage.id = 'success-message';
-            successMessage.className = 'success-message';
-
-            // Adicionar classe específica para mobile
-            if (window.innerWidth < 992) {
-                successMessage.classList.add('success-message-mobile');
-            }
-
-            successMessage.textContent = message;
-
-            // Inserir no local correto baseado no tamanho da tela
-            if (window.innerWidth < 992) {
-                // Em dispositivos pequenos: inserir entre os containers
-                const servicesContainer = document.querySelector('.new_order-block .col-lg-7');
-                const contactContainer = document.querySelector('.new_order-block .col-lg-5');
-                const rowContainer = document.querySelector('.new_order-block .row');
-
-                if (rowContainer && servicesContainer && contactContainer) {
-                    // Remover a mensagem existente primeiro
-                    const existingMsg = document.getElementById('success-message');
-                    if (existingMsg) existingMsg.remove();
-
-                    // Criar uma nova linha para a mensagem
-                    const messageRow = document.createElement('div');
-                    messageRow.className = 'col-12';
-                    messageRow.appendChild(successMessage);
-
-                    // Inserir após o container de serviços e antes do container de contato
-                    rowContainer.insertBefore(messageRow, contactContainer);
-                }
-            } else {
-                // Em dispositivos grandes: inserir após o container principal (comportamento original)
-                const servicesContainer = document.querySelector('.new_order-block');
-                if (servicesContainer) {
-                    servicesContainer.parentNode.insertBefore(successMessage, servicesContainer.nextSibling);
-                }
-            }
-        }
-
-        // --- helper: escolhe endpoint baseado na rede ---
-        function getApiEndpointForRede(rede) {
-            if (!rede) return null;
-            const r = String(rede).toLowerCase();
-            if (r.includes('tiktok')) return 'https://smmsociais.com/api/criar_acao_tiktok';
-            if (r.includes('instagram')) return 'https://smmsociais.com/api/criar_acao_instagram';
-            // se quiser adicionar outras redes no futuro, acrescente aqui
-            return null;
-        }
-
-        // criarAcao agora aceita endpoint opcional (string com URL completa)
-        async function criarAcao(formData, tokenOpcional = null, endpoint = null) {
-            const token = tokenOpcional || loadToken();
-            if (!token) {
-                throw new Error('Token de autenticação não encontrado');
-            }
-
-            // escolhe endpoint padrão se não passado
-            const url = endpoint || 'https://smmsociais.com/api/criar_acao_tiktok';
-
-            console.log('→ criarAcao endpoint:', url, ' token:', Boolean(token));
-
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                if (!response.ok) {
-                    // tenta ler texto primeiro (mais seguro), depois JSON
-                    const text = await response.text().catch(() => null);
-                    let errorMsg = text || `HTTP ${response.status}`;
-                    try {
-                        const json = text ? JSON.parse(text) : null;
-                        if (json && json.error) errorMsg = json.error;
-                    } catch (e) { /* não-JSON */ }
-
-                    console.error('criar_acao response NOT OK:', response.status, errorMsg);
-                    if (response.status === 401) {
-                        throw new Error('Não autorizado');
-                    }
-                    throw new Error(errorMsg || 'Erro ao criar ação');
-                }
-
-                const result = await response.json();
-                return result;
-
-            } catch (error) {
-                console.error('Erro na criação da ação:', error);
-                throw error;
-            }
-        }
-
-        // --- Ao mudar de serviço, configurar min/max corretamente ---
-        function handleServiceChange() {
-            const selectedOption = this.options[this.selectedIndex];
-            if (!selectedOption) return;
-
-            const price = selectedOption.getAttribute('data-price');
-            const description = selectedOption.getAttribute('data-description');
-            const minAttr = selectedOption.getAttribute('data-min');
-            const maxAttr = selectedOption.getAttribute('data-max');
-
-            // conversão segura de limites
-            const minQuantity = (minAttr !== null && minAttr !== '') ? parseInt(minAttr, 10) : null;
-            const maxQuantity = (maxAttr !== null && maxAttr !== '') ? parseInt(maxAttr, 10) : null;
-
-            // Atualizar preço
-            const quantityInput = document.getElementById('orderform-quantity');
-            const currentQuantity = quantityInput ? quantityInput.value || (minQuantity !== null ? minQuantity : '') : '';
-            updateChargeField(price, currentQuantity);
-
-            // Atualizar descrição
-            const descriptionPanel = document.querySelector('.panel-description');
-            if (description && descriptionPanel) {
-                descriptionPanel.innerHTML = description.replace(/\n/g, '<br>');
-                const serviceDescription = document.getElementById('service_description');
-                if (serviceDescription) {
-                    serviceDescription.classList.remove('hidden');
-                }
-            } else if (descriptionPanel) {
-                descriptionPanel.innerHTML = '';
-                const serviceDescription = document.getElementById('service_description');
-                if (serviceDescription) {
-                    serviceDescription.classList.add('hidden');
-                }
-            }
-
-            // Mostrar/ocultar campos de link e quantidade
-            const linkField = document.getElementById('link_field');
-            const quantityField = document.getElementById('quantity_field');
-
-            if (selectedOption.value) {
-                if (linkField) linkField.classList.remove('hidden');
-                if (quantityField) quantityField.classList.remove('hidden');
-
-                // Configurar limites da quantidade no input de forma segura
-                if (quantityInput) {
-                    if (minQuantity !== null) {
-                        quantityInput.min = minQuantity;
-                        quantityInput.placeholder = `Mínimo: ${minQuantity}`;
+                // monta innerHTML com img ou emoji (se for emoji, detecta)
+                let iconHtml = '';
+                if (icon) {
+                    if (isEmoji(icon)) {
+                        iconHtml = `<span class="align-middle mr-1 category-emoji-inline">${icon}</span>`;
                     } else {
-                        quantityInput.removeAttribute('min');
-                    }
-
-                    if (maxQuantity !== null) {
-                        quantityInput.max = maxQuantity;
-                        // placeholder já mostra mínimo; vamos juntar info se existir max
-                        const minText = minQuantity !== null ? `Mínimo: ${minQuantity}, ` : '';
-                        quantityInput.placeholder = `${minText}Máximo: ${maxQuantity}`;
-                    } else {
-                        quantityInput.removeAttribute('max');
-                    }
-
-                    // Preencher quantidade mínima automaticamente se estiver vazio
-                    if (minQuantity !== null && !quantityInput.value) {
-                        quantityInput.value = minQuantity;
-                        updateChargeField(price, minQuantity);
-                    }
-                }
-            } else {
-                if (linkField) linkField.classList.add('hidden');
-                if (quantityField) quantityField.classList.add('hidden');
-            }
-        }
-
-        // --- Ao mudar a quantidade pelo input ---
-        function handleQuantityChange() {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect) return;
-
-            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-            const price = selectedOption ? selectedOption.getAttribute('data-price') : null;
-
-            // sanitiza a quantidade para números antes de atualizar
-            const raw = this.value;
-            const sanitized = raw ? String(raw).replace(/[^\d]/g, '') : '';
-            if (sanitized !== raw) {
-                // opcional: atualiza o campo para remover chars inválidos
-                this.value = sanitized;
-            }
-
-            if (price) {
-                updateChargeField(price, sanitized);
-            }
-        }
-
-        // --- Envio do formulário com validação numérica correta (ajustada para escolher rota) ---
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-
-            const submitButton = event.target.querySelector('button[type="submit"]');
-            const originalText = submitButton ? submitButton.textContent : 'Enviar';
-
-            try {
-                if (submitButton) {
-                    submitButton.textContent = 'Enviando...';
-                    submitButton.disabled = true;
-                }
-                document.body.classList.add('loading');
-
-                // Obter dados do formulário
-                const serviceSelect = document.getElementById('orderform-service');
-                if (!serviceSelect || !serviceSelect.value) {
-                    throw new Error('Por favor, selecione um serviço');
-                }
-                const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-
-                const linkInput = document.getElementById('orderform-link');
-                const link = linkInput ? linkInput.value.trim() : '';
-                if (!link) throw new Error('Por favor, informe o link');
-
-                const quantityInput = document.getElementById('orderform-quantity');
-                const quantityRaw = quantityInput ? quantityInput.value : '';
-                const quantity = parseInt(String(quantityRaw).replace(/[^\d]/g, ''), 10);
-
-                const minAttr = selectedOption.getAttribute('data-min');
-                const maxAttr = selectedOption.getAttribute('data-max');
-                const minQuantity = (minAttr !== null && minAttr !== '') ? parseInt(minAttr, 10) : null;
-                const maxQuantity = (maxAttr !== null && maxAttr !== '') ? parseInt(maxAttr, 10) : null;
-
-                // Validações numéricas
-                if (isNaN(quantity) || quantity <= 0) {
-                    throw new Error('Quantidade inválida para este serviço');
-                }
-                if (minQuantity !== null && quantity < minQuantity) {
-                    throw new Error(`Quantidade abaixo do mínimo (${minQuantity})`);
-                }
-                if (maxQuantity !== null && quantity > maxQuantity) {
-                    throw new Error(`Quantidade acima do máximo (${maxQuantity})`);
-                }
-
-                const pricePer1000 = selectedOption.getAttribute('data-price');
-                const totalValue = calculateTotal(pricePer1000, quantity);
-
-                // Obter informações do usuário
-                const userInfo = await getUserInfo();
-                if (!userInfo || !(userInfo.userId || userInfo.id || userInfo._id || userInfo.token)) {
-                    throw new Error('Não foi possível obter informações do usuário');
-                }
-
-                // Detectar endpoint com base na rede do serviço
-                const redeAttr = selectedOption.getAttribute('data-rede') || '';
-                const apiEndpoint = getApiEndpointForRede(redeAttr);
-
-                if (!apiEndpoint) {
-                    throw new Error(`Rede desconhecida ou não suportada: "${redeAttr}". Contate o suporte.`);
-                }
-
-                // Preparar dados para a API
-                const actionData = {
-                    rede: redeAttr,
-                    tipo: selectedOption.getAttribute('data-tipo'),
-                    nome: selectedOption.textContent,
-                    valor: totalValue,
-                    quantidade: parseInt(quantity, 10),
-                    link: link,
-                    userId: userInfo.userId,
-                    id_servico: serviceSelect.value
-                };
-
-                // Chamar API para criar ação no endpoint correto
-                const result = await criarAcao(actionData, null, apiEndpoint);
-
-                // Se a API retornou novo saldo, atualiza o display IMEDIATAMENTE
-                if (result && typeof result.newSaldo !== 'undefined') {
-                    const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
-                    if (balanceElement) {
-                        const formatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.newSaldo || 0);
-                        balanceElement.textContent = formatted;
+                        iconHtml = `<img src="${icon}" alt="${name}" style="width:20px;height:20px;object-fit:contain;margin-right:8px">`;
                     }
                 } else {
-                    // fallback: recarrega saldo do servidor
-                    await loadUserBalance();
+                    // fallback ícone genérico
+                    iconHtml = `<span class="align-middle mr-1" style="width:20px;text-align:center">🔧</span>`;
                 }
 
-                // Mostrar notificação e mensagem de sucesso
-                showNotification(`Pedido criado com sucesso! ID: ${result.id_pedido}`, 'success');
-                showSuccessMessage(`Pedido enviado com sucesso! ID: ${result.id_pedido}`);
+                categoryItem.innerHTML = `
+      ${iconHtml}
+      <div>${name}</div>
+    `;
 
-                // Limpar apenas os campos específicos, mantendo o container expandido
-                const chargeInput = document.getElementById('charge');
-                if (chargeInput) chargeInput.value = '';
-
-                const linkInputField = document.getElementById('orderform-link');
-                if (linkInputField) linkInputField.value = ''; // Remove apenas o valor do link
-
-                // NÃO esconder os campos para manter o container expandido
-
-            } catch (error) {
-                console.error('Erro ao processar pedido:', error);
-                showNotification(error.message || 'Erro ao processar pedido', 'danger');
-            } finally {
-                if (submitButton) {
-                    submitButton.textContent = originalText;
-                    submitButton.disabled = false;
-                }
-                document.body.classList.remove('loading');
-            }
-        }
-
-        // Configurar event listener para o formulário
-        document.addEventListener('DOMContentLoaded', function () {
-            const orderForm = document.getElementById('order-form');
-            if (orderForm) {
-                orderForm.addEventListener('submit', handleFormSubmit);
-            }
-
-            // Reaplicar o posicionamento da mensagem quando a janela for redimensionada
-            window.addEventListener('resize', function () {
-                const existingMessage = document.getElementById('success-message');
-                if (existingMessage) {
-                    const messageText = existingMessage.textContent;
-                    existingMessage.remove();
-                    showSuccessMessage(messageText);
-                }
+                // append (insere depois do "Todas as categorias" / favorites)
+                categoryMenu.appendChild(categoryItem);
             });
-        });
 
-        // Guarda serviços carregados globalmente para o search
-        window._services = window._services || [];
-
-        // Debounce helper
-        function debounce(fn, wait = 180) {
-            let t;
-            return function (...args) {
-                clearTimeout(t);
-                t = setTimeout(() => fn.apply(this, args), wait);
-            };
-        }
-
-        // Retorna emoji/ícone por rede/tipo simples
-        function getIconForService(service) {
-            const r = (service.rede || '').toLowerCase();
-            const t = (service.tipo || '').toLowerCase();
-            if (r.includes('instagram') || t.includes('instagram')) return '📷';
-            if (r.includes('tiktok') || t.includes('tiktok')) return '🙎‍♂️';
-            if (r.includes('youtube') || t.includes('youtube')) return '▶️';
-            if (r.includes('facebook') || t.includes('facebook')) return '👥';
-            return '🔧';
-        }
-
-        // Filtra serviços por termo (prioriza startsWith depois includes)
-        function filterServicesBySearchTerm(term, services) {
-            term = String(term || '').trim().toLowerCase();
-            if (!term) return [];
-            const starts = [];
-            const contains = [];
-            services.forEach(s => {
-                const hay = `${s.nome || ''} ${s.descricao || ''} ${s.rede || ''} ${s.tipo || ''}`.toLowerCase();
-                if (hay.startsWith(term)) starts.push(s);
-                else if (hay.includes(term)) contains.push(s);
-            });
-            return starts.concat(contains);
-        }
-
-        // Renderiza a lista de resultados abaixo do input
-        function renderSearchResults(results) {
-            let container = document.getElementById('service-search-results');
-            if (!container) {
-                const searchInput = document.getElementById('template-input');
-                container = document.createElement('div');
-                container.id = 'service-search-results';
-                if (searchInput && searchInput.parentNode) {
-                    searchInput.parentNode.insertBefore(container, searchInput.nextSibling);
-                } else {
-                    document.body.appendChild(container);
-                }
+            // garante que exista um item 'all' (se não houver, cria)
+            if (!categoryMenu.querySelector('[data-filter-category-id="all"], [data-filter-category-id="All"]')) {
+                const allItem = document.createElement('a');
+                allItem.className = 'dropdown-item active';
+                allItem.href = '#';
+                allItem.setAttribute('data-filter-category-id', 'all');
+                allItem.setAttribute('data-filter-category-name', 'Todas as categorias');
+                allItem.innerHTML = `<span class="align-middle mr-1" style="min-width:18px"></span><div>Todas as categorias</div>`;
+                categoryMenu.insertBefore(allItem, categoryMenu.firstChild);
             }
+        }
 
-            container.innerHTML = '';
+        // Função para inicializar event listeners dos botões de descrição
+        function initializeServiceDescriptionButtons() {
+            const viewButtons = document.querySelectorAll('.btn-view-service-description');
+            viewButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const contentId = this.getAttribute('data-content-id');
+                    const serviceId = this.getAttribute('data-service-id');
+                    const serviceName = this.getAttribute('data-service-name');
+                    const min = this.getAttribute('data-min');
+                    const max = this.getAttribute('data-max');
 
-            if (!results || results.length === 0) {
-                const no = document.createElement('div');
-                no.className = 'search-no-results';
-                no.textContent = 'Nenhum serviço encontrado.';
-                container.appendChild(no);
-                return;
-            }
+                    const contentElement = document.querySelector(contentId);
+                    if (contentElement) {
+                        document.querySelector('.service-description-content').innerHTML = contentElement.innerHTML;
 
-            // limita resultados para evitar scroll gigantesco
-            const max = 25;
-            results.slice(0, max).forEach(service => {
-                const item = document.createElement('div');
-                item.className = 'service-result-item';
-                item.tabIndex = 0;
-                item.setAttribute('data-id', service.id_servico);
-
-                const icon = document.createElement('div');
-                icon.className = 'service-result-icon';
-                icon.textContent = getIconForService(service);
-
-                const body = document.createElement('div');
-                body.className = 'service-result-body';
-
-                const title = document.createElement('div');
-                title.className = 'service-result-title';
-                // Exemplo: "📷Seguidores Instagram (Menor Queda no momento)"
-                title.textContent = service.nome;
-
-                const sub = document.createElement('div');
-                sub.className = 'service-result-sub';
-                const noteParts = [];
-                if (service.rede) noteParts.push(service.rede);
-                if (service.tipo) noteParts.push(service.tipo);
-                if (service.descricao) noteParts.push(String(service.descricao).slice(0, 80));
-                sub.textContent = noteParts.join(' • ');
-
-                body.appendChild(title);
-                body.appendChild(sub);
-
-                item.appendChild(icon);
-                item.appendChild(body);
-
-                // seleção: ao clicar seleciona o serviço no select e fecha a lista
-                item.addEventListener('click', function () {
-                    // tenta selecionar usando a função já existente selectServiceById
-                    try {
-                        selectServiceById(service.id_servico, window._services);
-                    } catch (e) {
-                        // fallback: seta value diretamente
-                        const serviceSelect = document.getElementById('orderform-service');
-                        if (serviceSelect) {
-                            for (let i = 0; i < serviceSelect.options.length; i++) {
-                                if (String(serviceSelect.options[i].value) === String(service.id_servico)) {
-                                    serviceSelect.selectedIndex = i;
-                                    serviceSelect.dispatchEvent(new Event('change'));
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    // esconde a lista
-                    const container = document.getElementById('service-search-results');
-                    if (container) container.innerHTML = '';
-                });
-
-                // keyboard support: Enter to select
-                item.addEventListener('keydown', function (ev) {
-                    if (ev.key === 'Enter') {
-                        ev.preventDefault();
-                        this.click();
+                        // Atualizar o botão de criar pedido rápido
+                        const quickOrderBtn = document.getElementById('createQuickOrder');
+                        quickOrderBtn.setAttribute('data-service-id', serviceId);
+                        quickOrderBtn.setAttribute('data-service-name', serviceName);
+                        quickOrderBtn.setAttribute('data-min', min);
+                        quickOrderBtn.setAttribute('data-max', max);
                     }
                 });
+            });
 
-                container.appendChild(item);
+            // Event listener para o botão de criar pedido rápido no modal
+            document.getElementById('createQuickOrder').addEventListener('click', function () {
+                const serviceId = this.getAttribute('data-service-id');
+                if (serviceId) {
+                    // Redirecionar para a página de painel com o parâmetro do serviço
+                    window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
+                }
             });
         }
 
-        // Replace / enhance setupServiceEventListeners
-        function setupServiceEventListeners(services) {
-            // keep global copy for other functions
-            window._services = services || window._services || [];
-
-            const categorySelect = document.getElementById('orderform-category');
-            const serviceSelect = document.getElementById('orderform-service');
-            const searchInput = document.getElementById('template-input');
-            const quantityInput = document.getElementById('orderform-quantity');
-
-            if (categorySelect) {
-                categorySelect.addEventListener('change', function () {
-                    filterServicesByCategory(this.value, services);
-                    // limpa resultados do search quando categoria muda
-                    const sr = document.getElementById('service-search-results');
-                    if (sr) sr.innerHTML = '';
-                });
-            }
-
-            if (serviceSelect) {
-                serviceSelect.addEventListener('change', handleServiceChange);
-            }
-
-            // cria container de resultados se não existir
-            (function ensureResultContainer() {
-                if (!document.getElementById('service-search-results')) {
-                    const searchInputEl = document.getElementById('template-input');
-                    if (searchInputEl) {
-                        const container = document.createElement('div');
-                        container.id = 'service-search-results';
-                        searchInputEl.parentNode.insertBefore(container, searchInputEl.nextSibling);
-                        container.innerHTML = '';
-                    }
-                }
-            })();
-
-            if (searchInput) {
-                // comportamento: ao digitar, filtra e exibe sugestões
-                const onInput = debounce(function () {
-                    const term = this.value || '';
-                    if (!term.trim()) {
-                        // vazio — esconde resultados e restaura options visíveis
-                        const sr = document.getElementById('service-search-results');
-                        if (sr) sr.innerHTML = '';
-                        // also restore option display if you used the previous option hide approach
-                        const serviceSelect = document.getElementById('orderform-service');
-                        if (serviceSelect) {
-                            Array.from(serviceSelect.options).forEach(opt => opt.style.display = '');
-                        }
-                        return;
-                    }
-                    const filtered = filterServicesBySearchTerm(term, window._services || []);
-                    renderSearchResults(filtered);
-                    // opcional: highlight matched options in select (keeps accessibility)
-                    const serviceSelectEl = document.getElementById('orderform-service');
-                    if (serviceSelectEl) {
-                        Array.from(serviceSelectEl.options).forEach(opt => {
-                            const hay = opt.textContent.toLowerCase();
-                            opt.style.display = hay.includes(term.toLowerCase()) ? '' : 'none';
-                        });
-                    }
-                }, 160);
-
-                searchInput.addEventListener('input', onInput);
-
-                // limpar resultados quando input perde foco (com pequeno delay para clique funcionar)
-                searchInput.addEventListener('blur', function () {
-                    setTimeout(() => {
-                        const sr = document.getElementById('service-search-results');
-                        if (sr) sr.innerHTML = '';
-                    }, 180);
-                });
-
-                // se o usuário clicar no campo, mostra sugestões rápidas baseadas no valor atual
-                searchInput.addEventListener('focus', function () {
-                    const term = this.value || '';
-                    if (term.trim()) {
-                        const filtered = filterServicesBySearchTerm(term, window._services || []);
-                        renderSearchResults(filtered);
+        // Nova função para inicializar botões de seleção de serviço
+        function initializeServiceSelectionButtons() {
+            const selectButtons = document.querySelectorAll('.btn-select-service');
+            selectButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const serviceId = this.getAttribute('data-service-id');
+                    const serviceName = this.getAttribute('data-service-name');
+                    {
+                        // Redirecionar para a página de painel com o parâmetro do serviço
+                        window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
                     }
                 });
-            }
-
-            if (quantityInput) {
-                quantityInput.addEventListener('input', handleQuantityChange);
-            }
+            });
         }
 
+        // Função para redirecionar para o painel com serviço específico
+        function redirectToPanelWithService(serviceId) {
+            window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
+        }
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -1362,8 +502,7 @@ function updateCategories(services) {
                             <nav class="navbar navbar-expand-lg navbar-light">
                                 <div class="navbar-private__header">
                                     <div class="sidebar-block__top-brand">
-                                        <a href="/painel.html"
-                                            class="component-navbar-brand component-navbar-public-brand">
+                                        <a href="/painel" class="component-navbar-brand component-navbar-public-brand">
                                             <h3><strong style="font-weight: bold"></strong><span
                                                     style="color: var(--color-id-117)"><strong
                                                         style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
@@ -1383,14 +522,14 @@ function updateCategories(services) {
                                         <ul class="navbar-nav navbar-nav-sidebar-menu">
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
-                                                    href="/">
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
+                                                    href="/painel">
                                                     Novo pedido
                                                 </a>
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
                                                     href="/services">
                                                     Serviços
                                                 </a>
@@ -1468,12 +607,12 @@ function updateCategories(services) {
                                 </a>
                             </div>
                             <ul class="sidebar-block__left-menu editor__component-wrapper">
-                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
-                                    <a class="component-sidebar__menu-item-link" href="/">
+                                <li class="component-sidebar__menu-item ">
+                                    <a class="component-sidebar__menu-item-link" href="/painel">
                                         Novo pedido
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item ">
+                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
                                     <a class="component-sidebar__menu-item-link" href="/services">
                                         Serviços
                                     </a>
@@ -1514,275 +653,141 @@ function updateCategories(services) {
             </div>
             <div class="wrapper-content__body">
                 <!-- Main variables *content* -->
-                <div id="block_60">
+                <div id="block_55">
                     <div class="block-bg"></div>
                     <div class="container-fluid">
-                        <div class="new_order-block ">
+                        <div class="services-list ">
                             <div class="row">
-                                <div class="col-lg-7 mb-3 mb-lg-0">
+                                <div class="col ">
                                     <div
-                                        class="component_form_group component_card component_radio_button component_platforms">
-                                        <div class="card ">
-                                            <form action="/" method="post" id="order-form">
-                                                <div class="component_button_forms">
-                                                    <div class="form-group">
-                                                        <div class="search-dropdown" id="new-order-search"
-                                                            style="position: relative;"
-                                                            data-lang-placeholder="Procurar">
-                                                            <div class="input-wrapper" style="position: relative;">
-                                                                <button
-                                                                    style="position: absolute;top: 50%;transform: translateY(-50%);padding: 0px 2px;background: none;border: none;left: 12px;"
-                                                                    type="button">
-                                                                    <span class="fas fa-search"></span>
-                                                                </button>
-                                                                <input type="text" class="form-control"
-                                                                    id="template-input" value="" placeholder="Procurar">
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label for="orderform-category"
-                                                            class="control-label">Categoria</label>
-                                                        <select class="form-control" id="orderform-category"
-                                                            name="OrderForm[category]" data-select="true"
-                                                            data-select-search="true"
-                                                            data-select-search-placeholder="Procurar"
-                                                            data-select-container="#select-category-container">
-                                                            <option value="-1" data-icon="
-                                                                                              <span class='fas fa-star'></span>
-                                                                                         " selected>
-                                                                Favorite services
-                                                            </option>
-                                                            <!-- Categorias serão preenchidas dinamicamente -->
-                                                        </select>
-                                                        <div id="select-category-container" class="position-relative">
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label for="orderform-service"
-                                                            class="control-label">Serviço</label>
-                                                        <div class="d-flex">
-                                                            <div class="w-100 new_order-block__services-list">
-                                                                <select class="form-control" id="orderform-service"
-                                                                    name="OrderForm[service]" data-select="true"
-                                                                    data-select-search="true"
-                                                                    data-select-search-placeholder="Procurar"
-                                                                    data-select-container="#select-service-container">
-                                                                    <option value="" selected>Carregando serviços...
-                                                                    </option>
-                                                                </select>
-                                                                <div id="select-service-container"
-                                                                    class="position-relative"></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group hidden fields component_service_description"
-                                                        id="service_description">
-                                                        <label for="service_description"
-                                                            class="control-label">Descrição</label>
-                                                        <div class="panel-description">
-
-                                                        </div>
-                                                    </div>
-                                                    <!-- Campos adicionados: Link e Quantidade -->
-                                                    <div class="form-group hidden" id="link_field">
-                                                        <label for="orderform-link" class="control-label">Link</label>
-                                                        <input type="text" class="form-control" id="orderform-link"
-                                                            name="OrderForm[link]" placeholder="Cole o link aqui">
-                                                    </div>
-                                                    <div class="form-group hidden" id="quantity_field">
-                                                        <label for="orderform-quantity"
-                                                            class="control-label">Quantidade</label>
-                                                        <input type="number" class="form-control"
-                                                            id="orderform-quantity" name="OrderForm[quantity]"
-                                                            placeholder="Digite a quantidade" min="0">
-                                                    </div>
-                                                    <div id="fields"></div>
-                                                    <div class="form-group">
-                                                        <label for="charge" class="control-label">Valor</label>
-                                                        <input type="text" class="form-control" id="charge" value=""
-                                                            readonly>
-                                                    </div>
-                                                </div>
-                                                <input type="hidden" name="_csrf"
-                                                    value="Xbole38fGiDW4C4919TBihZOb3zsg6y7CdYCRlPW1hAqzX0tNW9zTe-SenyHhY7HIQEeG8Ht3NZ8gnURPbHmRg==">
-                                                <div class="new-order-button-submit component_button_submit ">
-                                                    <button type="submit"
-                                                        class="btn btn-block btn-big-primary">Enviar</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-5">
-                                    <div class="component_content_card component_content_button">
+                                        class="services-filters component_filter_form_group component_filter_card component_platforms mb-3">
                                         <div class="card">
-                                            <div class="new-order__content-title">
-                                                <div class="position-relative">
-                                                    <p>Para usar nossos serviços clique em <a target="_self"
-                                                            href="/addfunds">"Adicionar saldo"</a> ou <a target="_self"
-                                                            href="/addfunds">aqui</a></p>
-                                                    <p><br></p>
-                                                    <p><br></p>
-                                                    <p>Aceitamos somente <a target="_self" href="/addfunds">Pix</a> <a
-                                                            target="_self" href="/addfunds">- clique aqui para
-                                                            recarregar o &nbsp;seu saldo - </a>(Tudo integrado de forma
-                                                        automática, ou seja, você faz o Pix e ele entra no seu saldo na
-                                                        mesma hora! Se atente a usar a opção "Pix copia e cola"</p>
-                                                    <p>Caso você NÃO saiba utilizar a opção "Copia e cola" do Pix, <a
-                                                            target="_blank"
-                                                            href="https://www.youtube.com/watch?v=YIenNQLvb9g">clique
-                                                            aqui</a></p>
-                                                    <p><br></p>
-                                                    <p>Estamos dando 10% de comissão para todas as compras que seus
-                                                        amigos fizerem tendo se cadastrado no seu link! Para entender
-                                                        melhor <a target="_self" href="/affiliates">clique aqui</a></p>
+                                            <div class="row">
+                                                <div class="col-md-auto mb-3 mb-md-0">
+                                                    <div class="component_filter_button">
+                                                        <div class="dropdown">
+                                                            <a class="btn btn-big-primary w-sm-auto w-100 dropdown-toggle"
+                                                                href="#" role="button" id="dropdown-category-filter-55"
+                                                                data-toggle="dropdown" aria-haspopup="true"
+                                                                aria-expanded="false">
+                                                                <span class="fal fa-filter"></span>
+                                                                <span class="services-filter__active-category"
+                                                                    data-filter-active-category="true"></span>
+                                                            </a>
+                                                            <div class="dropdown-menu" id="category-filter-menu">
+                                                                <a class="dropdown-item" href="#"
+                                                                    data-filter-category-id="All">Tudo</a>
+                                                                <a class="dropdown-item d-flex align-items-center text-decoration-none"
+                                                                    href="#" data-filter-category-id="favorites"
+                                                                    data-filter-category-name="Favorite services">
+                                                                    <span class="fas fa-star align-middle mr-1"
+                                                                        style="min-width: 18px"></span>
+                                                                    <div>Favorite services</div>
+                                                                </a>
+                                                                <!-- Categories will be loaded dynamically from API -->
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="new-order__content-text">
-                                                <p>Somos uma empresa de publicidade digital, com diversos serviços à sua
-                                                    disposição para alavancar seu perfil nas redes sociais,
-                                                    proporcionando novas oportunidades para você ou sua empresa!&nbsp;
-                                                </p>
-                                                <p>Suporte das 6:30 até às 22 horas de segunda-feira a sexta-feira</p>
-                                                <p><br></p>
-                                                <h1>CONTATO</h1>
-                                                <p><br></p>
-                                                <p><br></p>
-                                                <p><strong style="font-weight: bold">E-mail</strong>:
-                                                    contato@smmsociais.com</p>
-                                                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Nosso Instagram é <a target="_blank"
-                                                        href="https://www.instagram.com/smmsociais/">@smmsociais</a>
-                                                    &nbsp;</p>
+                                                <div class="col">
+                                                    <div class="input-group">
+                                                        <input type="text" class="form-control" placeholder="Procurar"
+                                                            data-search-service="#service-table-55">
+                                                        <span class="input-group-append component_button_search">
+                                                            <button class="btn btn-big-secondary" type="button"
+                                                                data-filter-serch-btn="true">
+                                                                <i class="fas fa-search"></i>
+                                                            </button>
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="block_74">
-                    <div class="block-bg"></div>
-                    <div class="container">
-                        <div class="text-block-with-image ">
                             <div class="row">
                                 <div class="col">
-                                    <div class="d-md-flex align-items-start">
-                                        <div class="text-block__description">
-                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                            </p>
-                                            <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
-                                            <p class="text-left"><span style="text-align: LEFT">Ao acessar ao site ,
-                                                    você concorda em cumprir os nossos termos de serviço assim como
-                                                    todas as leis e regulamentos aplicáveis ​​e concorda que é
-                                                    responsável pelo cumprimento de todas as leis locais aplicáveis. Se
-                                                    você não concordar com algum desses termos, está proibido de usar ou
-                                                    acessar este site. Os materiais contidos neste site são protegidos
-                                                    pelas leis de direitos autorais e mardas comerciais aplicáveis.
-                                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                            </p>
+                                    <div class="services-list__table">
+                                        <div class="table-bg component_table ">
+                                            <div class="table-wr table-responsive editor__component-wrapper">
+                                                <table class="table" id="service-table-55">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="width: 42px"></th>
+                                                            <th>ID</th>
+                                                            <th class="nowrap">Serviço</th>
+                                                            <th class="nowrap">Preço por 1000</th>
+                                                            <th class="nowrap">Pedido mínimo</th>
+                                                            <th class="nowrap">Pedido máximo</th>
+                                                            <th class="nowrap" nowrap>
+                                                                <div class="d-flex align-items-center">
+                                                                    <span>Tempo médio</span>
+                                                                    <span class="ml-1 mr-1 fa fa-exclamation-circle"
+                                                                        data-toggle="tooltip" data-placement="top"
+                                                                        title="The average completion time is calculated based on the completion times of the latest orders."></span>
+                                                                </div>
+                                                            </th>
+                                                            <th class="hidden-xs hidden-sm service-description__th">
+                                                                Descrição</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="service-tbody">
+                                                        <!-- Services will be loaded dynamically from API -->
+                                                        <tr id="loading-row">
+                                                            <td colspan="8" class="text-center py-4">
+                                                                <div class="spinner-border" role="status">
+                                                                    <span class="sr-only">Carregando serviços...</span>
+                                                                </div>
+                                                                <p class="mt-2">Carregando serviços...</p>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
-                                        <div class="text-block__image">
-                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal fade " tabindex="-1" role="dialog" id="service-description-55">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-body">
+                                        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        <div class="service-description-content"></div>
+                                        <button class="btn btn-block btn-big-primary" id="createQuickOrder"
+                                            style="margin-top: 24px;">
+                                            Criar pedido
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                </a>
+            </div>
+            <div class="wrapper-content__footer">
             </div>
         </div>
     </div>
-    </div>
-    </div>
-    </div>
-    </div>
-    </div>
-    <div class="wrapper-content__footer">
-    </div>
-    </div>
-    </div>
     <!-- Notifications wrapper -->
     <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
+    <script type="text/javascript" src="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js">
+    </script>
+    <script type="text/javascript">
+        window.modules.alerts = { "alerts": [] };   </script>
 
-    <!-- ======= Navbar toggle fallback (vanilla JS) - torna o "hamburger" funcional em dispositivos móveis ======= -->
-    <script>
-        (function () {
-            // Função utilitária para encontrar o alvo do botão (data-target ou aria-controls)
-            function resolveTarget(button) {
-                const targetSelector = button.getAttribute('data-target') || button.getAttribute('data-bs-target') || ('#' + (button.getAttribute('aria-controls') || ''));
-                if (!targetSelector) return null;
-                try {
-                    return document.querySelector(targetSelector);
-                } catch (e) {
-                    return null;
-                }
-            }
-
-            // Inicializa todos os togglers de navbar existentes
-            function initNavTogglers() {
-                const togglers = document.querySelectorAll('.navbar-toggler');
-                togglers.forEach(btn => {
-                    const target = resolveTarget(btn);
-                    if (!target) return;
-
-                    // Garantir que o botão tenha type="button" para evitar submit acidental
-                    if (!btn.hasAttribute('type')) btn.setAttribute('type', 'button');
-
-                    // Evitar duplicar event listeners
-                    if (btn.__nav_init) return;
-                    btn.__nav_init = true;
-
-                    btn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        const isShown = target.classList.contains('show');
-                        if (isShown) {
-                            target.classList.remove('show');
-                            btn.classList.remove('collapsed');
-                            btn.setAttribute('aria-expanded', 'false');
-                        } else {
-                            target.classList.add('show');
-                            btn.classList.add('collapsed');
-                            btn.setAttribute('aria-expanded', 'true');
-                        }
-                    });
-
-                    // Fechar ao clicar fora (somente se estiver aberto)
-                    document.addEventListener('click', function (ev) {
-                        if (!target.classList.contains('show')) return;
-                        if (btn.contains(ev.target) || target.contains(ev.target)) return;
-                        target.classList.remove('show');
-                        btn.setAttribute('aria-expanded', 'false');
-                    });
-
-                    // Fechar ao pressionar ESC
-                    document.addEventListener('keydown', function (ev) {
-                        if (ev.key === 'Escape' && target.classList.contains('show')) {
-                            target.classList.remove('show');
-                            btn.setAttribute('aria-expanded', 'false');
-                        }
-                    });
-
-                    // Ao redimensionar para telas grandes, garantir menu fechado
-                    window.addEventListener('resize', function () {
-                        if (window.innerWidth >= 992 && target.classList.contains('show')) {
-                            target.classList.remove('show');
-                            btn.setAttribute('aria-expanded', 'false');
-                        }
-                    });
-                });
-            }
-
-            // Inicializar no DOM ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initNavTogglers);
-            } else {
-                initNavTogglers();
-            }
-        })();
+    <script type="text/javascript">
+        window.modules.layouts = { "theme_id": 23, "auth": 1, "live": true, "csrftoken": "L1tjeQBUwXhimMFOQW-mfPQhCHSYYdNSO4lVo5RDUQtYLDsvSiSoFVvqlQ8RPukxw255E7UPoz9O3SL0-iRhXQ==" };   </script>
+    <script type="text/javascript">
+        window.modules.siteServices = { "quickOrderAction": "\/quick-order", "quickOrderUrl": "\/" };   </script>
+    <script type="text/javascript">
+        window.modules.alerts = { "alerts": [] };   </script>
+    <script type="text/javascript">
     </script>
 
     <!-- Script para garantir que a página apareça apenas após todas as APIs terminarem -->
@@ -1813,21 +818,16 @@ function updateCategories(services) {
 
             Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
                 .then(() => {
+                    // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
-
-                    // Inicializar campos com valores padrão após um pequeno delay
-                    // para garantir que o DOM esteja completamente renderizado
-                    setTimeout(() => {
-                        initializeDefaultFields();
-                    }, 100);
                 })
                 .catch(err => {
                     // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
                     console.error('Erro ao carregar dados principais:', err);
                     document.body.classList.add('loaded');
-                    const serviceSelect = document.getElementById('orderform-service');
-                    if (serviceSelect && serviceSelect.innerHTML.includes('Carregando serviços')) {
-                        serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+                    const tbody = document.getElementById('service-tbody');
+                    if (tbody && tbody.innerHTML.trim() === '') {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
                     }
                 })
                 .finally(() => {
@@ -1844,12 +844,263 @@ function updateCategories(services) {
                 }
             }, 15000); // 15s — opcional, ajuste conforme necessidade
         })();
+
+        /* ---------- Helpers e armazenamento global ---------- */
+        window._allServices = window._allServices || [];
+        function debounce(fn, wait = 180) {
+            let t;
+            return function (...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), wait); };
+        }
+
+        /* highlight seguro: substitui ocorrências do termo por <span class="service-highlight">term</span> */
+        function highlight(text = '', term = '') {
+            if (!term) return text;
+            try {
+                const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const re = new RegExp(esc, 'gi');
+                return text.replace(re, match => `<span class="service-highlight">${match}</span>`);
+            } catch (e) { return text; }
+        }
+
+        /* Filtra serviços por termo (procura em nome, descrição, rede e tipo) */
+        function filterServicesByTerm(term, services) {
+            term = String(term || '').trim().toLowerCase();
+            if (!term) return services.slice();
+            return services.filter(s => {
+                const hay = `${s.nome || ''} ${s.descricao || ''} ${s.rede || ''} ${s.tipo || ''}`.toLowerCase();
+                return hay.includes(term);
+            });
+        }
+
+        // ----- Substitua a função loadServices atual por esta (guarda a cópia original) -----
+        function loadServices() {
+            return fetch('https://smmsociais.com/api/servico')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar serviços da API');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // salva uma cópia imutável da lista original para usar nos filtros
+                    window._allServicesOriginal = Array.isArray(data) ? data.slice() : [];
+                    // também mantém compatibilidade com _allServices
+                    window._allServices = window._allServicesOriginal.slice();
+
+                    // renderiza usando a lista original na primeira carga
+                    renderServices(window._allServicesOriginal);
+                    renderCategories(window._allServicesOriginal);
+                    return data;
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    const tbody = document.getElementById('service-tbody');
+                    if (tbody) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                    }
+                    // garante que existam arrays mesmo no erro para evitar outros problemas
+                    window._allServicesOriginal = window._allServicesOriginal || [];
+                    window._allServices = window._allServices || [];
+                    return [];
+                });
+        }
+
+        // ----- Substitua renderServices pela versão abaixo (NÃO sobrescreve a cópia original) -----
+        function renderServices(services) {
+            // NÃO sobrescrever window._allServicesOriginal aqui!
+            // Apenas atualiza _allServices com a lista atualmente renderizada (útil para outras funções, se necessário)
+            window._allServices = Array.isArray(services) ? services.slice() : [];
+
+            const tbody = document.getElementById('service-tbody');
+            const loadingRow = document.getElementById('loading-row');
+
+            if (loadingRow) loadingRow.remove();
+            tbody.innerHTML = '';
+
+            if (!services || services.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
+                return;
+            }
+
+            // AGRUPAR POR CATEGORIA
+            const servicesByCategory = {};
+            services.forEach(service => {
+                const categoryName = service.categoria || service.category_name || "Outros";
+                if (!servicesByCategory[categoryName]) servicesByCategory[categoryName] = [];
+                servicesByCategory[categoryName].push(service);
+            });
+
+            // RENDERIZA POR CATEGORIA
+            Object.keys(servicesByCategory).forEach(categoryName => {
+                const categoryServices = servicesByCategory[categoryName];
+                const categoryImage = categoryImages[categoryName];
+
+                // Linha de título da categoria
+                const categoryRow = document.createElement('tr');
+                categoryRow.className = 'services-list-category-title';
+
+                let categoryContent = `
+            <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
+                <div class="category-content">
+                    <h4>${categoryName}</h4>
+                </div>
+        `;
+
+                if (categoryImage) {
+                    if (isEmoji(categoryImage)) {
+                        categoryContent += `<span class="category-emoji">${categoryImage}</span>`;
+                    } else {
+                        categoryContent += `<img src="${categoryImage}" alt="${categoryName}" class="category-image">`;
+                    }
+                }
+
+                categoryContent += `</td>`;
+                categoryRow.innerHTML = categoryContent;
+                tbody.appendChild(categoryRow);
+
+                // Serviços
+                categoryServices.forEach(service => {
+                    const pricePer1000 = service.preco_1000 ? `R$ ${parseFloat(service.preco_1000).toFixed(2)}` : '-';
+                    const minOrder = service.minimo || '-';
+                    const maxOrder = service.maximo || '-';
+                    const avgTime = service.tempo_medio || '-';
+
+                    const descButtons = `
+    <div style="display:inline-block">
+        <button class="btn btn-big-primary btn-select-service"
+            data-service-id="${service.id_servico}"
+            data-service-name="${service.nome}">
+            Selecionar
+        </button>
+    </div>
+`;
+
+                    const serviceRow = document.createElement('tr');
+
+                    const currentSearchInput = document.querySelector('input[data-search-service]');
+                    const currentTerm = currentSearchInput ? (currentSearchInput.value || '') : '';
+                    const highlightedName = highlight(service.nome || '', currentTerm);
+
+                    serviceRow.innerHTML = `
+                <td data-label="Favorite services">
+                    <a href="#" data-favorite-service-id="${service.id_servico}">
+                        <span data-favorite-icon class="far fa-star"></span>
+                    </a>
+                </td>
+
+                <td data-label="ID">${service.id_servico}</td>
+
+                <td data-label="Serviço" class="table-service">
+                    ${highlightedName}
+                </td>
+
+                <td data-label="Preço por 1000">${pricePer1000}</td>
+
+                <td data-label="Pedido mínimo">${minOrder}</td>
+
+                <td data-label="Pedido máximo">${maxOrder}</td>
+
+                <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
+
+                <td data-label="" class="services-list__description">
+                    ${service.descricao ? `<div class="d-none" id="service-description-id-55-${service.id_servico}">${service.descricao.replace(/\n/g, "<br>")}</div>` : ''}
+                    ${descButtons}
+                </td>
+            `;
+
+                    tbody.appendChild(serviceRow);
+                });
+            });
+
+            // Inicializa listeners dos botões recém-criados
+            initializeServiceDescriptionButtons();
+            initializeServiceSelectionButtons();
+        }
+
+        // ----- Substitua applyFilters por esta versão (usa a cópia original como base) -----
+        function applyFilters() {
+            const input = document.querySelector('input[data-search-service]');
+            const term = input ? input.value.trim() : '';
+
+            // pegar categoria ativa
+            const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]');
+            const categoryId = activeCategoryEl ? activeCategoryEl.getAttribute('data-filter-category-id') : 'All';
+
+            // fonte inicial: a cópia original salva na primeira carga
+            const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : (Array.isArray(window._allServices) ? window._allServices.slice() : []);
+
+            let filtered = base;
+
+            if (categoryId && categoryId !== 'All') filtered = filterServicesByCategoryId(categoryId, filtered);
+            if (term) filtered = filterServicesByTerm(term, filtered);
+
+            // renderiza a lista filtrada (renderServices não sobrescreve a original)
+            renderServices(filtered);
+        }
+
+        /* ---------- Event binding para search input e menu de categorias ---------- */
+        function setupServicesTableSearchAndFilters() {
+            const searchInput = document.querySelector('input[data-search-service]');
+            const categoryMenu = document.getElementById('category-filter-menu');
+
+            if (searchInput) {
+                const onInput = debounce(() => {
+                    applyFilters();
+                }, 160);
+                searchInput.addEventListener('input', onInput);
+
+                // botão de busca (se houver) mantém comportamento: aciona filtros
+                const btn = document.querySelector('[data-filter-serch-btn="true"]');
+                if (btn) btn.addEventListener('click', () => applyFilters());
+
+                // limpa highlight ao perder foco (opcional)
+                searchInput.addEventListener('blur', () => {
+                    // setTimeout para permitir clique em itens
+                    setTimeout(() => {
+                        // se quiser esconder highlights ao perder foco, descomente a próxima linha:
+                        // renderServices(window._allServices);
+                    }, 180);
+                });
+            }
+
+            if (categoryMenu) {
+                // adiciona listener a todos itens (inclusive os inseridos dinamicamente)
+                categoryMenu.addEventListener('click', function (ev) {
+                    ev.preventDefault();
+                    const a = ev.target.closest('[data-filter-category-id]');
+                    if (!a) return;
+
+                    // remove active de outros itens
+                    categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => el.classList.remove('active'));
+                    a.classList.add('active');
+
+                    // atualiza label do botão principal (se existir)
+                    const activeLabel = document.querySelector('[data-filter-active-category="true"]');
+                    if (activeLabel) activeLabel.textContent = a.getAttribute('data-filter-category-name') || a.textContent;
+
+                    applyFilters();
+                });
+            }
+        }
+
+        function filterServicesByCategoryId(categoryId, services) {
+            if (!categoryId) return services.slice();
+            const cid = String(categoryId).toLowerCase();
+            if (cid === 'all') return services.slice();
+            return services.filter(s => {
+                const sName = s.category_name || s.categoria || s.category || '';
+                return slugify(sName) === cid;
+            });
+        }
+
+        /* ---------- fallback: se renderServices já foi chamado antes deste script, garante setup ---------- */
+        (function ensureSetup() {
+            // Se services já foram carregados antes deste script (por renderServices original), window._allServices foi setado? se não, tentamos extrair do DOM (não ideal).
+            // Normalmente renderServices foi sobrescrita e será chamada novamente via loadServices; agora apenas ligamos os handlers.
+            setupServicesTableSearchAndFilters();
+        })();
     </script>
 
-    <!-- Botão do WhatsApp para suporte -->
-    <a href="https://wa.me/5582999801112?text=Olá,%20preciso%20de%20ajuda" target="_blank" id="whatsapp-button">
-        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg" alt="WhatsApp">
-    </a>
 </body>
 
 </html>
