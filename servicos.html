@@ -633,8 +633,7 @@
             // Executar fillAndHideInput imediatamente (não depende de APIs)
             fillAndHideInput();
 
-            // --- Promise principal: saldo + serviços (+ window.load) ---
-            const saldoPromise = loadUserBalance();
+            // --- Promise principal: serviços (+ window.load) ---
             const servicesPromise = loadServices();
 
             Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
