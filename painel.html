@@ -543,78 +543,23 @@
                 categories.set(name, icon);
             });
 
-            // criar img/span que exibirá o ícone da categoria selecionada (se ainda não existir)
-            let iconEl = document.getElementById('orderform-category-icon');
-            if (!iconEl) {
-                // cria wrapper para suportar emoji ou img
-                const wrapper = document.createElement('span');
-                wrapper.id = 'orderform-category-icon-wrapper';
-                wrapper.style.display = 'inline-flex';
-                wrapper.style.alignItems = 'center';
-                wrapper.style.marginRight = '8px';
-                // cria elemento img (por padrão escondido)
-                const img = document.createElement('img');
-                img.id = 'orderform-category-icon';
-                img.style.width = '22px';
-                img.style.height = '22px';
-                img.style.objectFit = 'contain';
-                img.style.display = 'none';
-                // cria elemento span para emoji fallback
-                const emoji = document.createElement('span');
-                emoji.id = 'orderform-category-icon-emoji';
-                emoji.style.fontSize = '18px';
-                emoji.style.display = 'none';
-                wrapper.appendChild(img);
-                wrapper.appendChild(emoji);
-                // inserir antes do select
-                categorySelect.parentNode.insertBefore(wrapper, categorySelect);
-                iconEl = img;
-            }
+// Preencher options com atributo data-icon (e colocar emoji direto no texto quando for emoji)
+categories.forEach((icon, name) => {
+  const option = document.createElement('option');
+  option.value = name;
 
-            // Preencher options com atributo data-icon
-            categories.forEach((icon, name) => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                if (icon) option.setAttribute('data-icon', icon);
-                categorySelect.appendChild(option);
-            });
+  // se icon for emoji (pequeno) coloca direto no texto do option
+  const isEmoji = icon && typeof icon === 'string' && icon.length <= 4 && /\p{Emoji}/u.test(icon);
+  if (isEmoji) {
+    option.textContent = `${icon} ${name}`;
+  } else {
+    option.textContent = name;
+    // para imagens (URL) guardamos no data-icon caso queira usar o wrapper externo (opcional)
+    if (icon) option.setAttribute('data-icon', icon);
+  }
 
-            // cria um custom dropdown que substitui visualmente o select
-            function createCustomCategoryDropdown(selectEl) {
-                if (!selectEl) return;
-
-                // não recriar se já existe
-                if (selectEl.__custom_inited) return;
-                selectEl.__custom_inited = true;
-
-                const wrapper = document.createElement('div');
-                wrapper.className = 'custom-select-wrapper';
-
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'custom-select-btn';
-                btn.setAttribute('aria-haspopup', 'listbox');
-
-                const iconImg = document.createElement('img');
-                iconImg.style.display = 'none';
-                iconImg.alt = '';
-
-                const iconEmoji = document.createElement('span');
-                iconEmoji.className = 'emoji';
-                iconEmoji.style.display = 'none';
-
-                const labelSpan = document.createElement('span');
-                labelSpan.className = 'custom-select-label';
-                labelSpan.textContent = selectEl.options[selectEl.selectedIndex]?.text || 'Categoria';
-
-                btn.appendChild(iconImg);
-                btn.appendChild(iconEmoji);
-                btn.appendChild(labelSpan);
-
-                const list = document.createElement('div');
-                list.className = 'custom-select-list';
-                list.setAttribute('role', 'listbox');
+  categorySelect.appendChild(option);
+});
 
                 // preencher itens a partir das options do select (data-icon pode ser emoji ou url)
                 function rebuildList() {
@@ -713,10 +658,6 @@
                 updateBtn();
             }
 
-            // uso: depois que updateCategories preencher o select, chama:
-            const catSelect = document.getElementById('orderform-category');
-            createCustomCategoryDropdown(catSelect);
-
             // Atualiza ícone com base na categoria selecionada atualmente
             function refreshCategoryIcon() {
                 const sel = categorySelect.options[categorySelect.selectedIndex];
@@ -757,7 +698,7 @@
                 categorySelect.selectedIndex = 1;
                 categorySelect.dispatchEvent(new Event('change'));
             }
-        }
+        
         // Função para selecionar automaticamente a primeira categoria
         function autoSelectFirstCategory(categories) {
             const categorySelect = document.getElementById('orderform-category');
