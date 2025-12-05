@@ -171,7 +171,20 @@
             padding: 12px;
             color: #777;
         }
-        
+
+  /* Ajustes visuais para o select (coloca espaço para o ícone) */
+  #orderform-category {
+    background-repeat: no-repeat;
+    background-position: 8px center; /* distância esquerda onde o ícone aparecerá */
+    background-size: 20px 20px;
+    padding-left: 36px; /* deixa espaço para o ícone */
+    -webkit-appearance: none; /* opcional, para ter controle visual */
+    appearance: none;
+  }
+  /* Se quiser que em telas pequenas ocupe menos padding: */
+  @media (max-width: 480px) {
+    #orderform-category { padding-left: 32px; background-size: 18px 18px; }
+  }
     </style>
     <script>
 
@@ -476,188 +489,251 @@
             return null;
         }
 
-// Substitua sua updateCategories por esta versão
-function updateCategories(services) {
-    const categorySelect = document.getElementById('orderform-category');
-    if (!categorySelect) return;
+        // Substitua sua updateCategories por esta versão
+        function updateCategories(services) {
+            const categorySelect = document.getElementById('orderform-category');
+            if (!categorySelect) return;
 
-    // Limpar categorias existentes, mantendo apenas a opção padrão
-    while (categorySelect.options.length > 1) {
-        categorySelect.remove(1);
+            // Limpar categorias existentes, mantendo apenas a opção padrão
+            while (categorySelect.options.length > 1) {
+                categorySelect.remove(1);
+            }
+
+            const categories = new Map();
+
+            services.forEach(service => {
+                const name = (service.categoria || service.category_name || service.category || '').toString().trim();
+                if (!name) return;
+                if (categories.has(name)) return;
+
+                // prioridade: icon enviado pelo serviço, senão tenta mapear pelo nome
+                let icon = service.category_icon || getCategoryImageForName(name) || null;
+                categories.set(name, icon);
+            });
+
+            // --- preencher options (select nativo) ---
+            categories.forEach((icon, name) => {
+                const option = document.createElement('option');
+                option.value = name;
+
+                const isEmoji = icon && typeof icon === 'string' && icon.length <= 4 && /\p{Emoji}/u.test(icon);
+
+                if (isEmoji) {
+                    // Para emojis: adiciona o emoji diretamente no texto
+                    option.textContent = `${icon} ${name}`;
+                } else if (icon && icon.startsWith('http')) {
+                    // Para imagens via URL: não podemos mostrar no select nativo
+                    // Mantemos apenas o nome, mas guardamos o ícone como data-atributo
+                    option.textContent = name;
+                    option.setAttribute('data-icon', icon);
+                } else {
+                    // Sem ícone ou ícone não suportado
+                    option.textContent = name;
+                }
+
+                // Adiciona data-icon para referência se precisar em algum lugar
+                if (icon) {
+                    option.setAttribute('data-icon', icon);
+                }
+
+                categorySelect.appendChild(option);
+            });
+
+            // NOTA: REMOVA a chamada para createCustomCategoryDropdown
+            // Não use custom dropdown, mantenha o select nativo
+        }
+
+function applyCategoryIconToNativeSelect(selectEl) {
+  if (!selectEl) return;
+
+  // pre-carrega imagens presentes nas options (melhora velocidade ao selecionar)
+  Array.from(selectEl.options).forEach(opt => {
+    const icon = opt.getAttribute('data-icon');
+    if (icon && typeof icon === 'string' && icon.startsWith('http')) {
+      const img = new Image();
+      img.src = icon;
+      // opcional: tratar onerror se quiser fallback
+      img.onerror = () => {
+        // remove atributo caso a URL inválida
+        try { opt.removeAttribute('data-icon'); } catch(e){}
+      };
+    }
+  });
+
+  function update() {
+    const sel = selectEl.options[selectEl.selectedIndex];
+    const iconVal = sel ? sel.getAttribute('data-icon') : null;
+
+    if (!iconVal) {
+      // sem ícone -> limpa background e mantém padding padrão
+      selectEl.style.backgroundImage = '';
+      // se quiser reduzir padding quando não houver ícone, comente a próxima linha
+      // selectEl.style.paddingLeft = '';
+      return;
     }
 
-    const categories = new Map();
+    // detectar emoji simples
+    const isEmoji = typeof iconVal === 'string' && iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
+    if (isEmoji) {
+      // emoji: prefira tê-lo diretamente no option.textContent (já feito no seu código)
+      selectEl.style.backgroundImage = '';
+      return;
+    }
 
-    services.forEach(service => {
-        const name = (service.categoria || service.category_name || service.category || '').toString().trim();
-        if (!name) return;
-        if (categories.has(name)) return;
+    // tratar como URL: aplicamos como background do select
+    try {
+      // força URL segura (escape aspas)
+      selectEl.style.backgroundImage = `url("${iconVal.replace(/"/g, '%22')}")`;
+      selectEl.style.backgroundSize = '20px 20px';
+      selectEl.style.backgroundPosition = '8px center';
+      selectEl.style.backgroundRepeat = 'no-repeat';
+      // garante padding suficiente (customize conforme seu layout)
+      selectEl.style.paddingLeft = '36px';
+    } catch (e) {
+      selectEl.style.backgroundImage = '';
+    }
+  }
 
-        // prioridade: icon enviado pelo serviço, senão tenta mapear pelo nome
-        let icon = service.category_icon || getCategoryImageForName(name) || null;
-        categories.set(name, icon);
-    });
-
-    // --- preencher options (select nativo) ---
-    categories.forEach((icon, name) => {
-        const option = document.createElement('option');
-        option.value = name;
-
-        const isEmoji = icon && typeof icon === 'string' && icon.length <= 4 && /\p{Emoji}/u.test(icon);
-        
-        if (isEmoji) {
-            // Para emojis: adiciona o emoji diretamente no texto
-            option.textContent = `${icon} ${name}`;
-        } else if (icon && icon.startsWith('http')) {
-            // Para imagens via URL: não podemos mostrar no select nativo
-            // Mantemos apenas o nome, mas guardamos o ícone como data-atributo
-            option.textContent = name;
-            option.setAttribute('data-icon', icon);
-        } else {
-            // Sem ícone ou ícone não suportado
-            option.textContent = name;
-        }
-
-        // Adiciona data-icon para referência se precisar em algum lugar
-        if (icon) {
-            option.setAttribute('data-icon', icon);
-        }
-
-        categorySelect.appendChild(option);
-    });
-
-    // NOTA: REMOVA a chamada para createCustomCategoryDropdown
-    // Não use custom dropdown, mantenha o select nativo
+  // ligar evento change e chamar uma vez na inicialização
+  selectEl.addEventListener('change', update);
+  update();
 }
 
- 
+// chamar para o select da categoria (após options terem sido criadas)
+document.addEventListener('DOMContentLoaded', function () {
+  // se as categorias são populadas dinamicamente depois do DOMContentLoaded,
+  // chame applyCategoryIconToNativeSelect(document.getElementById('orderform-category'))
+  // logo após a função updateCategories terminar de inserir as options.
+  const sel = document.getElementById('orderform-category');
+  if (sel) applyCategoryIconToNativeSelect(sel);
+});
 
-                function updateButton() {
-                    const sel = selectEl.options[selectEl.selectedIndex];
-                    const iconVal = sel ? sel.getAttribute('data-icon') : null;
-                    labelSpan.textContent = sel ? sel.textContent : 'Selecione uma categoria';
+        function updateButton() {
+            const sel = selectEl.options[selectEl.selectedIndex];
+            const iconVal = sel ? sel.getAttribute('data-icon') : null;
+            labelSpan.textContent = sel ? sel.textContent : 'Selecione uma categoria';
 
-                    // Atualiza visualmente qual opção está selecionada na lista
-                    const allOptions = list.querySelectorAll('.custom-option');
-                    allOptions.forEach(opt => {
-                        opt.classList.remove('selected');
-                        opt.style.backgroundColor = '';
-                        opt.style.color = '#333';
-                    });
+            // Atualiza visualmente qual opção está selecionada na lista
+            const allOptions = list.querySelectorAll('.custom-option');
+            allOptions.forEach(opt => {
+                opt.classList.remove('selected');
+                opt.style.backgroundColor = '';
+                opt.style.color = '#333';
+            });
 
-                    if (sel && sel.value) {
-                        const selectedOption = Array.from(list.querySelectorAll('.custom-option')).find(opt => {
-                            const span = opt.querySelector('span:last-child');
-                            return span && span.textContent === sel.textContent;
-                        });
-                        if (selectedOption) {
-                            selectedOption.classList.add('selected');
-                            selectedOption.style.backgroundColor = '#e8f0fe';
-                            selectedOption.style.color = '#1a73e8';
-                        }
-                    }
-
-                    if (!iconVal) {
-                        iconImg.style.display = 'none';
-                        iconEmoji.style.display = 'none';
-                        return;
-                    }
-                    const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
-                    if (isEmoji) {
-                        iconEmoji.textContent = iconVal;
-                        iconEmoji.style.display = 'inline-block';
-                        iconImg.style.display = 'none';
-                    } else {
-                        iconImg.src = iconVal;
-                        iconImg.style.display = 'inline-block';
-                        iconEmoji.style.display = 'none';
-                    }
+            if (sel && sel.value) {
+                const selectedOption = Array.from(list.querySelectorAll('.custom-option')).find(opt => {
+                    const span = opt.querySelector('span:last-child');
+                    return span && span.textContent === sel.textContent;
+                });
+                if (selectedOption) {
+                    selectedOption.classList.add('selected');
+                    selectedOption.style.backgroundColor = '#e8f0fe';
+                    selectedOption.style.color = '#1a73e8';
                 }
+            }
 
-                function open() {
-                    rebuild();
-                    list.style.display = 'block';
-                    btn.setAttribute('aria-expanded', 'true');
-                    btn.style.borderColor = '#4d90fe';
-                    btn.style.boxShadow = '0 0 0 2px rgba(77, 144, 254, 0.2)';
+            if (!iconVal) {
+                iconImg.style.display = 'none';
+                iconEmoji.style.display = 'none';
+                return;
+            }
+            const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
+            if (isEmoji) {
+                iconEmoji.textContent = iconVal;
+                iconEmoji.style.display = 'inline-block';
+                iconImg.style.display = 'none';
+            } else {
+                iconImg.src = iconVal;
+                iconImg.style.display = 'inline-block';
+                iconEmoji.style.display = 'none';
+            }
+        }
+
+        function open() {
+            rebuild();
+            list.style.display = 'block';
+            btn.setAttribute('aria-expanded', 'true');
+            btn.style.borderColor = '#4d90fe';
+            btn.style.boxShadow = '0 0 0 2px rgba(77, 144, 254, 0.2)';
+        }
+
+        function close() {
+            list.style.display = 'none';
+            btn.setAttribute('aria-expanded', 'false');
+            btn.style.borderColor = '#ddd';
+            btn.style.boxShadow = 'none';
+        }
+
+        btn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (list.style.display === 'block') {
+                close();
+            } else {
+                open();
+            }
+        });
+
+        btn.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' || ev.key === ' ') {
+                ev.preventDefault();
+                if (list.style.display === 'block') {
+                    close();
+                } else {
+                    open();
                 }
+            } else if (ev.key === 'Escape') {
+                close();
+            }
+        });
 
-                function close() {
-                    list.style.display = 'none';
-                    btn.setAttribute('aria-expanded', 'false');
-                    btn.style.borderColor = '#ddd';
-                    btn.style.boxShadow = 'none';
-                }
+        document.addEventListener('click', (ev) => {
+            if (!wrapper.contains(ev.target)) {
+                close();
+            }
+        });
 
-                btn.addEventListener('click', (ev) => {
+        // Navegação por teclado na lista
+        list.addEventListener('keydown', (ev) => {
+            const items = Array.from(list.querySelectorAll('.custom-option'));
+            const currentIndex = items.findIndex(item => item === document.activeElement);
+
+            switch (ev.key) {
+                case 'ArrowDown':
                     ev.preventDefault();
-                    ev.stopPropagation();
-                    if (list.style.display === 'block') {
-                        close();
-                    } else {
-                        open();
-                    }
-                });
+                    const nextIndex = (currentIndex + 1) % items.length;
+                    items[nextIndex]?.focus();
+                    break;
+                case 'ArrowUp':
+                    ev.preventDefault();
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+                    items[prevIndex]?.focus();
+                    break;
+                case 'Enter':
+                case ' ':
+                    ev.preventDefault();
+                    document.activeElement?.click();
+                    break;
+                case 'Escape':
+                    ev.preventDefault();
+                    close();
+                    btn.focus();
+                    break;
+            }
+        });
 
-                btn.addEventListener('keydown', (ev) => {
-                    if (ev.key === 'Enter' || ev.key === ' ') {
-                        ev.preventDefault();
-                        if (list.style.display === 'block') {
-                            close();
-                        } else {
-                            open();
-                        }
-                    } else if (ev.key === 'Escape') {
-                        close();
-                    }
-                });
+        // insert into DOM: hide native select but keep it for form semantics
+        selectEl.style.display = 'none';
+        selectEl.parentNode.insertBefore(wrapper, selectEl);
+        wrapper.appendChild(btn);
+        wrapper.appendChild(list);
 
-                document.addEventListener('click', (ev) => {
-                    if (!wrapper.contains(ev.target)) {
-                        close();
-                    }
-                });
+        // sync from outside changes
+        selectEl.addEventListener('change', updateButton);
 
-                // Navegação por teclado na lista
-                list.addEventListener('keydown', (ev) => {
-                    const items = Array.from(list.querySelectorAll('.custom-option'));
-                    const currentIndex = items.findIndex(item => item === document.activeElement);
-
-                    switch (ev.key) {
-                        case 'ArrowDown':
-                            ev.preventDefault();
-                            const nextIndex = (currentIndex + 1) % items.length;
-                            items[nextIndex]?.focus();
-                            break;
-                        case 'ArrowUp':
-                            ev.preventDefault();
-                            const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-                            items[prevIndex]?.focus();
-                            break;
-                        case 'Enter':
-                        case ' ':
-                            ev.preventDefault();
-                            document.activeElement?.click();
-                            break;
-                        case 'Escape':
-                            ev.preventDefault();
-                            close();
-                            btn.focus();
-                            break;
-                    }
-                });
-
-                // insert into DOM: hide native select but keep it for form semantics
-                selectEl.style.display = 'none';
-                selectEl.parentNode.insertBefore(wrapper, selectEl);
-                wrapper.appendChild(btn);
-                wrapper.appendChild(list);
-
-                // sync from outside changes
-                selectEl.addEventListener('change', updateButton);
-
-                // init
-                updateButton()
+        // init
+        updateButton()
 
         // Função para selecionar automaticamente a primeira categoria
         function autoSelectFirstCategory(categories) {
