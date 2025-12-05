@@ -83,6 +83,18 @@
             padding: 0 3px;
             border-radius: 2px;
         }
+
+        /* No seu bloco <style> ou em um CSS externo */
+        .fal.fa-filter {
+            display: inline-block !important;
+            visibility: visible !important;
+        }
+
+        .btn .fal,
+        .btn .fas,
+        .btn .far {
+            display: inline-block !important;
+        }
     </style>
     <script>
         // Mapeamento de categorias para imagens - CORRIGIDO para emoji
@@ -482,6 +494,8 @@
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.15.4/css/all.css">
     <script>
         window.modules = {};
     </script>
@@ -520,7 +534,7 @@
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/painel">
-                                                    Novo pedido
+                                                    Novo Pedido
                                                 </a>
                                             </li>
                                             <li
@@ -548,21 +562,14 @@
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/affiliates">
-                                                    Meus indicados
+                                                    Meus Indicados
                                                 </a>
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/massorder">
-                                                    Mass order
-                                                </a>
-                                            </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/suporte">
-                                                    Suporte
+                                                    Pedido em Massa
                                                 </a>
                                             </li>
                                         </ul>
@@ -605,7 +612,7 @@
                             <ul class="sidebar-block__left-menu editor__component-wrapper">
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/painel">
-                                        Novo pedido
+                                        Novo Pedido
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
@@ -625,17 +632,12 @@
                                 </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/affiliates">
-                                        Meus indicados
+                                        Meus Indicados
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/massorder">
-                                        Mass order
-                                    </a>
-                                </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/suporte">
-                                        Suporte
+                                        Pedido em Massa
                                     </a>
                                 </li>
                             </ul>
@@ -673,7 +675,8 @@
                                                             <div class="dropdown-menu" id="category-filter-menu">
                                                                 <a class="dropdown-item active" href="#"
                                                                     data-filter-category-id="All"
-                                                                    data-filter-category-name="Todas as categorias">Todas as categorias</a>
+                                                                    data-filter-category-name="Todas as categorias">Todas
+                                                                    as Categorias</a>
                                                                 <!-- Categories will be loaded dynamically from API -->
                                                             </div>
                                                         </div>
