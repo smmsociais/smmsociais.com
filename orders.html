@@ -28,6 +28,37 @@
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
         }
+
+        /* Remover contornos de foco de todos os elementos do menu */
+        .navbar a:focus,
+        .navbar button:focus,
+        .nav-link:focus,
+        .component-navbar-nav-link:focus,
+        .component-sidebar__menu-item-link:focus,
+        .navbar-toggler:focus,
+        .btn:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Remover contorno específico da sidebar */
+        .component-sidebar__menu a:focus,
+        .sidebar-block__left-menu a:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Para navegadores WebKit (Chrome, Safari, Edge) */
+        .navbar a:focus-visible,
+        .nav-link:focus-visible {
+            outline: none !important;
+        }
+
+        /* Para a navbar principal */
+        .component_private_navbar a:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -405,7 +436,7 @@
     <div class="wrapper  wrapper-sidebar-navbar ">
         <div id="block_52" class="component_private_navbar">
             <span class="component_private_navbar ">
-                <div class="component-navbar-private__wrapper component_private_sidebar ">
+                <div class="component_private_navbar__wrapper component_private_sidebar ">
                     <div
                         class="sidebar-block__top component-navbar component-navbar__navbar-private editor__component-wrapper ">
                         <div>
@@ -418,8 +449,8 @@
                                                         style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
                                         </a>
                                     </div>
-                                    <button class="navbar-toggler" type="button" data-toggle="collapse"
-                                        data-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
+                                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
                                         aria-expanded="false" aria-label="Toggle navigation">
                                         <span class="navbar-burger">
                                             <span class="navbar-burger-line"></span>
@@ -439,7 +470,7 @@
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
                                                     href="/services">
                                                     Serviços
                                                 </a>
@@ -472,10 +503,11 @@
                                                     Pedido em Massa
                                                 </a>
                                             </li>
-                                            <li class="navbar-nav navbar-nav-currencies">
+                                        </ul>
+                                        <ul class="navbar-nav navbar-nav-currencies">
                                             <li
                                                 class="nav-item d-flex align-items-center component-navbar-nav-item component-navbar-private-nav-item component-navbar-balance-wrap__navbar-private">
-                                                <a class="component-navbar-balance-item__navbar-private">R$ 0</a>
+                                                <a class="component-navbar-balance-item__navbar-private">R$ 0,00</a>
                                             </li>
                                         </ul>
                                         <ul class="navbar-nav">
@@ -518,7 +550,6 @@
                                     <a class="component-sidebar__menu-item-link" href="/services">
                                         Serviços
                                     </a>
-                                </li>
                                 <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
                                     <a class="component-sidebar__menu-item-link" href="/orders">
                                         Ordens
