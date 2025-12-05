@@ -373,11 +373,9 @@
                 button.addEventListener('click', function () {
                     const serviceId = this.getAttribute('data-service-id');
                     const serviceName = this.getAttribute('data-service-name');
-
-                    // Confirmar seleção (opcional)
-                    if (confirm(`Deseja selecionar o serviço "${serviceName}"?`)) {
+ {
                         // Redirecionar para a página de painel com o parâmetro do serviço
-                        window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
+                        window.location.href = `https://smmsociais.com/`;
                     }
                 });
             });
@@ -837,105 +835,105 @@
             initializeServiceSelectionButtons();
         }
 
-// Ajuste: aceita tanto input[data-search-service] quanto #search-service-input
-function applyFilters() {
-  const input = document.querySelector('input[data-search-service]') || document.getElementById('search-service-input');
-  const term = input ? input.value.trim() : '';
+        // Ajuste: aceita tanto input[data-search-service] quanto #search-service-input
+        function applyFilters() {
+            const input = document.querySelector('input[data-search-service]') || document.getElementById('search-service-input');
+            const term = input ? input.value.trim() : '';
 
-  // pega elemento de categoria ativo (qualquer caso)
-  const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]') ||
-                           document.querySelector('#category-filter-menu .dropdown-item.active') ||
-                           document.querySelector('#category-filter-menu .active');
+            // pega elemento de categoria ativo (qualquer caso)
+            const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]') ||
+                document.querySelector('#category-filter-menu .dropdown-item.active') ||
+                document.querySelector('#category-filter-menu .active');
 
-  // normalize para lowercase e fallback 'all'
-  const categoryId = activeCategoryEl ? String(activeCategoryEl.getAttribute('data-filter-category-id') || activeCategoryEl.getAttribute('data-filter-category-name') || '').toLowerCase() : 'all';
+            // normalize para lowercase e fallback 'all'
+            const categoryId = activeCategoryEl ? String(activeCategoryEl.getAttribute('data-filter-category-id') || activeCategoryEl.getAttribute('data-filter-category-name') || '').toLowerCase() : 'all';
 
-  // fonte inicial: cópia original salva na primeira carga
-  const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : (Array.isArray(window._allServices) ? window._allServices.slice() : []);
+            // fonte inicial: cópia original salva na primeira carga
+            const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : (Array.isArray(window._allServices) ? window._allServices.slice() : []);
 
-  let filtered = base;
+            let filtered = base;
 
-  if (categoryId && categoryId !== 'all') {
-    filtered = filterServicesByCategoryId(categoryId, filtered);
-  }
+            if (categoryId && categoryId !== 'all') {
+                filtered = filterServicesByCategoryId(categoryId, filtered);
+            }
 
-  if (term) {
-    filtered = filterServicesByTerm(term, filtered);
-  }
+            if (term) {
+                filtered = filterServicesByTerm(term, filtered);
+            }
 
-  renderServices(filtered);
-}
-
-// Ajuste: procura pelos dois seletores de input e pelo botão com id fallback
-function setupServicesTableSearchAndFilters() {
-  const searchInput = document.querySelector('input[data-search-service]') || document.getElementById('search-service-input');
-  const categoryMenu = document.getElementById('category-filter-menu');
-
-  if (searchInput) {
-    const onInput = debounce(() => {
-      applyFilters();
-    }, 160);
-    searchInput.addEventListener('input', onInput);
-
-    // botão de busca: primeiro tenta o seletor antigo, depois o id #search-service-btn
-    const btn = document.querySelector('[data-filter-serch-btn="true"]') || document.getElementById('search-service-btn');
-    if (btn) btn.addEventListener('click', () => applyFilters());
-
-    // permitir Enter no input para acionar pesquisa
-    searchInput.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter') {
-        ev.preventDefault();
-        applyFilters();
-      }
-    });
-
-    // opcional: se campo ficar vazio, restaura tudo
-    searchInput.addEventListener('input', debounce(() => {
-      if (searchInput.value.trim() === '') {
-        // seleciona "all" no menu (se existir)
-        const allItem = document.querySelector('#category-filter-menu [data-filter-category-id="all"], #category-filter-menu [data-filter-category-id="All"]');
-        if (allItem) {
-          // remover active dos demais e marcar all
-          document.querySelectorAll('#category-filter-menu [data-filter-category-id]').forEach(el => el.classList.remove('active'));
-          allItem.classList.add('active');
+            renderServices(filtered);
         }
-        applyFilters();
-      }
-    }, 220));
-  }
 
-  if (categoryMenu) {
-    categoryMenu.addEventListener('click', function (ev) {
-      ev.preventDefault();
-      const a = ev.target.closest('[data-filter-category-id]');
-      if (!a) return;
+        // Ajuste: procura pelos dois seletores de input e pelo botão com id fallback
+        function setupServicesTableSearchAndFilters() {
+            const searchInput = document.querySelector('input[data-search-service]') || document.getElementById('search-service-input');
+            const categoryMenu = document.getElementById('category-filter-menu');
 
-      categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => el.classList.remove('active'));
-      a.classList.add('active');
+            if (searchInput) {
+                const onInput = debounce(() => {
+                    applyFilters();
+                }, 160);
+                searchInput.addEventListener('input', onInput);
 
-      // atualiza label do botão principal (se existir)
-      const activeLabel = document.querySelector('[data-filter-active-category="true"]');
-      if (activeLabel) activeLabel.textContent = a.getAttribute('data-filter-category-name') || a.textContent;
+                // botão de busca: primeiro tenta o seletor antigo, depois o id #search-service-btn
+                const btn = document.querySelector('[data-filter-serch-btn="true"]') || document.getElementById('search-service-btn');
+                if (btn) btn.addEventListener('click', () => applyFilters());
 
-      applyFilters();
-    });
-  }
-}
+                // permitir Enter no input para acionar pesquisa
+                searchInput.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter') {
+                        ev.preventDefault();
+                        applyFilters();
+                    }
+                });
 
-// Pequeno ajuste na função de filtro por categoria para aceitar 'all' de forma case-insensitive
-function filterServicesByCategoryId(categoryId, services) {
-  if (!categoryId) return services.slice();
-  const cid = String(categoryId).toLowerCase();
-  if (cid === 'all') return services.slice();
-  if (cid === 'favorites') {
-    // lógica de favoritos (se implementar) — por enquanto retorna todos
-    return services.slice();
-  }
-  return services.filter(s => {
-    const sCid = String(s.category_id || s.categoria || s.category_name || '').toLowerCase();
-    return sCid === cid;
-  });
-}
+                // opcional: se campo ficar vazio, restaura tudo
+                searchInput.addEventListener('input', debounce(() => {
+                    if (searchInput.value.trim() === '') {
+                        // seleciona "all" no menu (se existir)
+                        const allItem = document.querySelector('#category-filter-menu [data-filter-category-id="all"], #category-filter-menu [data-filter-category-id="All"]');
+                        if (allItem) {
+                            // remover active dos demais e marcar all
+                            document.querySelectorAll('#category-filter-menu [data-filter-category-id]').forEach(el => el.classList.remove('active'));
+                            allItem.classList.add('active');
+                        }
+                        applyFilters();
+                    }
+                }, 220));
+            }
+
+            if (categoryMenu) {
+                categoryMenu.addEventListener('click', function (ev) {
+                    ev.preventDefault();
+                    const a = ev.target.closest('[data-filter-category-id]');
+                    if (!a) return;
+
+                    categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => el.classList.remove('active'));
+                    a.classList.add('active');
+
+                    // atualiza label do botão principal (se existir)
+                    const activeLabel = document.querySelector('[data-filter-active-category="true"]');
+                    if (activeLabel) activeLabel.textContent = a.getAttribute('data-filter-category-name') || a.textContent;
+
+                    applyFilters();
+                });
+            }
+        }
+
+        // Pequeno ajuste na função de filtro por categoria para aceitar 'all' de forma case-insensitive
+        function filterServicesByCategoryId(categoryId, services) {
+            if (!categoryId) return services.slice();
+            const cid = String(categoryId).toLowerCase();
+            if (cid === 'all') return services.slice();
+            if (cid === 'favorites') {
+                // lógica de favoritos (se implementar) — por enquanto retorna todos
+                return services.slice();
+            }
+            return services.filter(s => {
+                const sCid = String(s.category_id || s.categoria || s.category_name || '').toLowerCase();
+                return sCid === cid;
+            });
+        }
         /* ---------- fallback: se renderServices já foi chamado antes deste script, garante setup ---------- */
         (function ensureSetup() {
             // Se services já foram carregados antes deste script (por renderServices original), window._allServices foi setado? se não, tentamos extrair do DOM (não ideal).
