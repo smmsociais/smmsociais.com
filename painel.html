@@ -543,176 +543,235 @@
                 categories.set(name, icon);
             });
 
-// --- preencher options e garantir data-icon sempre presente ---
-categories.forEach((icon, name) => {
-  const option = document.createElement('option');
-  option.value = name;
+            // --- preencher options e garantir data-icon sempre presente ---
+            categories.forEach((icon, name) => {
+                const option = document.createElement('option');
+                option.value = name;
 
-  const isEmoji = icon && typeof icon === 'string' && icon.length <= 4 && /\p{Emoji}/u.test(icon);
-  if (isEmoji) {
-    // coloca o emoji também no texto para compatibilidade
-    option.textContent = `${icon} ${name}`;
-    option.setAttribute('data-icon', icon); // **IMPORTANTE**: seta sempre data-icon
-  } else {
-    option.textContent = name;
-    if (icon) {
-      option.setAttribute('data-icon', icon); // imagem (URL)
-    }
-  }
+                const isEmoji = icon && typeof icon === 'string' && icon.length <= 4 && /\p{Emoji}/u.test(icon);
+                if (isEmoji) {
+                    // coloca o emoji também no texto para compatibilidade
+                    option.textContent = `${icon} ${name}`;
+                    option.setAttribute('data-icon', icon); // **IMPORTANTE**: seta sempre data-icon
+                } else {
+                    option.textContent = name;
+                    if (icon) {
+                        option.setAttribute('data-icon', icon); // imagem (URL)
+                    }
+                }
 
-  categorySelect.appendChild(option);
-});
+                categorySelect.appendChild(option);
+            });
 
-// --- criar (ou atualizar) um preview inline ao lado do select ---
-(function ensureCategoryInlineIcon() {
-  const sel = categorySelect;
-  if (!sel) return;
+                // cria preview img
+                let preview = wrapper.querySelector('#orderform-category-inline-icon');
+                if (!preview) {
+                    preview = document.createElement('img');
+                    preview.id = 'orderform-category-inline-icon';
+                    preview.alt = '';
+                    preview.style.width = '20px';
+                    preview.style.height = '20px';
+                    preview.style.objectFit = 'contain';
+                    preview.style.flex = '0 0 20px';
+                    preview.style.display = 'none';
+                    preview.style.pointerEvents = 'none';
+                    wrapper.insertBefore(preview, sel);
+                }
 
-  // cria wrapper se ainda não existir
-  let wrapper = sel.parentNode.querySelector('.category-select-wrapper');
-  if (!wrapper) {
-    wrapper = document.createElement('div');
-    wrapper.className = 'category-select-wrapper';
-    wrapper.style.display = 'inline-flex';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.gap = '8px';
-    sel.parentNode.insertBefore(wrapper, sel);
-    wrapper.appendChild(sel);
-  }
+                // função que atualiza preview com base na option selecionada
+                function updateInlineIcon() {
+                    const selected = sel.options[sel.selectedIndex];
+                    const iconVal = selected ? selected.getAttribute('data-icon') : null;
 
-  // cria preview img
-  let preview = wrapper.querySelector('#orderform-category-inline-icon');
-  if (!preview) {
-    preview = document.createElement('img');
-    preview.id = 'orderform-category-inline-icon';
-    preview.alt = '';
-    preview.style.width = '20px';
-    preview.style.height = '20px';
-    preview.style.objectFit = 'contain';
-    preview.style.flex = '0 0 20px';
-    preview.style.display = 'none';
-    preview.style.pointerEvents = 'none';
-    wrapper.insertBefore(preview, sel);
-  }
-
-  // função que atualiza preview com base na option selecionada
-  function updateInlineIcon() {
-    const selected = sel.options[sel.selectedIndex];
-    const iconVal = selected ? selected.getAttribute('data-icon') : null;
-
-    if (!iconVal) {
-      preview.style.display = 'none';
-      return;
-    }
-
-    // emoji ou url
-    const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
-    if (isEmoji) {
-      preview.style.display = 'none';
-      // já colocamos o emoji no textContent ao criar a option
-    } else {
-      // URL -> mostrar imagem
-      preview.src = iconVal;
-      preview.style.display = 'inline-block';
-    }
-  }
-
-  // ligar evento e forçar atualização agora
-  sel.addEventListener('change', updateInlineIcon);
-  updateInlineIcon();
-})();
-
-            // preencher itens a partir das options do select (data-icon pode ser emoji ou url)
-            function rebuildList() {
-                list.innerHTML = '';
-                Array.from(selectEl.options).forEach(opt => {
-                    if (!opt.value) return; // pular opção padrão
-                    const item = document.createElement('div');
-                    item.className = 'custom-option';
-                    item.tabIndex = 0;
-                    const iconVal = opt.getAttribute('data-icon');
-
-                    if (iconVal) {
-                        const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
-                        if (isEmoji) {
-                            const sp = document.createElement('span');
-                            sp.className = 'emoji';
-                            sp.textContent = iconVal;
-                            item.appendChild(sp);
-                        } else {
-                            const im = document.createElement('img');
-                            im.src = iconVal;
-                            im.alt = '';
-                            item.appendChild(im);
-                        }
-                    } else {
-                        // pequeno placeholder para alinhamento (opcional)
-                        const ph = document.createElement('span');
-                        ph.style.width = '20px';
-                        item.appendChild(ph);
+                    if (!iconVal) {
+                        preview.style.display = 'none';
+                        return;
                     }
 
-                    const txt = document.createElement('span');
-                    txt.textContent = opt.textContent;
-                    item.appendChild(txt);
+                    // emoji ou url
+                    const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
+                    if (isEmoji) {
+                        preview.style.display = 'none';
+                        // já colocamos o emoji no textContent ao criar a option
+                    } else {
+                        // URL -> mostrar imagem
+                        preview.src = iconVal;
+                        preview.style.display = 'inline-block';
+                    }
+                }
 
-                    // click set value
-                    item.addEventListener('click', () => {
-                        selectEl.value = opt.value;
-                        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-                        // atualizar label
-                        updateBtn();
-                        closeList();
-                    });
+                // ligar evento e forçar atualização agora
+                sel.addEventListener('change', updateInlineIcon);
+                updateInlineIcon();
+            })();
 
-                    item.addEventListener('keydown', (ev) => {
-                        if (ev.key === 'Enter') item.click();
-                    });
+// ---------------- custom dropdown (substitui select visualmente) ----------------
+function createCustomCategoryDropdown(selectEl) {
+  if (!selectEl || selectEl.__custom_inited) return;
+  selectEl.__custom_inited = true;
 
-                    list.appendChild(item);
-                });
-            }
+  // wrapper
+  const wrapper = document.createElement('div');
+  wrapper.className = 'custom-select-wrapper';
+  wrapper.style.position = 'relative';
+  wrapper.style.display = 'inline-block';
+  wrapper.style.width = selectEl.offsetWidth ? selectEl.offsetWidth + 'px' : '100%';
+
+  // button (visível)
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'custom-select-btn';
+  btn.style.width = '100%';
+  btn.style.display = 'flex';
+  btn.style.alignItems = 'center';
+  btn.style.gap = '8px';
+  btn.style.padding = '8px';
+  btn.setAttribute('aria-haspopup', 'listbox');
+
+  // preview img / emoji
+  const iconImg = document.createElement('img');
+  iconImg.style.width = '20px';
+  iconImg.style.height = '20px';
+  iconImg.style.objectFit = 'contain';
+  iconImg.style.display = 'none';
+  iconImg.alt = '';
+
+  const iconEmoji = document.createElement('span');
+  iconEmoji.className = 'emoji';
+  iconEmoji.style.fontSize = '18px';
+  iconEmoji.style.display = 'none';
+
+  const labelSpan = document.createElement('span');
+  labelSpan.className = 'custom-select-label';
+  labelSpan.style.flex = '1';
+  labelSpan.style.textAlign = 'left';
+  labelSpan.textContent = selectEl.options[selectEl.selectedIndex]?.text || 'Categoria';
+
+  btn.appendChild(iconImg);
+  btn.appendChild(iconEmoji);
+  btn.appendChild(labelSpan);
+
+  // list (dropdown)
+  const list = document.createElement('div');
+  list.className = 'custom-select-list';
+  list.setAttribute('role', 'listbox');
+  list.style.position = 'absolute';
+  list.style.left = '0';
+  list.style.right = '0';
+  list.style.zIndex = '9999';
+  list.style.maxHeight = '260px';
+  list.style.overflow = 'auto';
+  list.style.display = 'none';
+  list.style.background = '#fff';
+  list.style.border = '1px solid #ddd';
+  list.style.boxShadow = '0 8px 22px rgba(0,0,0,.12)';
+  list.style.marginTop = '6px';
+
+  // build items from the select options
+  function rebuild() {
+    list.innerHTML = '';
+    Array.from(selectEl.options).forEach(opt => {
+      if (!opt.value) return; // pular opção padrão
+      const item = document.createElement('div');
+      item.className = 'custom-option';
+      item.tabIndex = 0;
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.gap = '8px';
+      item.style.padding = '8px 10px';
+      item.style.cursor = 'pointer';
+
+      const iconVal = opt.getAttribute('data-icon');
+      if (iconVal) {
+        const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
+        if (isEmoji) {
+          const sp = document.createElement('span');
+          sp.className = 'emoji';
+          sp.textContent = iconVal;
+          sp.style.fontSize = '18px';
+          item.appendChild(sp);
+        } else {
+          const im = document.createElement('img');
+          im.src = iconVal;
+          im.alt = '';
+          im.style.width = '20px';
+          im.style.height = '20px';
+          im.style.objectFit = 'contain';
+          item.appendChild(im);
         }
+      } else {
+        const ph = document.createElement('span');
+        ph.style.width = '20px';
+        item.appendChild(ph);
+      }
 
-        /* --- Inserir uma imagem ao lado do select (mantendo o select nativo) --- */
-        (function ensureCategoryInlineIcon() {
-            const categorySelect = document.getElementById('orderform-category');
-            if (!categorySelect) return;
+      const txt = document.createElement('span');
+      txt.textContent = opt.textContent;
+      txt.style.flex = '1';
+      item.appendChild(txt);
 
-            // Se já houver wrapper, pega ele
-            let wrapper = categorySelect.parentNode.querySelector('.category-select-wrapper');
-            if (!wrapper) {
-                // cria wrapper inline-flex e move o select para dentro
-                wrapper = document.createElement('div');
-                wrapper.className = 'category-select-wrapper';
-                wrapper.style.position = 'relative';
-                wrapper.style.display = 'inline-flex';
-                wrapper.style.alignItems = 'center';
-                wrapper.style.gap = '8px'; // espaço entre ícone e select
-                // opcional: mantém largura igual ao select original
-                categorySelect.parentNode.insertBefore(wrapper, categorySelect);
-                wrapper.appendChild(categorySelect);
-            }
+      item.addEventListener('click', () => {
+        selectEl.value = opt.value;
+        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        updateButton();
+        close();
+      });
 
-            // cria elemento img de preview se não existir
-            let preview = wrapper.querySelector('#orderform-category-inline-icon');
-            if (!preview) {
-                preview = document.createElement('img');
-                preview.id = 'orderform-category-inline-icon';
-                preview.alt = '';
-                preview.style.width = '20px';
-                preview.style.height = '20px';
-                preview.style.objectFit = 'contain';
-                preview.style.flex = '0 0 20px';
-                preview.style.display = 'none'; // por padrão escondido
-                preview.style.pointerEvents = 'none';
-                // inserir antes do select para aparecer à esquerda
-                wrapper.insertBefore(preview, categorySelect);
-            }
+      item.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') item.click(); });
 
-            // ajusta padding do select para não sobrepor texto (apenas se precisar)
-            // aqui não forçamos alteração visual drástica, mas se quiser mais espaço:
-            // categorySelect.style.paddingLeft = '4px';
+      list.appendChild(item);
+    });
+  }
+
+  function updateButton() {
+    const sel = selectEl.options[selectEl.selectedIndex];
+    const iconVal = sel ? sel.getAttribute('data-icon') : null;
+    labelSpan.textContent = sel ? sel.textContent : 'Categoria';
+    if (!iconVal) {
+      iconImg.style.display = 'none';
+      iconEmoji.style.display = 'none';
+      return;
+    }
+    const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
+    if (isEmoji) {
+      iconEmoji.textContent = iconVal;
+      iconEmoji.style.display = 'inline-block';
+      iconImg.style.display = 'none';
+    } else {
+      iconImg.src = iconVal;
+      iconImg.style.display = 'inline-block';
+      iconEmoji.style.display = 'none';
+    }
+  }
+
+  function open() { list.style.display = 'block'; btn.setAttribute('aria-expanded', 'true'); }
+  function close() { list.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); }
+
+  btn.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    if (list.style.display === 'block') close(); else { rebuild(); open(); }
+  });
+
+  document.addEventListener('click', (ev) => {
+    if (!wrapper.contains(ev.target)) close();
+  });
+
+  // insert into DOM: hide native select but keep it for form semantics
+  selectEl.style.display = 'none';
+  selectEl.parentNode.insertBefore(wrapper, selectEl);
+  wrapper.appendChild(btn);
+  wrapper.appendChild(list);
+
+  // sync from outside changes
+  selectEl.addEventListener('change', updateButton);
+
+  // init
+  updateButton();
+}
+
+// chamada: logo após popular as options
+createCustomCategoryDropdown(categorySelect);
+// --------------------------------------------------------------------------------
 
             function updateInlineIcon() {
                 const sel = categorySelect.options[categorySelect.selectedIndex];
