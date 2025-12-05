@@ -176,13 +176,13 @@
                     console.error('Erro:', error);
                     const tbody = document.getElementById('service-tbody');
                     if (tbody) {
-                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
                     }
                     return [];
                 });
         }
 
-        // Função para renderizar os serviços na tabela - ATUALIZADA
+        // Função para renderizar os serviços na tabela - ATUALIZADA (sem estrela de favoritos)
         function renderServices(services) {
             const tbody = document.getElementById('service-tbody');
             const loadingRow = document.getElementById('loading-row');
@@ -191,7 +191,7 @@
             tbody.innerHTML = '';
 
             if (!services || services.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Nenhum serviço disponível</td></tr>';
                 return;
             }
 
@@ -252,12 +252,6 @@
                     const serviceRow = document.createElement('tr');
 
                     serviceRow.innerHTML = `
-                        <td data-label="Favorite services">
-                            <a href="#" data-favorite-service-id="${service.id_servico}">
-                                <span data-favorite-icon class="far fa-star"></span>
-                            </a>
-                        </td>
-
                         <td data-label="ID">${service.id_servico}</td>
 
                         <td data-label="Serviço" class="table-service">
@@ -277,18 +271,18 @@
                             <div class="component_button_view">
                                 <button class="btn btn-actions btn-view-service-description"
                                     data-toggle="modal"
-                                    data-content-id="#service-description-id-55-${service.id_servico}"
+                                    data-content-id="#service-description-id-53-${service.id_servico}"
                                     data-service-id="${service.id_servico}"
                                     data-service-name="${service.nome}"
                                     data-min="${minOrder}"
                                     data-max="${maxOrder}"
-                                    data-target="#service-description-55">
+                                    data-target="#service-description-53">
                                     Visualizar
                                 </button>
                             </div>
                             ` : ''}
                             ${service.descricao ? `
-                            <div class="d-none" id="service-description-id-55-${service.id_servico}">
+                            <div class="d-none" id="service-description-id-53-${service.id_servico}">
                                 ${service.descricao.replace(/\n/g, "<br>")}
                             </div>
                             ` : ''}
@@ -329,20 +323,20 @@ function getCategoryImageForName(name) {
   return null;
 }
 
-// Substitua sua função renderCategories por esta
+// Substitua sua função renderCategories por esta (sem opção de favoritos)
 function renderCategories(services) {
   const categoryMenu = document.getElementById('category-filter-menu');
   if (!categoryMenu) return;
 
-  // limpa as categorias dinâmicas (mantém o item "Todas as categorias" se existir)
+  // limpa as categorias dinâmicas (mantém apenas "Todas as categorias")
   const preserve = [];
-  // coleta itens que já existem com data-filter-category-id="all" ou "favorites"
+  // coleta apenas o item "all"
   categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => {
     const id = (el.getAttribute('data-filter-category-id') || '').toLowerCase();
-    if (id === 'all' || id === 'favorites') preserve.push(el);
+    if (id === 'all') preserve.push(el);
   });
   categoryMenu.innerHTML = '';
-  // re-insere preserve no topo (mantém "Todas as categorias")
+  // re-insere apenas "Todas as categorias"
   preserve.forEach(el => categoryMenu.appendChild(el));
 
   const seen = new Set();
@@ -382,7 +376,7 @@ function renderCategories(services) {
       <div>${name}</div>
     `;
 
-    // append (insere depois do "Todas as categorias" / favorites)
+    // append (insere depois do "Todas as categorias")
     categoryMenu.appendChild(categoryItem);
   });
 
@@ -700,7 +694,7 @@ function renderCategories(services) {
                     document.body.classList.add('loaded');
                     const tbody = document.getElementById('service-tbody');
                     if (tbody && tbody.innerHTML.trim() === '') {
-                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
                     }
                 })
                 .finally(() => {
@@ -769,7 +763,7 @@ function renderCategories(services) {
                     console.error('Erro:', error);
                     const tbody = document.getElementById('service-tbody');
                     if (tbody) {
-                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
                     }
                     // garante que existam arrays mesmo no erro para evitar outros problemas
                     window._allServicesOriginal = window._allServicesOriginal || [];
@@ -791,7 +785,7 @@ function renderCategories(services) {
             tbody.innerHTML = '';
 
             if (!services || services.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Nenhum serviço disponível</td></tr>';
                 return;
             }
 
@@ -850,17 +844,11 @@ function renderCategories(services) {
 
                     const serviceRow = document.createElement('tr');
 
-                    const currentSearchInput = document.querySelector('input[data-search-service]');
+                    const currentSearchInput = document.querySelector('input[data-search-service]') || document.getElementById('search-service-input');
                     const currentTerm = currentSearchInput ? (currentSearchInput.value || '') : '';
                     const highlightedName = highlight(service.nome || '', currentTerm);
 
                     serviceRow.innerHTML = `
-                <td data-label="Favorite services">
-                    <a href="#" data-favorite-service-id="${service.id_servico}">
-                        <span data-favorite-icon class="far fa-star"></span>
-                    </a>
-                </td>
-
                 <td data-label="ID">${service.id_servico}</td>
 
                 <td data-label="Serviço" class="table-service">
@@ -876,7 +864,7 @@ function renderCategories(services) {
                 <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
 
                 <td data-label="" class="services-list__description">
-                    ${service.descricao ? `<div class="d-none" id="service-description-id-55-${service.id_servico}">${service.descricao.replace(/\n/g, "<br>")}</div>` : ''}
+                    ${service.descricao ? `<div class="d-none" id="service-description-id-53-${service.id_servico}">${service.descricao.replace(/\n/g, "<br>")}</div>` : ''}
                     ${descButtons}
                 </td>
             `;
