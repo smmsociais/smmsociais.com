@@ -47,8 +47,10 @@
             top: 50%;
             left: 15px;
             transform: translateY(-50%);
-            width: 30px; /* Diminuído de 40px para 24px */
-            height: 30px; /* Diminuído de 40px para 24px */
+            width: 30px;
+            /* Diminuído de 40px para 24px */
+            height: 30px;
+            /* Diminuído de 40px para 24px */
             object-fit: contain;
             z-index: 1;
         }
@@ -58,13 +60,15 @@
             top: 50%;
             left: 15px;
             transform: translateY(-50%);
-            font-size: 30px; /* Tamanho adequado para emoji */
+            font-size: 30px;
+            /* Tamanho adequado para emoji */
             z-index: 1;
         }
 
         .category-content {
             position: relative;
-            padding-left: 40px; /* Espaço para a imagem/emoji */
+            padding-left: 40px;
+            /* Espaço para a imagem/emoji */
         }
 
         .services-category h4 {
@@ -73,9 +77,12 @@
         }
 
 
-/* Highlight simples para termo buscado */
-.service-highlight { background: rgba(255,230,0,0.35); padding: 0 3px; border-radius: 2px; }
-
+        /* Highlight simples para termo buscado */
+        .service-highlight {
+            background: rgba(255, 230, 0, 0.35);
+            padding: 0 3px;
+            border-radius: 2px;
+        }
     </style>
     <script>
         // Mapeamento de categorias para imagens - CORRIGIDO para emoji
@@ -310,8 +317,6 @@
                                     data-min="${minOrder}"
                                     data-max="${maxOrder}"
                                     data-target="#service-description-55">
-                                    Visualizar
-                                </button>
                             </div>
                             ` : ''}
                             ${service.descricao ? `
@@ -776,138 +781,138 @@
             }, 15000); // 15s — opcional, ajuste conforme necessidade
         })();
 
-/* ---------- Helpers e armazenamento global ---------- */
-window._allServices = window._allServices || [];
-function debounce(fn, wait = 180) {
-  let t;
-  return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), wait); };
-}
+        /* ---------- Helpers e armazenamento global ---------- */
+        window._allServices = window._allServices || [];
+        function debounce(fn, wait = 180) {
+            let t;
+            return function (...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), wait); };
+        }
 
-/* highlight seguro: substitui ocorrências do termo por <span class="service-highlight">term</span> */
-function highlight(text = '', term = '') {
-  if (!term) return text;
-  try {
-    const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = new RegExp(esc, 'gi');
-    return text.replace(re, match => `<span class="service-highlight">${match}</span>`);
-  } catch (e) { return text; }
-}
+        /* highlight seguro: substitui ocorrências do termo por <span class="service-highlight">term</span> */
+        function highlight(text = '', term = '') {
+            if (!term) return text;
+            try {
+                const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const re = new RegExp(esc, 'gi');
+                return text.replace(re, match => `<span class="service-highlight">${match}</span>`);
+            } catch (e) { return text; }
+        }
 
-/* Filtra serviços por termo (procura em nome, descrição, rede e tipo) */
-function filterServicesByTerm(term, services) {
-  term = String(term || '').trim().toLowerCase();
-  if (!term) return services.slice();
-  return services.filter(s => {
-    const hay = `${s.nome||''} ${s.descricao||''} ${s.rede||''} ${s.tipo||''}`.toLowerCase();
-    return hay.includes(term);
-  });
-}
+        /* Filtra serviços por termo (procura em nome, descrição, rede e tipo) */
+        function filterServicesByTerm(term, services) {
+            term = String(term || '').trim().toLowerCase();
+            if (!term) return services.slice();
+            return services.filter(s => {
+                const hay = `${s.nome || ''} ${s.descricao || ''} ${s.rede || ''} ${s.tipo || ''}`.toLowerCase();
+                return hay.includes(term);
+            });
+        }
 
-/* Filtra por categoriaId (quando aplicável). categoryId expects the value set in data-filter-category-id */
-function filterServicesByCategoryId(categoryId, services) {
-  if (!categoryId || categoryId === 'All') return services.slice();
-  if (categoryId === 'favorites') {
-    // Se quiser lógica de favoritos, habilite aqui. Por enquanto retorna todos.
-    return services.slice();
-  }
-  // Serviços podem ter category_id ou categoria textual: tenta casar com ambos
-  return services.filter(s => String(s.category_id || s.categoria || s.category_name || '').toLowerCase() === String(categoryId).toLowerCase());
-}
-
-// ----- Substitua a função loadServices atual por esta (guarda a cópia original) -----
-function loadServices() {
-    return fetch('https://smmsociais.com/api/servico')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Erro ao carregar serviços da API');
+        /* Filtra por categoriaId (quando aplicável). categoryId expects the value set in data-filter-category-id */
+        function filterServicesByCategoryId(categoryId, services) {
+            if (!categoryId || categoryId === 'All') return services.slice();
+            if (categoryId === 'favorites') {
+                // Se quiser lógica de favoritos, habilite aqui. Por enquanto retorna todos.
+                return services.slice();
             }
-            return response.json();
-        })
-        .then(data => {
-            // salva uma cópia imutável da lista original para usar nos filtros
-            window._allServicesOriginal = Array.isArray(data) ? data.slice() : [];
-            // também mantém compatibilidade com _allServices
-            window._allServices = window._allServicesOriginal.slice();
+            // Serviços podem ter category_id ou categoria textual: tenta casar com ambos
+            return services.filter(s => String(s.category_id || s.categoria || s.category_name || '').toLowerCase() === String(categoryId).toLowerCase());
+        }
 
-            // renderiza usando a lista original na primeira carga
-            renderServices(window._allServicesOriginal);
-            renderCategories(window._allServicesOriginal);
-            return data;
-        })
-        .catch(error => {
-            console.error('Erro:', error);
+        // ----- Substitua a função loadServices atual por esta (guarda a cópia original) -----
+        function loadServices() {
+            return fetch('https://smmsociais.com/api/servico')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar serviços da API');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // salva uma cópia imutável da lista original para usar nos filtros
+                    window._allServicesOriginal = Array.isArray(data) ? data.slice() : [];
+                    // também mantém compatibilidade com _allServices
+                    window._allServices = window._allServicesOriginal.slice();
+
+                    // renderiza usando a lista original na primeira carga
+                    renderServices(window._allServicesOriginal);
+                    renderCategories(window._allServicesOriginal);
+                    return data;
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    const tbody = document.getElementById('service-tbody');
+                    if (tbody) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                    }
+                    // garante que existam arrays mesmo no erro para evitar outros problemas
+                    window._allServicesOriginal = window._allServicesOriginal || [];
+                    window._allServices = window._allServices || [];
+                    return [];
+                });
+        }
+
+        // ----- Substitua renderServices pela versão abaixo (NÃO sobrescreve a cópia original) -----
+        function renderServices(services) {
+            // NÃO sobrescrever window._allServicesOriginal aqui!
+            // Apenas atualiza _allServices com a lista atualmente renderizada (útil para outras funções, se necessário)
+            window._allServices = Array.isArray(services) ? services.slice() : [];
+
             const tbody = document.getElementById('service-tbody');
-            if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+            const loadingRow = document.getElementById('loading-row');
+
+            if (loadingRow) loadingRow.remove();
+            tbody.innerHTML = '';
+
+            if (!services || services.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
+                return;
             }
-            // garante que existam arrays mesmo no erro para evitar outros problemas
-            window._allServicesOriginal = window._allServicesOriginal || [];
-            window._allServices = window._allServices || [];
-            return [];
-        });
-}
 
-// ----- Substitua renderServices pela versão abaixo (NÃO sobrescreve a cópia original) -----
-function renderServices(services) {
-    // NÃO sobrescrever window._allServicesOriginal aqui!
-    // Apenas atualiza _allServices com a lista atualmente renderizada (útil para outras funções, se necessário)
-    window._allServices = Array.isArray(services) ? services.slice() : [];
+            // AGRUPAR POR CATEGORIA
+            const servicesByCategory = {};
+            services.forEach(service => {
+                const categoryName = service.categoria || service.category_name || "Outros";
+                if (!servicesByCategory[categoryName]) servicesByCategory[categoryName] = [];
+                servicesByCategory[categoryName].push(service);
+            });
 
-    const tbody = document.getElementById('service-tbody');
-    const loadingRow = document.getElementById('loading-row');
+            // RENDERIZA POR CATEGORIA
+            Object.keys(servicesByCategory).forEach(categoryName => {
+                const categoryServices = servicesByCategory[categoryName];
+                const categoryImage = categoryImages[categoryName];
 
-    if (loadingRow) loadingRow.remove();
-    tbody.innerHTML = '';
+                // Linha de título da categoria
+                const categoryRow = document.createElement('tr');
+                categoryRow.className = 'services-list-category-title';
 
-    if (!services || services.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
-        return;
-    }
-
-    // AGRUPAR POR CATEGORIA
-    const servicesByCategory = {};
-    services.forEach(service => {
-        const categoryName = service.categoria || service.category_name || "Outros";
-        if (!servicesByCategory[categoryName]) servicesByCategory[categoryName] = [];
-        servicesByCategory[categoryName].push(service);
-    });
-
-    // RENDERIZA POR CATEGORIA
-    Object.keys(servicesByCategory).forEach(categoryName => {
-        const categoryServices = servicesByCategory[categoryName];
-        const categoryImage = categoryImages[categoryName];
-
-        // Linha de título da categoria
-        const categoryRow = document.createElement('tr');
-        categoryRow.className = 'services-list-category-title';
-
-        let categoryContent = `
+                let categoryContent = `
             <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
                 <div class="category-content">
                     <h4>${categoryName}</h4>
                 </div>
         `;
 
-        if (categoryImage) {
-            if (isEmoji(categoryImage)) {
-                categoryContent += `<span class="category-emoji">${categoryImage}</span>`;
-            } else {
-                categoryContent += `<img src="${categoryImage}" alt="${categoryName}" class="category-image">`;
-            }
-        }
+                if (categoryImage) {
+                    if (isEmoji(categoryImage)) {
+                        categoryContent += `<span class="category-emoji">${categoryImage}</span>`;
+                    } else {
+                        categoryContent += `<img src="${categoryImage}" alt="${categoryName}" class="category-image">`;
+                    }
+                }
 
-        categoryContent += `</td>`;
-        categoryRow.innerHTML = categoryContent;
-        tbody.appendChild(categoryRow);
+                categoryContent += `</td>`;
+                categoryRow.innerHTML = categoryContent;
+                tbody.appendChild(categoryRow);
 
-        // Serviços
-        categoryServices.forEach(service => {
-            const pricePer1000 = service.preco_1000 ? `R$ ${parseFloat(service.preco_1000).toFixed(2)}` : '-';
-            const minOrder = service.minimo || '-';
-            const maxOrder = service.maximo || '-';
-            const avgTime = service.tempo_medio || '-';
+                // Serviços
+                categoryServices.forEach(service => {
+                    const pricePer1000 = service.preco_1000 ? `R$ ${parseFloat(service.preco_1000).toFixed(2)}` : '-';
+                    const minOrder = service.minimo || '-';
+                    const maxOrder = service.maximo || '-';
+                    const avgTime = service.tempo_medio || '-';
 
-            const descButtons = `
+                    const descButtons = `
                 ${service.descricao ? `
                 <div class="component_button_view" style="display:inline-block;margin-right:8px">
                     <button class="btn btn-actions btn-view-service-description"
@@ -918,8 +923,6 @@ function renderServices(services) {
                         data-min="${minOrder}"
                         data-max="${maxOrder}"
                         data-target="#service-description-55">
-                        Visualizar
-                    </button>
                 </div>
                 ` : ''}
                 <div style="display:inline-block">
@@ -931,13 +934,13 @@ function renderServices(services) {
                 </div>
             `;
 
-            const serviceRow = document.createElement('tr');
+                    const serviceRow = document.createElement('tr');
 
-            const currentSearchInput = document.querySelector('input[data-search-service]');
-            const currentTerm = currentSearchInput ? (currentSearchInput.value || '') : '';
-            const highlightedName = highlight(service.nome || '', currentTerm);
+                    const currentSearchInput = document.querySelector('input[data-search-service]');
+                    const currentTerm = currentSearchInput ? (currentSearchInput.value || '') : '';
+                    const highlightedName = highlight(service.nome || '', currentTerm);
 
-            serviceRow.innerHTML = `
+                    serviceRow.innerHTML = `
                 <td data-label="Favorite services">
                     <a href="#" data-favorite-service-id="${service.id_servico}">
                         <span data-favorite-icon class="far fa-star"></span>
@@ -964,88 +967,88 @@ function renderServices(services) {
                 </td>
             `;
 
-            tbody.appendChild(serviceRow);
-        });
-    });
+                    tbody.appendChild(serviceRow);
+                });
+            });
 
-    // Inicializa listeners dos botões recém-criados
-    initializeServiceDescriptionButtons();
-    initializeServiceSelectionButtons();
-}
+            // Inicializa listeners dos botões recém-criados
+            initializeServiceDescriptionButtons();
+            initializeServiceSelectionButtons();
+        }
 
-// ----- Substitua applyFilters por esta versão (usa a cópia original como base) -----
-function applyFilters() {
-  const input = document.querySelector('input[data-search-service]');
-  const term = input ? input.value.trim() : '';
+        // ----- Substitua applyFilters por esta versão (usa a cópia original como base) -----
+        function applyFilters() {
+            const input = document.querySelector('input[data-search-service]');
+            const term = input ? input.value.trim() : '';
 
-  // pegar categoria ativa
-  const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]');
-  const categoryId = activeCategoryEl ? activeCategoryEl.getAttribute('data-filter-category-id') : 'All';
+            // pegar categoria ativa
+            const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]');
+            const categoryId = activeCategoryEl ? activeCategoryEl.getAttribute('data-filter-category-id') : 'All';
 
-  // fonte inicial: a cópia original salva na primeira carga
-  const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : (Array.isArray(window._allServices) ? window._allServices.slice() : []);
+            // fonte inicial: a cópia original salva na primeira carga
+            const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : (Array.isArray(window._allServices) ? window._allServices.slice() : []);
 
-  let filtered = base;
+            let filtered = base;
 
-  if (categoryId && categoryId !== 'All') filtered = filterServicesByCategoryId(categoryId, filtered);
-  if (term) filtered = filterServicesByTerm(term, filtered);
+            if (categoryId && categoryId !== 'All') filtered = filterServicesByCategoryId(categoryId, filtered);
+            if (term) filtered = filterServicesByTerm(term, filtered);
 
-  // renderiza a lista filtrada (renderServices não sobrescreve a original)
-  renderServices(filtered);
-}
+            // renderiza a lista filtrada (renderServices não sobrescreve a original)
+            renderServices(filtered);
+        }
 
-/* ---------- Event binding para search input e menu de categorias ---------- */
-function setupServicesTableSearchAndFilters() {
-  const searchInput = document.querySelector('input[data-search-service]');
-  const categoryMenu = document.getElementById('category-filter-menu');
+        /* ---------- Event binding para search input e menu de categorias ---------- */
+        function setupServicesTableSearchAndFilters() {
+            const searchInput = document.querySelector('input[data-search-service]');
+            const categoryMenu = document.getElementById('category-filter-menu');
 
-  if (searchInput) {
-    const onInput = debounce(() => {
-      applyFilters();
-    }, 160);
-    searchInput.addEventListener('input', onInput);
+            if (searchInput) {
+                const onInput = debounce(() => {
+                    applyFilters();
+                }, 160);
+                searchInput.addEventListener('input', onInput);
 
-    // botão de busca (se houver) mantém comportamento: aciona filtros
-    const btn = document.querySelector('[data-filter-serch-btn="true"]');
-    if (btn) btn.addEventListener('click', () => applyFilters());
+                // botão de busca (se houver) mantém comportamento: aciona filtros
+                const btn = document.querySelector('[data-filter-serch-btn="true"]');
+                if (btn) btn.addEventListener('click', () => applyFilters());
 
-    // limpa highlight ao perder foco (opcional)
-    searchInput.addEventListener('blur', () => {
-      // setTimeout para permitir clique em itens
-      setTimeout(() => {
-        // se quiser esconder highlights ao perder foco, descomente a próxima linha:
-        // renderServices(window._allServices);
-      }, 180);
-    });
-  }
+                // limpa highlight ao perder foco (opcional)
+                searchInput.addEventListener('blur', () => {
+                    // setTimeout para permitir clique em itens
+                    setTimeout(() => {
+                        // se quiser esconder highlights ao perder foco, descomente a próxima linha:
+                        // renderServices(window._allServices);
+                    }, 180);
+                });
+            }
 
-  if (categoryMenu) {
-    // adiciona listener a todos itens (inclusive os inseridos dinamicamente)
-    categoryMenu.addEventListener('click', function (ev) {
-      ev.preventDefault();
-      const a = ev.target.closest('[data-filter-category-id]');
-      if (!a) return;
+            if (categoryMenu) {
+                // adiciona listener a todos itens (inclusive os inseridos dinamicamente)
+                categoryMenu.addEventListener('click', function (ev) {
+                    ev.preventDefault();
+                    const a = ev.target.closest('[data-filter-category-id]');
+                    if (!a) return;
 
-      // remove active de outros itens
-      categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => el.classList.remove('active'));
-      a.classList.add('active');
+                    // remove active de outros itens
+                    categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => el.classList.remove('active'));
+                    a.classList.add('active');
 
-      // atualiza label do botão principal (se existir)
-      const activeLabel = document.querySelector('[data-filter-active-category="true"]');
-      if (activeLabel) activeLabel.textContent = a.getAttribute('data-filter-category-name') || a.textContent;
+                    // atualiza label do botão principal (se existir)
+                    const activeLabel = document.querySelector('[data-filter-active-category="true"]');
+                    if (activeLabel) activeLabel.textContent = a.getAttribute('data-filter-category-name') || a.textContent;
 
-      applyFilters();
-    });
-  }
-}
+                    applyFilters();
+                });
+            }
+        }
 
-/* ---------- fallback: se renderServices já foi chamado antes deste script, garante setup ---------- */
-(function ensureSetup() {
-  // Se services já foram carregados antes deste script (por renderServices original), window._allServices foi setado? se não, tentamos extrair do DOM (não ideal).
-  // Normalmente renderServices foi sobrescrita e será chamada novamente via loadServices; agora apenas ligamos os handlers.
-  setupServicesTableSearchAndFilters();
-})();
-</script>
+        /* ---------- fallback: se renderServices já foi chamado antes deste script, garante setup ---------- */
+        (function ensureSetup() {
+            // Se services já foram carregados antes deste script (por renderServices original), window._allServices foi setado? se não, tentamos extrair do DOM (não ideal).
+            // Normalmente renderServices foi sobrescrita e será chamada novamente via loadServices; agora apenas ligamos os handlers.
+            setupServicesTableSearchAndFilters();
+        })();
+    </script>
 
 </body>
 
