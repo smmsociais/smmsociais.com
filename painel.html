@@ -412,28 +412,38 @@
         }
 
         // Função para carregar serviços da API
-        function loadServices() {
-            return fetch('https://smmsociais.com/api/servico')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Erro ao carregar serviços da API');
-                    }
-                    return response.json();
-                })
-                .then(services => {
-                    renderServices(services);
-                    return services;
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar serviços:', error);
-                    const serviceSelect = document.getElementById('orderform-service');
-                    if (serviceSelect) {
-                        serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
-                    }
-                    return [];
-                });
-        }
-
+function loadServices() {
+    return fetch('https://smmsociais.com/api/servico')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao carregar serviços da API');
+            }
+            return response.json();
+        })
+        .then(services => {
+            renderServices(services);
+            
+            // Garantir que a primeira categoria seja selecionada
+            setTimeout(() => {
+                const categorySelect = document.getElementById('orderform-category');
+                if (categorySelect && categorySelect.options.length > 0) {
+                    categorySelect.selectedIndex = 0;
+                    const event = new Event('change');
+                    categorySelect.dispatchEvent(event);
+                }
+            }, 100);
+            
+            return services;
+        })
+        .catch(error => {
+            console.error('Erro ao carregar serviços:', error);
+            const serviceSelect = document.getElementById('orderform-service');
+            if (serviceSelect) {
+                serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+            }
+            return [];
+        });
+}
         // Função para renderizar serviços no formulário
         function renderServices(services) {
             const serviceSelect = document.getElementById('orderform-service');
@@ -557,42 +567,50 @@
             return null;
         }
 
-        // Substitua sua updateCategories por esta versão que cria data-icon em cada option
-        function updateCategories(services) {
-            const categorySelect = document.getElementById('orderform-category');
-            if (!categorySelect) return;
+// Na função updateCategories, modifique para carregar a primeira categoria:
+function updateCategories(services) {
+    const categorySelect = document.getElementById('orderform-category');
+    if (!categorySelect) return;
 
-            // Limpar categorias existentes, mantendo apenas a opção padrão
-            while (categorySelect.options.length > 1) {
-                categorySelect.remove(1);
-            }
+    // Limpar categorias existentes, mantendo apenas a opção padrão
+    while (categorySelect.options.length > 1) {
+        categorySelect.remove(1);
+    }
 
-            const categories = new Map();
+    const categories = new Map();
 
-            services.forEach(service => {
-                const name = (service.categoria || service.category_name || service.category || '').toString().trim();
-                if (!name) return;
-                if (categories.has(name)) return;
+    services.forEach(service => {
+        const name = (service.categoria || service.category_name || service.category || '').toString().trim();
+        if (!name) return;
+        if (categories.has(name)) return;
 
-                let icon = service.category_icon || getCategoryImageForName(name) || null;
-                categories.set(name, icon);
-            });
+        let icon = service.category_icon || getCategoryImageForName(name) || null;
+        categories.set(name, icon);
+    });
 
-            // --- preencher options sem duplicar emoji no texto ---
-            categories.forEach((icon, name) => {
-                const option = document.createElement('option');
-                option.value = name;
+    // --- preencher options sem duplicar emoji no texto ---
+    categories.forEach((icon, name) => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;  // ← APENAS O NOME, sem emoji!
 
-                // IMPORTANTE: NÃO adicionar o emoji no textContent
-                option.textContent = name;  // ← APENAS O NOME, sem emoji!
+        // Adicionar o ícone apenas no data-icon
+        if (icon) {
+            option.setAttribute('data-icon', icon);
+        }
 
-                // Adicionar o ícone apenas no data-icon
-                if (icon) {
-                    option.setAttribute('data-icon', icon);
-                }
+        categorySelect.appendChild(option);
+    });
 
-                categorySelect.appendChild(option);
-            });
+    // --- ADICIONE ESTA PARTE PARA SELECIONAR A PRIMEIRA CATEGORIA ---
+    if (categorySelect.options.length > 1) {
+        // Seleciona a primeira categoria (índice 1, pois índice 0 era "Favorite services")
+        categorySelect.selectedIndex = 0; // Agora será índice 0 após remover "Favorite services"
+        
+        // Dispara o evento change para filtrar os serviços
+        const event = new Event('change');
+        categorySelect.dispatchEvent(event);
+    }
 
             // ---------------- custom dropdown (substitui select visualmente) ----------------
             function createCustomCategoryDropdown(selectEl) {
@@ -883,19 +901,17 @@
             // --------------------------------------------------------------------------------
         }
 
-        // Função para selecionar automaticamente a primeira categoria
-        function autoSelectFirstCategory(categories) {
-            const categorySelect = document.getElementById('orderform-category');
-            if (categorySelect && categorySelect.options.length > 1) {
-                // Pular a primeira opção (índice 0) que é "Favorite services"
-                // e selecionar a primeira categoria real (índice 1)
-                categorySelect.selectedIndex = 1;
+function autoSelectFirstCategory(categories) {
+    const categorySelect = document.getElementById('orderform-category');
+    if (categorySelect && categorySelect.options.length > 0) { // Agora inicia de 0
+        // Selecionar a primeira categoria (índice 0)
+        categorySelect.selectedIndex = 0;
 
-                // Disparar o evento change para filtrar os serviços
-                const event = new Event('change');
-                categorySelect.dispatchEvent(event);
-            }
-        }
+        // Disparar o evento change para filtrar os serviços
+        const event = new Event('change');
+        categorySelect.dispatchEvent(event);
+    }
+}
 
         // Função para configurar event listeners dos serviços
         function setupServiceEventListeners(services) {
@@ -937,24 +953,21 @@
         }
 
         // Função para filtrar serviços por categoria
-        function filterServicesByCategory(category, services) {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect) return;
+function filterServicesByCategory(category, services) {
+    const serviceSelect = document.getElementById('orderform-service');
+    if (!serviceSelect) return;
 
-            // Limpar opções existentes
-            serviceSelect.innerHTML = '';
+    // Limpar opções existentes
+    serviceSelect.innerHTML = '';
 
-            // Adicionar opção padrão
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.textContent = category === '-1' ? 'Todos os serviços' : 'Selecione um serviço';
-            serviceSelect.appendChild(defaultOption);
+    // Adicionar opção padrão
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Selecione um serviço'; // Removida verificação de "-1"
+    serviceSelect.appendChild(defaultOption);
 
-            // Filtrar e adicionar serviços
-            const filteredServices = category === '-1'
-                ? services
-                : services.filter(service => service.categoria === category);
-
+    // Filtrar e adicionar serviços
+    const filteredServices = services.filter(service => service.categoria === category);
             filteredServices.forEach(service => {
                 const option = document.createElement('option');
                 option.value = service.id_servico;
@@ -1865,13 +1878,10 @@
                                                     <div class="form-group">
                                                         <label for="orderform-category"
                                                             class="control-label">Categoria</label>
-                                                        <select class="form-control" id="orderform-category"
-                                                            name="OrderForm[category]" data-select="true"
-                                                            data-select-search="true"
-                                                            data-select-search-placeholder="Procurar"
-                                                            data-select-container="#select-category-container">
-                                                            <option value="-1" data-icon="
-                                                                                         " selected>
+<!-- DEPOIS: -->
+<select class="form-control" id="orderform-category" name="OrderForm[category]">
+    <!-- Categorias serão preenchidas dinamicamente -->
+</select>
                                                             </option>
                                                             <!-- Categorias serão preenchidas dinamicamente -->
                                                         </select>
