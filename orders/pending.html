@@ -28,6 +28,37 @@
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
         }
+
+        /* Remover contornos de foco de todos os elementos do menu */
+        .navbar a:focus,
+        .navbar button:focus,
+        .nav-link:focus,
+        .component-navbar-nav-link:focus,
+        .component-sidebar__menu-item-link:focus,
+        .navbar-toggler:focus,
+        .btn:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Remover contorno específico da sidebar */
+        .component-sidebar__menu a:focus,
+        .sidebar-block__left-menu a:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Para navegadores WebKit (Chrome, Safari, Edge) */
+        .navbar a:focus-visible,
+        .nav-link:focus-visible {
+            outline: none !important;
+        }
+
+        /* Para a navbar principal */
+        .component_private_navbar a:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -385,8 +416,8 @@
                                                         style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
                                         </a>
                                     </div>
-                                    <button class="navbar-toggler" type="button" data-toggle="collapse"
-                                        data-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
+                                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
                                         aria-expanded="false" aria-label="Toggle navigation">
                                         <span class="navbar-burger">
                                             <span class="navbar-burger-line"></span>
@@ -401,7 +432,7 @@
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/painel">
-                                                    Novo pedido
+                                                    Novo Pedido
                                                 </a>
                                             </li>
                                             <li
@@ -429,21 +460,14 @@
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/affiliates">
-                                                    Meus indicados
+                                                    Meus Indicados
                                                 </a>
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/massorder">
-                                                    Mass order
-                                                </a>
-                                            </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/suporte">
-                                                    Suporte
+                                                    Pedido em Massa
                                                 </a>
                                             </li>
                                         </ul>
@@ -486,15 +510,15 @@
                             <ul class="sidebar-block__left-menu editor__component-wrapper">
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/painel">
-                                        Novo pedido
+                                        Novo Pedido
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
+                                <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/services">
                                         Serviços
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item ">
+                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
                                     <a class="component-sidebar__menu-item-link" href="/orders">
                                         Ordens
                                     </a>
@@ -506,18 +530,15 @@
                                 </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/affiliates">
-                                        Meus indicados
+                                        Meus Indicados
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/massorder">
-                                        Mass order
+                                        Pedido em Massa
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/suporte">
-                                        Suporte
-                                    </a>
+                                </a>
                                 </li>
                             </ul>
                         </div>
