@@ -563,48 +563,6 @@
                 categorySelect.appendChild(option);
             });
 
-                // cria preview img
-                let preview = wrapper.querySelector('#orderform-category-inline-icon');
-                if (!preview) {
-                    preview = document.createElement('img');
-                    preview.id = 'orderform-category-inline-icon';
-                    preview.alt = '';
-                    preview.style.width = '20px';
-                    preview.style.height = '20px';
-                    preview.style.objectFit = 'contain';
-                    preview.style.flex = '0 0 20px';
-                    preview.style.display = 'none';
-                    preview.style.pointerEvents = 'none';
-                    wrapper.insertBefore(preview, sel);
-                }
-
-                // função que atualiza preview com base na option selecionada
-                function updateInlineIcon() {
-                    const selected = sel.options[sel.selectedIndex];
-                    const iconVal = selected ? selected.getAttribute('data-icon') : null;
-
-                    if (!iconVal) {
-                        preview.style.display = 'none';
-                        return;
-                    }
-
-                    // emoji ou url
-                    const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
-                    if (isEmoji) {
-                        preview.style.display = 'none';
-                        // já colocamos o emoji no textContent ao criar a option
-                    } else {
-                        // URL -> mostrar imagem
-                        preview.src = iconVal;
-                        preview.style.display = 'inline-block';
-                    }
-                }
-
-                // ligar evento e forçar atualização agora
-                sel.addEventListener('change', updateInlineIcon);
-                updateInlineIcon();
-            })();
-
 // ---------------- custom dropdown (substitui select visualmente) ----------------
 function createCustomCategoryDropdown(selectEl) {
   if (!selectEl || selectEl.__custom_inited) return;
@@ -773,41 +731,34 @@ function createCustomCategoryDropdown(selectEl) {
 createCustomCategoryDropdown(categorySelect);
 // --------------------------------------------------------------------------------
 
-            function updateInlineIcon() {
-                const sel = categorySelect.options[categorySelect.selectedIndex];
-                const iconVal = sel ? sel.getAttribute('data-icon') : null;
 
-                if (!iconVal) {
-                    preview.style.display = 'none';
-                    // se o option já contiver emoji no texto, ele permanece visível naturalmente
-                    return;
-                }
+                // função que atualiza preview com base na option selecionada
+                function updateInlineIcon() {
+                    const selected = sel.options[sel.selectedIndex];
+                    const iconVal = selected ? selected.getAttribute('data-icon') : null;
 
-                // detecta emoji simples
-                const isEmoji = typeof iconVal === 'string' && iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
-                if (isEmoji) {
-                    // esconder img e garantir emoji aparece no texto do option
-                    preview.style.display = 'none';
-                    // se ainda não tiver emoji no option, prefixa (opcional)
-                    if (!sel.textContent.trim().startsWith(iconVal)) {
-                        sel.textContent = `${iconVal} ${sel.textContent}`;
+                    if (!iconVal) {
+                        preview.style.display = 'none';
+                        return;
                     }
-                } else {
-                    // tratar como URL: mostrar imagem no preview (lado esquerdo)
-                    preview.src = iconVal;
-                    preview.style.display = 'inline-block';
-                    // opcional: remover emoji do texto se houver (para evitar duplicidade)
-                    // sel.textContent = sel.textContent.replace(/^\p{Emoji}\s*/u, '');
+
+                    // emoji ou url
+                    const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
+                    if (isEmoji) {
+                        preview.style.display = 'none';
+                        // já colocamos o emoji no textContent ao criar a option
+                    } else {
+                        // URL -> mostrar imagem
+                        preview.src = iconVal;
+                        preview.style.display = 'inline-block';
+                    }
                 }
+
+                // ligar evento e forçar atualização agora
+                sel.addEventListener('change', updateInlineIcon);
+                updateInlineIcon();
             }
-
-            // atualiza quando o select mudar
-            categorySelect.addEventListener('change', updateInlineIcon);
-
-            // chama agora para sincronizar
-            updateInlineIcon();
-        })();
-
+            
         // Função para selecionar automaticamente a primeira categoria
         function autoSelectFirstCategory(categories) {
             const categorySelect = document.getElementById('orderform-category');
@@ -2047,6 +1998,9 @@ createCustomCategoryDropdown(categorySelect);
                 if (document.readyState === 'complete') return resolve();
                 window.addEventListener('load', resolve);
             });
+
+            // Executar fillAndHideInput imediatamente (não depende de APIs)
+            fillAndHideInput();
 
             // --- Promise principal: saldo + serviços (+ window.load) ---
             const saldoPromise = loadUserBalance();
