@@ -730,31 +730,6 @@ function createCustomCategoryDropdown(selectEl) {
 // chamada: logo após popular as options
 createCustomCategoryDropdown(categorySelect);
 // --------------------------------------------------------------------------------
-
-
-                // função que atualiza preview com base na option selecionada
-                function updateInlineIcon() {
-                    const selected = sel.options[sel.selectedIndex];
-                    const iconVal = selected ? selected.getAttribute('data-icon') : null;
-
-                    if (!iconVal) {
-                        preview.style.display = 'none';
-                        return;
-                    }
-
-                    // emoji ou url
-                    const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
-                    if (isEmoji) {
-                        preview.style.display = 'none';
-                        // já colocamos o emoji no textContent ao criar a option
-                    } else {
-                        // URL -> mostrar imagem
-                        preview.src = iconVal;
-                        preview.style.display = 'inline-block';
-                    }
-                }
-
-                updateInlineIcon();
             }
             
         // Função para selecionar automaticamente a primeira categoria
