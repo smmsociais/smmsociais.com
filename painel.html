@@ -76,12 +76,48 @@
             line-height: 1.2;
         }
 
-
         /* Highlight simples para termo buscado */
         .service-highlight {
             background: rgba(255, 230, 0, 0.35);
             padding: 0 3px;
             border-radius: 2px;
+        }
+
+        /* REMOÇÃO COMPLETA DOS FAVORITOS */
+        /* Oculta qualquer elemento relacionado a favoritos */
+        [data-favorite-service-id],
+        [data-favorite-icon],
+        .fa-star,
+        .far.fa-star,
+        .fas.fa-star,
+        [data-filter-category-id="favorites"],
+        [data-filter-category-name="Favorite services"],
+        th:first-child,
+        td:first-child {
+            display: none !important;
+            width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        /* Remove a primeira coluna da tabela */
+        #service-table-55 th:first-child,
+        #service-table-55 td:first-child {
+            display: none !important;
+        }
+
+        /* Ajusta o layout da tabela sem a coluna de favoritos */
+        #service-table-55 th:nth-child(2),
+        #service-table-55 td:nth-child(2) {
+            display: table-cell !important;
+        }
+
+        /* Ajuste para garantir que todas as colunas fiquem visíveis */
+        #service-table-55 th,
+        #service-table-55 td {
+            display: table-cell !important;
         }
     </style>
     <script>
@@ -210,7 +246,7 @@
                     console.error('Erro:', error);
                     const tbody = document.getElementById('service-tbody');
                     if (tbody) {
-                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
                     }
                     return [];
                 });
@@ -311,6 +347,7 @@
                                     data-min="${minOrder}"
                                     data-max="${maxOrder}"
                                     data-target="#service-description-55">
+                                    Ver Descrição
                                 </button>
                             </div>
                             ` : ''}
@@ -327,7 +364,26 @@
             });
 
             initializeServiceDescriptionButtons();
-            initializeServiceSelectionButtons();
+            // Remover qualquer elemento de favoritos que possa ter sido injetado
+            removeFavoriteElements();
+        }
+
+        // Função para remover elementos de favoritos
+        function removeFavoriteElements() {
+            // Remove links de favoritos
+            document.querySelectorAll('[data-favorite-service-id]').forEach(el => el.remove());
+            
+            // Remove ícones de estrela
+            document.querySelectorAll('[data-favorite-icon]').forEach(el => el.remove());
+            
+            // Remove elementos com classes de estrela
+            document.querySelectorAll('.fa-star, .far.fa-star, .fas.fa-star').forEach(el => el.remove());
+            
+            // Remove a primeira coluna se ainda existir
+            document.querySelectorAll('#service-table-55 th:first-child, #service-table-55 td:first-child').forEach(el => el.remove());
+            
+            // Remove item de favoritos do menu de categorias
+            document.querySelectorAll('[data-filter-category-id="favorites"]').forEach(el => el.remove());
         }
 
         // helper: transforma "Seguidores Instagram" -> "seguidores-instagram"
@@ -356,21 +412,22 @@
             return null;
         }
 
-        // Substitua sua função renderCategories por esta
+        // Função para renderizar categorias SEM favoritos
         function renderCategories(services) {
             const categoryMenu = document.getElementById('category-filter-menu');
             if (!categoryMenu) return;
 
-            // limpa as categorias dinâmicas (mantém o item "Todas as categorias" se existir)
-            const preserve = [];
-            // coleta itens que já existem com data-filter-category-id="all"
-            categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => {
-                const id = (el.getAttribute('data-filter-category-id') || '').toLowerCase();
-                if (id === 'all') preserve.push(el);
-            });
+            // Limpa completamente o menu
             categoryMenu.innerHTML = '';
-            // re-insere preserve no topo (mantém "Todas as categorias")
-            preserve.forEach(el => categoryMenu.appendChild(el));
+
+            // Adiciona apenas o item "Todas as categorias"
+            const allItem = document.createElement('a');
+            allItem.className = 'dropdown-item active';
+            allItem.href = '#';
+            allItem.setAttribute('data-filter-category-id', 'all');
+            allItem.setAttribute('data-filter-category-name', 'Todas as categorias');
+            allItem.innerHTML = `<span class="align-middle mr-1" style="min-width:18px"></span><div>Todas as categorias</div>`;
+            categoryMenu.appendChild(allItem);
 
             const seen = new Set();
             services.forEach(service => {
@@ -409,20 +466,8 @@
       <div>${name}</div>
     `;
 
-                // append (insere depois do "Todas as categorias")
                 categoryMenu.appendChild(categoryItem);
             });
-
-            // garante que exista um item 'all' (se não houver, cria)
-            if (!categoryMenu.querySelector('[data-filter-category-id="all"], [data-filter-category-id="All"]')) {
-                const allItem = document.createElement('a');
-                allItem.className = 'dropdown-item active';
-                allItem.href = '#';
-                allItem.setAttribute('data-filter-category-id', 'all');
-                allItem.setAttribute('data-filter-category-name', 'Todas as categorias');
-                allItem.innerHTML = `<span class="align-middle mr-1" style="min-width:18px"></span><div>Todas as categorias</div>`;
-                categoryMenu.insertBefore(allItem, categoryMenu.firstChild);
-            }
         }
 
         // Função para inicializar event listeners dos botões de descrição
@@ -459,31 +504,15 @@
                 }
             });
         }
-
-        // Nova função para inicializar botões de seleção de serviço
-        function initializeServiceSelectionButtons() {
-            const selectButtons = document.querySelectorAll('.btn-select-service');
-            selectButtons.forEach(button => {
-                button.addEventListener('click', function () {
-                    const serviceId = this.getAttribute('data-service-id');
-                    const serviceName = this.getAttribute('data-service-name');
-                    {
-                        // Redirecionar para a página de painel com o parâmetro do serviço
-                        window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
-                    }
-                });
-            });
-        }
-
-        // Função para redirecionar para o painel com serviço específico
-        function redirectToPanelWithService(serviceId) {
-            window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
-        }
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <script>
         window.modules = {};
+        // Sobrescreve qualquer função de favoritos que possa existir
+        window.toggleFavorite = function() { return false; };
+        window.loadFavorites = function() { return []; };
+        window.isFavorite = function() { return false; };
     </script>
 </head>
 
@@ -668,12 +697,9 @@
                                                                 aria-expanded="false">
                                                                 <span class="fal fa-filter"></span>
                                                                 <span class="services-filter__active-category"
-                                                                    data-filter-active-category="true"></span>
+                                                                    data-filter-active-category="true">Todas as categorias</span>
                                                             </a>
                                                             <div class="dropdown-menu" id="category-filter-menu">
-                                                                <a class="dropdown-item active" href="#"
-                                                                    data-filter-category-id="All"
-                                                                    data-filter-category-name="Todas as categorias">Todas as categorias</a>
                                                                 <!-- Categories will be loaded dynamically from API -->
                                                             </div>
                                                         </div>
@@ -717,7 +743,7 @@
                                                                         title="The average completion time is calculated based on the completion times of the latest orders."></span>
                                                                 </div>
                                                             </th>
-                                                            <th class="hidden-xs hidden-sm service-description__th">
+                                                            <th class="hidden-xs hidden-sm service-description__th">Ações</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="service-tbody">
@@ -808,6 +834,10 @@
                 .then(() => {
                     // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
+                    // Garante remoção completa dos favoritos após carregamento
+                    removeFavoriteElements();
+                    // Força a ocultação de qualquer elemento de favoritos
+                    forceRemoveFavorites();
                 })
                 .catch(err => {
                     // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
@@ -817,6 +847,9 @@
                     if (tbody && tbody.innerHTML.trim() === '') {
                         tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
                     }
+                    // Ainda tenta remover favoritos mesmo em caso de erro
+                    removeFavoriteElements();
+                    forceRemoveFavorites();
                 })
                 .finally(() => {
                     // remover loader visual
@@ -829,12 +862,16 @@
                     console.warn('Fallback: exibindo página após timeout.');
                     document.body.classList.add('loaded');
                     if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                    // Remove favoritos mesmo no timeout
+                    removeFavoriteElements();
+                    forceRemoveFavorites();
                 }
             }, 15000); // 15s — opcional, ajuste conforme necessidade
         })();
 
         /* ---------- Helpers e armazenamento global ---------- */
         window._allServices = window._allServices || [];
+        
         function debounce(fn, wait = 180) {
             let t;
             return function (...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), wait); };
@@ -857,6 +894,34 @@
             return services.filter(s => {
                 const hay = `${s.nome || ''} ${s.descricao || ''} ${s.rede || ''} ${s.tipo || ''}`.toLowerCase();
                 return hay.includes(term);
+            });
+        }
+
+        // Função para forçar remoção de favoritos
+        function forceRemoveFavorites() {
+            // Remove elementos DOM
+            document.querySelectorAll('[data-favorite-service-id], [data-favorite-icon], .fa-star, .far.fa-star, .fas.fa-star, [data-filter-category-id="favorites"]').forEach(el => {
+                el.remove();
+            });
+            
+            // Remove a primeira coluna da tabela se ainda existir
+            const firstTh = document.querySelector('#service-table-55 th:first-child');
+            const firstTd = document.querySelectorAll('#service-table-55 td:first-child');
+            
+            if (firstTh && firstTh.textContent.toLowerCase().includes('favorite')) {
+                firstTh.remove();
+            }
+            
+            firstTd.forEach(td => {
+                if (td.innerHTML.includes('fa-star') || td.innerHTML.includes('favorite')) {
+                    td.remove();
+                }
+            });
+            
+            // Remove qualquer evento de clique em favoritos
+            document.querySelectorAll('a[href*="favorite"], button[onclick*="favorite"]').forEach(el => {
+                el.onclick = null;
+                el.removeEventListener('click', window.toggleFavorite);
             });
         }
 
@@ -953,16 +1018,6 @@
                     const maxOrder = service.maximo || '-';
                     const avgTime = service.tempo_medio || '-';
 
-                    const descButtons = `
-    <div style="display:inline-block">
-        <button class="btn btn-big-primary btn-select-service"
-            data-service-id="${service.id_servico}"
-            data-service-name="${service.nome}">
-            Selecionar
-        </button>
-    </div>
-`;
-
                     const serviceRow = document.createElement('tr');
 
                     const currentSearchInput = document.querySelector('input[data-search-service]');
@@ -985,8 +1040,21 @@
                 <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
 
                 <td data-label="" class="services-list__description">
+                    ${service.descricao ? `
+                    <div class="component_button_view">
+                        <button class="btn btn-actions btn-view-service-description"
+                            data-toggle="modal"
+                            data-content-id="#service-description-id-55-${service.id_servico}"
+                            data-service-id="${service.id_servico}"
+                            data-service-name="${service.nome}"
+                            data-min="${minOrder}"
+                            data-max="${maxOrder}"
+                            data-target="#service-description-55">
+                            Ver Descrição
+                        </button>
+                    </div>
+                    ` : ''}
                     ${service.descricao ? `<div class="d-none" id="service-description-id-55-${service.id_servico}">${service.descricao.replace(/\n/g, "<br>")}</div>` : ''}
-                    ${descButtons}
                 </td>
             `;
 
@@ -996,7 +1064,8 @@
 
             // Inicializa listeners dos botões recém-criados
             initializeServiceDescriptionButtons();
-            initializeServiceSelectionButtons();
+            // Remove qualquer elemento de favoritos
+            removeFavoriteElements();
         }
 
         // ----- Substitua applyFilters por esta versão (usa a cópia original como base) -----
@@ -1006,14 +1075,14 @@
 
             // pegar categoria ativa
             const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]');
-            const categoryId = activeCategoryEl ? activeCategoryEl.getAttribute('data-filter-category-id') : 'All';
+            const categoryId = activeCategoryEl ? activeCategoryEl.getAttribute('data-filter-category-id') : 'all';
 
             // fonte inicial: a cópia original salva na primeira carga
             const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : (Array.isArray(window._allServices) ? window._allServices.slice() : []);
 
             let filtered = base;
 
-            if (categoryId && categoryId !== 'All') filtered = filterServicesByCategoryId(categoryId, filtered);
+            if (categoryId && categoryId !== 'all') filtered = filterServicesByCategoryId(categoryId, filtered);
             if (term) filtered = filterServicesByTerm(term, filtered);
 
             // renderiza a lista filtrada (renderServices não sobrescreve a original)
@@ -1081,6 +1150,11 @@
             // Normalmente renderServices foi sobrescrita e será chamada novamente via loadServices; agora apenas ligamos os handlers.
             setupServicesTableSearchAndFilters();
         })();
+        
+        // Executa uma limpeza final após um breve delay para garantir que tudo foi carregado
+        setTimeout(() => {
+            forceRemoveFavorites();
+        }, 1000);
     </script>
 
 </body>
