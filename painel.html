@@ -172,138 +172,144 @@
             color: #777;
         }
 
-/* Estilos para o custom dropdown (copiando o tema) */
-.custom-dropdown-wrapper {
-    position: relative;
-    width: 100%;
+  /* Ajustes visuais para o select (coloca espaço para o ícone) */
+  #orderform-category {
+    background-repeat: no-repeat;
+    background-position: 8px center; /* distância esquerda onde o ícone aparecerá */
+    background-size: 20px 20px;
+    padding-left: 36px; /* deixa espaço para o ícone */
+    -webkit-appearance: none; /* opcional, para ter controle visual */
+    appearance: none;
+  }
+  /* Se quiser que em telas pequenas ocupe menos padding: */
+  @media (max-width: 480px) {
+    #orderform-category { padding-left: 32px; background-size: 18px 18px; }
+  }
+
+/* custom select style — adapta visual ao seu tema */
+.custom-select-wrapper {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  font-family: inherit;
+  z-index: 9999;
 }
 
-.custom-dropdown-toggle {
-    width: 100%;
-    padding: 0.375rem 0.75rem;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    color: #495057;
-    background-color: #fff;
-    background-clip: padding-box;
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-align: left;
-    cursor: pointer;
+.custom-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 42px;                /* ajuste pra combinar com seus outros selects */
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;      /* ajuste cor da borda conforme tema */
+  background: #fff;
+  cursor: pointer;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  user-select: none;
 }
 
-.custom-dropdown-toggle:hover {
-    border-color: #adb5bd;
+.custom-select-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(77,144,254,0.12); /* foco */
+  border-color: #4d90fe;
 }
 
-.custom-dropdown-toggle:focus {
-    color: #495057;
-    background-color: #fff;
-    border-color: #80bdff;
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+.custom-select-btn .icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.custom-dropdown-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    display: none;
-    max-height: 250px;
-    overflow-y: auto;
-    background-color: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 0.25rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
-    margin-top: 2px;
+.custom-select-btn .icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
-.custom-dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0.375rem 1.5rem;
-    clear: both;
-    font-weight: 400;
-    color: #212529;
-    text-align: inherit;
-    white-space: nowrap;
-    background-color: transparent;
-    border: 0;
-    cursor: pointer;
-    width: 100%;
-    text-align: left;
+.custom-select-btn .label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  color: #222;
 }
 
-.custom-dropdown-item:hover,
-.custom-dropdown-item:focus {
-    color: #16181b;
-    text-decoration: none;
-    background-color: #f8f9fa;
+.custom-select-btn .arrow {
+  margin-left: 8px;
+  flex: 0 0 12px;
+  pointer-events: none;
+  transform: rotate(0deg);
+  transition: transform .18s ease;
 }
 
-.custom-dropdown-item.active {
-    color: #fff;
-    text-decoration: none;
-    background-color: #007bff;
+/* lista */
+.custom-select-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-top: 6px;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  max-height: 280px;
+  overflow: auto;
+  display: none;
+  padding: 6px 6px;
+  box-sizing: border-box;
 }
 
-.custom-dropdown-item .dropdown-icon {
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+/* abrir */
+.custom-select-wrapper.open .custom-select-list { display: block; }
+.custom-select-wrapper.open .custom-select-btn .arrow { transform: rotate(180deg); }
+
+.custom-option {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #222;
 }
 
-.custom-dropdown-item .dropdown-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+.custom-option:hover,
+.custom-option:focus {
+  background: #f5f8ff;
+  outline: none;
 }
 
-.custom-dropdown-item .dropdown-text {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.custom-option .opt-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.custom-dropdown-toggle .selected-icon {
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+.custom-option .opt-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-.custom-dropdown-toggle .selected-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+.custom-option .opt-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.custom-dropdown-toggle .selected-text {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Ajuste para telas pequenas */
-@media (max-width: 767.98px) {
-    .custom-dropdown-menu {
-        max-height: 200px;
-    }
-}      
-        
     </style>
     <script>
 
@@ -595,295 +601,40 @@
             if (serviceDescription) serviceDescription.classList.remove('hidden');
         }
 
-// helper: procura ícone/emoji no map categoryImages (case-insensitive)
-function getCategoryImageForName(name) {
-    if (!name) return null;
-    
-    // Busca exata primeiro
-    for (let [key, value] of Object.entries(categoryImages)) {
-        if (key.toLowerCase() === name.toLowerCase()) {
-            return value;
-        }
-    }
-    
-    // Busca parcial
-    for (let [key, value] of Object.entries(categoryImages)) {
-        if (name.toLowerCase().includes(key.toLowerCase())) {
-            return value;
-        }
-    }
-    
-    // Fallback baseado em palavras-chave
-    const nameLower = name.toLowerCase();
-    if (nameLower.includes('instagram')) return '📷';
-    if (nameLower.includes('tiktok')) return '🎵';
-    if (nameLower.includes('youtube')) return '▶️';
-    if (nameLower.includes('facebook')) return '👥';
-    if (nameLower.includes('twitter')) return '🐦';
-    if (nameLower.includes('telegram')) return '📱';
-    if (nameLower.includes('curtida') || nameLower.includes('like')) return '❤️';
-    if (nameLower.includes('seguidor') || nameLower.includes('follower')) return '👤';
-    if (nameLower.includes('visualiza') || nameLower.includes('view')) return '👀';
-    if (nameLower.includes('comentário') || nameLower.includes('comment')) return '💬';
-    if (nameLower.includes('brasil') || nameLower.includes('brazil')) return '🇧🇷';
-    
-    return null; // Sem ícone padrão
-}
-
- // Substitua a função updateCategories por esta versão completa
-function updateCategories(services) {
-    const categorySelect = document.getElementById('orderform-category');
-    if (!categorySelect) return;
-
-    // Limpar categorias existentes, mantendo apenas a opção padrão
-    while (categorySelect.options.length > 1) {
-        categorySelect.remove(1);
-    }
-
-    const categories = new Map();
-
-    services.forEach(service => {
-        const name = (service.categoria || service.category_name || service.category || '').toString().trim();
-        if (!name) return;
-        if (categories.has(name)) return;
-
-        // prioridade: icon enviado pelo serviço, senão tenta mapear pelo nome
-        let icon = service.category_icon || getCategoryImageForName(name) || null;
-        categories.set(name, icon);
-    });
-
-    // Preencher options do select nativo (para formulário)
-    categories.forEach((icon, name) => {
-        const option = document.createElement('option');
-        option.value = name;
-        
-        // Para o select nativo (valor do formulário)
-        option.textContent = name;
-        if (icon) {
-            option.setAttribute('data-icon', icon);
-        }
-        
-        categorySelect.appendChild(option);
-    });
-
-    // Criar o custom dropdown visual
-    createCustomCategoryDropdown(categorySelect);
-}
-
-// Função para criar o custom dropdown
-function createCustomCategoryDropdown(selectEl) {
-    if (!selectEl || selectEl.__customDropdown) return;
-    selectEl.__customDropdown = true;
-
-    // Criar wrapper
-    const wrapper = document.createElement('div');
-    wrapper.className = 'custom-dropdown-wrapper';
-    
-    // Criar botão de toggle
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'custom-dropdown-toggle form-control';
-    toggle.setAttribute('aria-haspopup', 'true');
-    toggle.setAttribute('aria-expanded', 'false');
-    
-    // Criar ícone selecionado
-    const selectedIcon = document.createElement('div');
-    selectedIcon.className = 'selected-icon';
-    
-    // Criar texto selecionado
-    const selectedText = document.createElement('span');
-    selectedText.className = 'selected-text';
-    
-    toggle.appendChild(selectedIcon);
-    toggle.appendChild(selectedText);
-    
-    // Criar menu dropdown
-    const menu = document.createElement('div');
-    menu.className = 'custom-dropdown-menu';
-    menu.setAttribute('role', 'menu');
-    
-    // Função para atualizar o toggle
-    function updateToggle() {
-        const selectedOption = selectEl.options[selectEl.selectedIndex];
-        if (selectedOption) {
-            selectedText.textContent = selectedOption.textContent || 'Selecione uma categoria';
-            
-            const icon = selectedOption.getAttribute('data-icon');
-            selectedIcon.innerHTML = '';
-            
-            if (icon) {
-                if (icon.length <= 4 && /\p{Emoji}/u.test(icon)) {
-                    // Emoji
-                    selectedIcon.textContent = icon;
-                } else if (icon.startsWith('http')) {
-                    // Imagem URL
-                    const img = document.createElement('img');
-                    img.src = icon;
-                    img.alt = '';
-                    selectedIcon.appendChild(img);
-                }
+        // helper: procura ícone/emoji no map categoryImages (case-insensitive)
+        function getCategoryImageForName(name) {
+            if (!name) return null;
+            const keys = Object.keys(categoryImages || {});
+            for (let k of keys) {
+                if (String(k).toLowerCase() === String(name).toLowerCase()) return categoryImages[k];
             }
-        } else {
-            selectedText.textContent = 'Selecione uma categoria';
-            selectedIcon.innerHTML = '';
+            for (let k of keys) {
+                if (String(name).toLowerCase().includes(String(k).toLowerCase())) return categoryImages[k];
+            }
+            return null;
         }
-    }
-    
-    // Função para construir o menu
-    function buildMenu() {
-        menu.innerHTML = '';
-        
-        Array.from(selectEl.options).forEach((option, index) => {
-            if (option.value === '') return; // Pular opção vazia
-            
-            const item = document.createElement('button');
-            item.type = 'button';
-            item.className = 'custom-dropdown-item';
-            item.setAttribute('role', 'menuitem');
-            if (option.selected) {
-                item.classList.add('active');
+
+        // Substitua sua updateCategories por esta versão
+        function updateCategories(services) {
+            const categorySelect = document.getElementById('orderform-category');
+            if (!categorySelect) return;
+
+            // Limpar categorias existentes, mantendo apenas a opção padrão
+            while (categorySelect.options.length > 1) {
+                categorySelect.remove(1);
             }
-            
-            // Criar container do ícone
-            const iconContainer = document.createElement('div');
-            iconContainer.className = 'dropdown-icon';
-            
-            const icon = option.getAttribute('data-icon');
-            if (icon) {
-                if (icon.length <= 4 && /\p{Emoji}/u.test(icon)) {
-                    // Emoji
-                    iconContainer.textContent = icon;
-                } else if (icon.startsWith('http')) {
-                    // Imagem URL
-                    const img = document.createElement('img');
-                    img.src = icon;
-                    img.alt = '';
-                    iconContainer.appendChild(img);
-                }
-            }
-            
-            // Criar texto
-            const text = document.createElement('span');
-            text.className = 'dropdown-text';
-            text.textContent = option.textContent;
-            
-            item.appendChild(iconContainer);
-            item.appendChild(text);
-            
-            // Evento de clique
-            item.addEventListener('click', () => {
-                selectEl.selectedIndex = index;
-                selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-                updateToggle();
-                closeMenu();
+
+            const categories = new Map();
+
+            services.forEach(service => {
+                const name = (service.categoria || service.category_name || service.category || '').toString().trim();
+                if (!name) return;
+                if (categories.has(name)) return;
+
+                // prioridade: icon enviado pelo serviço, senão tenta mapear pelo nome
+                let icon = service.category_icon || getCategoryImageForName(name) || null;
+                categories.set(name, icon);
             });
-            
-            menu.appendChild(item);
-        });
-    }
-    
-    // Funções para abrir/fechar menu
-    function openMenu() {
-        buildMenu();
-        menu.style.display = 'block';
-        toggle.setAttribute('aria-expanded', 'true');
-        
-        // Fechar ao clicar fora
-        setTimeout(() => {
-            document.addEventListener('click', closeOnClickOutside);
-        }, 0);
-    }
-    
-    function closeMenu() {
-        menu.style.display = 'none';
-        toggle.setAttribute('aria-expanded', 'false');
-        document.removeEventListener('click', closeOnClickOutside);
-    }
-    
-    function closeOnClickOutside(event) {
-        if (!wrapper.contains(event.target)) {
-            closeMenu();
-        }
-    }
-    
-    // Event listeners
-    toggle.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        if (menu.style.display === 'block') {
-            closeMenu();
-        } else {
-            openMenu();
-        }
-    });
-    
-    // Navegação por teclado
-    toggle.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            if (menu.style.display === 'block') {
-                closeMenu();
-            } else {
-                openMenu();
-            }
-        } else if (e.key === 'Escape' && menu.style.display === 'block') {
-            closeMenu();
-        } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && menu.style.display !== 'block') {
-            e.preventDefault();
-            openMenu();
-            if (menu.firstChild) menu.firstChild.focus();
-        }
-    });
-    
-    // Navegação no menu
-    menu.addEventListener('keydown', (e) => {
-        const items = Array.from(menu.querySelectorAll('.custom-dropdown-item'));
-        const currentIndex = items.indexOf(document.activeElement);
-        
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                const nextIndex = (currentIndex + 1) % items.length;
-                items[nextIndex]?.focus();
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-                items[prevIndex]?.focus();
-                break;
-            case 'Enter':
-            case ' ':
-                e.preventDefault();
-                document.activeElement?.click();
-                break;
-            case 'Escape':
-                e.preventDefault();
-                closeMenu();
-                toggle.focus();
-                break;
-        }
-    });
-    
-    // Esconder o select nativo mas mantê-lo para o formulário
-    selectEl.style.position = 'absolute';
-    selectEl.style.opacity = '0';
-    selectEl.style.height = '1px';
-    selectEl.style.width = '1px';
-    selectEl.style.overflow = 'hidden';
-    selectEl.style.clip = 'rect(0 0 0 0)';
-    
-    // Inserir no DOM
-    wrapper.appendChild(toggle);
-    wrapper.appendChild(menu);
-    selectEl.parentNode.insertBefore(wrapper, selectEl.nextSibling);
-    
-    // Atualizar quando o select mudar
-    selectEl.addEventListener('change', updateToggle);
-    
-    // Inicializar
-    updateToggle();
-}
 
             // --- preencher options (select nativo) ---
             categories.forEach((icon, name) => {
@@ -911,178 +662,201 @@ function createCustomCategoryDropdown(selectEl) {
                 }
 
                 categorySelect.appendChild(option);
+    // Depois de preencher o select:
+createCustomCategoryDropdown(document.getElementById('orderform-category'));
+
             });
 
-        function applyCategoryIconToNativeSelect(selectEl) {
-            if (!selectEl) return;
-
-            // pre-carrega imagens presentes nas options (melhora velocidade ao selecionar)
-            Array.from(selectEl.options).forEach(opt => {
-                const icon = opt.getAttribute('data-icon');
-                if (icon && typeof icon === 'string' && icon.startsWith('http')) {
-                    const img = new Image();
-                    img.src = icon;
-                    // opcional: tratar onerror se quiser fallback
-                    img.onerror = () => {
-                        // remove atributo caso a URL inválida
-                        try { opt.removeAttribute('data-icon'); } catch (e) { }
-                    };
-                }
-            });
-
-            function update() {
-                const sel = selectEl.options[selectEl.selectedIndex];
-                const iconVal = sel ? sel.getAttribute('data-icon') : null;
-
-                if (!iconVal) {
-                    // sem ícone -> limpa background e mantém padding padrão
-                    selectEl.style.backgroundImage = '';
-                    // se quiser reduzir padding quando não houver ícone, comente a próxima linha
-                    // selectEl.style.paddingLeft = '';
-                    return;
-                }
-
-                // detectar emoji simples
-                const isEmoji = typeof iconVal === 'string' && iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
-                if (isEmoji) {
-                    // emoji: prefira tê-lo diretamente no option.textContent (já feito no seu código)
-                    selectEl.style.backgroundImage = '';
-                    return;
-                }
-
-                // tratar como URL: aplicamos como background do select
-                try {
-                    // força URL segura (escape aspas)
-                    selectEl.style.backgroundImage = `url("${iconVal.replace(/"/g, '%22')}")`;
-                    selectEl.style.backgroundSize = '20px 20px';
-                    selectEl.style.backgroundPosition = '8px center';
-                    selectEl.style.backgroundRepeat = 'no-repeat';
-                    // garante padding suficiente (customize conforme seu layout)
-                    selectEl.style.paddingLeft = '36px';
-                } catch (e) {
-                    selectEl.style.backgroundImage = '';
-                }
-            }
-
-            // ligar evento change e chamar uma vez na inicialização
-            selectEl.addEventListener('change', update);
-            update();
+            // NOTA: REMOVA a chamada para createCustomCategoryDropdown
+            // Não use custom dropdown, mantenha o select nativo
         }
 
-        // chamar para o select da categoria (após options terem sido criadas)
-        document.addEventListener('DOMContentLoaded', function () {
-            // se as categorias são populadas dinamicamente depois do DOMContentLoaded,
-            // chame applyCategoryIconToNativeSelect(document.getElementById('orderform-category'))
-            // logo após a função updateCategories terminar de inserir as options.
-            const sel = document.getElementById('orderform-category');
-            if (sel) applyCategoryIconToNativeSelect(sel);
-        });
+function createCustomCategoryDropdown(selectEl) {
+  if (!selectEl) return;
+  if (selectEl.__custom_inited) return; // não recriar
+  selectEl.__custom_inited = true;
 
-            // Atualiza visualmente qual opção está selecionada na lista
-            const allOptions = list.querySelectorAll('.custom-option');
-            allOptions.forEach(opt => {
-                opt.classList.remove('selected');
-                opt.style.backgroundColor = '';
-                opt.style.color = '#333';
-            });
+  // wrapper
+  const wrapper = document.createElement('div');
+  wrapper.className = 'custom-select-wrapper';
 
-            if (sel && sel.value) {
-                const selectedOption = Array.from(list.querySelectorAll('.custom-option')).find(opt => {
-                    const span = opt.querySelector('span:last-child');
-                    return span && span.textContent === sel.textContent;
-                });
-                if (selectedOption) {
-                    selectedOption.classList.add('selected');
-                    selectedOption.style.backgroundColor = '#e8f0fe';
-                    selectedOption.style.color = '#1a73e8';
-                }
-            }
+  // button (visual)
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'custom-select-btn';
+  btn.setAttribute('aria-haspopup', 'listbox');
+  btn.setAttribute('aria-expanded', 'false');
 
-            if (!iconVal) {
-                iconImg.style.display = 'none';
-                iconEmoji.style.display = 'none';
-                return;
-            }
-            const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
-            if (isEmoji) {
-                iconEmoji.textContent = iconVal;
-                iconEmoji.style.display = 'inline-block';
-                iconImg.style.display = 'none';
-            } else {
-                iconImg.src = iconVal;
-                iconImg.style.display = 'inline-block';
-                iconEmoji.style.display = 'none';
-            }
+  const iconBox = document.createElement('span');
+  iconBox.className = 'icon';
+  const labelSpan = document.createElement('span');
+  labelSpan.className = 'label';
+  labelSpan.textContent = selectEl.options[selectEl.selectedIndex]?.text || 'Selecione uma categoria';
 
-        btn.addEventListener('click', (ev) => {
-            ev.preventDefault();
-            ev.stopPropagation();
-            if (list.style.display === 'block') {
-                close();
-            } else {
-                open();
-            }
-        });
+  const arrow = document.createElement('span');
+  arrow.className = 'arrow';
+  arrow.innerHTML = '&#9662;'; // seta simples
 
-        btn.addEventListener('keydown', (ev) => {
-            if (ev.key === 'Enter' || ev.key === ' ') {
-                ev.preventDefault();
-                if (list.style.display === 'block') {
-                    close();
-                } else {
-                    open();
-                }
-            } else if (ev.key === 'Escape') {
-                close();
-            }
-        });
+  btn.appendChild(iconBox);
+  btn.appendChild(labelSpan);
+  btn.appendChild(arrow);
 
-        document.addEventListener('click', (ev) => {
-            if (!wrapper.contains(ev.target)) {
-                close();
-            }
-        });
+  // list
+  const list = document.createElement('div');
+  list.className = 'custom-select-list';
+  list.setAttribute('role', 'listbox');
 
-        // Navegação por teclado na lista
-        list.addEventListener('keydown', (ev) => {
-            const items = Array.from(list.querySelectorAll('.custom-option'));
-            const currentIndex = items.findIndex(item => item === document.activeElement);
+  // helper: cria um item com imagem/emoji + texto
+  function buildListItems() {
+    list.innerHTML = '';
+    Array.from(selectEl.options).forEach((opt) => {
+      if (!opt.value) return; // pular opção padrão se quiser
+      const item = document.createElement('div');
+      item.className = 'custom-option';
+      item.tabIndex = 0;
+      item.setAttribute('data-value', opt.value);
 
-            switch (ev.key) {
-                case 'ArrowDown':
-                    ev.preventDefault();
-                    const nextIndex = (currentIndex + 1) % items.length;
-                    items[nextIndex]?.focus();
-                    break;
-                case 'ArrowUp':
-                    ev.preventDefault();
-                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-                    items[prevIndex]?.focus();
-                    break;
-                case 'Enter':
-                case ' ':
-                    ev.preventDefault();
-                    document.activeElement?.click();
-                    break;
-                case 'Escape':
-                    ev.preventDefault();
-                    close();
-                    btn.focus();
-                    break;
-            }
-        });
+      const val = opt.getAttribute('data-icon') || ''; // url ou emoji
+      const iconWrap = document.createElement('span');
+      iconWrap.className = 'opt-icon';
 
-        // insert into DOM: hide native select but keep it for form semantics
-        selectEl.style.display = 'none';
-        selectEl.parentNode.insertBefore(wrapper, selectEl);
-        wrapper.appendChild(btn);
-        wrapper.appendChild(list);
+      if (val && val.startsWith && val.startsWith('http')) {
+        const img = document.createElement('img');
+        img.src = val;
+        img.alt = '';
+        img.onerror = () => { iconWrap.textContent = ''; }; // fallback se erro
+        iconWrap.appendChild(img);
+      } else if (val && /\p{Emoji}/u.test(val)) {
+        iconWrap.textContent = val;
+      } else {
+        // placeholder para alinhar quando não houver ícone
+        iconWrap.innerHTML = '';
+      }
 
-        // sync from outside changes
-        selectEl.addEventListener('change', updateButton);
+      const lbl = document.createElement('span');
+      lbl.className = 'opt-label';
+      lbl.textContent = opt.textContent;
 
-        // init
-        updateButton()
+      item.appendChild(iconWrap);
+      item.appendChild(lbl);
+
+      // click: atualiza select nativo + dispara evento change
+      item.addEventListener('click', () => {
+        selectEl.value = opt.value;
+        // atualizar label + icon
+        refreshButton();
+        // dispara change para lógica existente
+        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        close();
+      });
+
+      // keyboard
+      item.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          item.click();
+        }
+      });
+
+      list.appendChild(item);
+    });
+  }
+
+  function refreshButton() {
+    const selOption = selectEl.options[selectEl.selectedIndex];
+    const iconVal = selOption ? selOption.getAttribute('data-icon') : null;
+    labelSpan.textContent = selOption ? selOption.textContent : 'Selecione uma categoria';
+    iconBox.innerHTML = '';
+
+    if (iconVal) {
+      if (iconVal.startsWith && iconVal.startsWith('http')) {
+        const img = document.createElement('img');
+        img.src = iconVal;
+        img.alt = '';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        iconBox.appendChild(img);
+      } else if (/\p{Emoji}/u.test(iconVal)) {
+        iconBox.textContent = iconVal;
+      }
+    }
+  }
+
+  // open / close
+  function open() {
+    wrapper.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
+    // foco no primeiro item
+    const first = list.querySelector('.custom-option');
+    if (first) first.focus();
+  }
+
+  function close() {
+    wrapper.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.focus();
+  }
+
+  // events
+  btn.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (wrapper.classList.contains('open')) close();
+    else {
+      buildListItems(); // reconstrói (útil se options mudaram)
+      open();
+    }
+  });
+
+  // keyboard no botão
+  btn.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      ev.preventDefault();
+      btn.click();
+    } else if (ev.key === 'ArrowDown') {
+      ev.preventDefault();
+      buildListItems();
+      open();
+    }
+  });
+
+  // fecha ao clicar fora
+  document.addEventListener('click', (ev) => {
+    if (!wrapper.contains(ev.target)) close();
+  });
+
+  // keyboard navigation dentro da lista
+  list.addEventListener('keydown', (ev) => {
+    const items = Array.from(list.querySelectorAll('.custom-option'));
+    const idx = items.indexOf(document.activeElement);
+    if (ev.key === 'ArrowDown') {
+      ev.preventDefault();
+      const next = (idx + 1) < items.length ? idx + 1 : 0;
+      items[next]?.focus();
+    } else if (ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      const prev = idx > 0 ? idx - 1 : items.length - 1;
+      items[prev]?.focus();
+    } else if (ev.key === 'Escape') {
+      ev.preventDefault();
+      close();
+    }
+  });
+
+  // manter select nativo no DOM (mas oculto)
+  selectEl.style.display = 'none';
+  selectEl.parentNode.insertBefore(wrapper, selectEl);
+  wrapper.appendChild(btn);
+  wrapper.appendChild(list);
+
+  // sincroniza mudanças externas (se outro script muda select)
+  selectEl.addEventListener('change', () => {
+    refreshButton();
+  });
+
+  // inicializa
+  refreshButton();
+}
 
         // Função para selecionar automaticamente a primeira categoria
         function autoSelectFirstCategory(categories) {
