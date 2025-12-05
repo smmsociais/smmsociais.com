@@ -2048,9 +2048,6 @@ createCustomCategoryDropdown(categorySelect);
                 window.addEventListener('load', resolve);
             });
 
-            // Executar fillAndHideInput imediatamente (não depende de APIs)
-            fillAndHideInput();
-
             // --- Promise principal: saldo + serviços (+ window.load) ---
             const saldoPromise = loadUserBalance();
             const servicesPromise = loadServices();
