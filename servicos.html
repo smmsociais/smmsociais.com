@@ -692,17 +692,6 @@
             });
         }
 
-        /* Filtra por categoriaId (quando aplicável). categoryId expects the value set in data-filter-category-id */
-        function filterServicesByCategoryId(categoryId, services) {
-            if (!categoryId || categoryId === 'All') return services.slice();
-            if (categoryId === 'favorites') {
-                // Se quiser lógica de favoritos, habilite aqui. Por enquanto retorna todos.
-                return services.slice();
-            }
-            // Serviços podem ter category_id ou categoria textual: tenta casar com ambos
-            return services.filter(s => String(s.category_id || s.categoria || s.category_name || '').toLowerCase() === String(categoryId).toLowerCase());
-        }
-
         // ----- Substitua a função loadServices atual por esta (guarda a cópia original) -----
         function loadServices() {
             return fetch('https://smmsociais.com/api/servico')
@@ -848,72 +837,105 @@
             initializeServiceSelectionButtons();
         }
 
-        // ----- Substitua applyFilters por esta versão (usa a cópia original como base) -----
-        function applyFilters() {
-            const input = document.querySelector('input[data-search-service]');
-            const term = input ? input.value.trim() : '';
+// Ajuste: aceita tanto input[data-search-service] quanto #search-service-input
+function applyFilters() {
+  const input = document.querySelector('input[data-search-service]') || document.getElementById('search-service-input');
+  const term = input ? input.value.trim() : '';
 
-            // pegar categoria ativa
-            const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]');
-            const categoryId = activeCategoryEl ? activeCategoryEl.getAttribute('data-filter-category-id') : 'All';
+  // pega elemento de categoria ativo (qualquer caso)
+  const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]') ||
+                           document.querySelector('#category-filter-menu .dropdown-item.active') ||
+                           document.querySelector('#category-filter-menu .active');
 
-            // fonte inicial: a cópia original salva na primeira carga
-            const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : (Array.isArray(window._allServices) ? window._allServices.slice() : []);
+  // normalize para lowercase e fallback 'all'
+  const categoryId = activeCategoryEl ? String(activeCategoryEl.getAttribute('data-filter-category-id') || activeCategoryEl.getAttribute('data-filter-category-name') || '').toLowerCase() : 'all';
 
-            let filtered = base;
+  // fonte inicial: cópia original salva na primeira carga
+  const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : (Array.isArray(window._allServices) ? window._allServices.slice() : []);
 
-            if (categoryId && categoryId !== 'All') filtered = filterServicesByCategoryId(categoryId, filtered);
-            if (term) filtered = filterServicesByTerm(term, filtered);
+  let filtered = base;
 
-            // renderiza a lista filtrada (renderServices não sobrescreve a original)
-            renderServices(filtered);
+  if (categoryId && categoryId !== 'all') {
+    filtered = filterServicesByCategoryId(categoryId, filtered);
+  }
+
+  if (term) {
+    filtered = filterServicesByTerm(term, filtered);
+  }
+
+  renderServices(filtered);
+}
+
+// Ajuste: procura pelos dois seletores de input e pelo botão com id fallback
+function setupServicesTableSearchAndFilters() {
+  const searchInput = document.querySelector('input[data-search-service]') || document.getElementById('search-service-input');
+  const categoryMenu = document.getElementById('category-filter-menu');
+
+  if (searchInput) {
+    const onInput = debounce(() => {
+      applyFilters();
+    }, 160);
+    searchInput.addEventListener('input', onInput);
+
+    // botão de busca: primeiro tenta o seletor antigo, depois o id #search-service-btn
+    const btn = document.querySelector('[data-filter-serch-btn="true"]') || document.getElementById('search-service-btn');
+    if (btn) btn.addEventListener('click', () => applyFilters());
+
+    // permitir Enter no input para acionar pesquisa
+    searchInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        applyFilters();
+      }
+    });
+
+    // opcional: se campo ficar vazio, restaura tudo
+    searchInput.addEventListener('input', debounce(() => {
+      if (searchInput.value.trim() === '') {
+        // seleciona "all" no menu (se existir)
+        const allItem = document.querySelector('#category-filter-menu [data-filter-category-id="all"], #category-filter-menu [data-filter-category-id="All"]');
+        if (allItem) {
+          // remover active dos demais e marcar all
+          document.querySelectorAll('#category-filter-menu [data-filter-category-id]').forEach(el => el.classList.remove('active'));
+          allItem.classList.add('active');
         }
+        applyFilters();
+      }
+    }, 220));
+  }
 
-        /* ---------- Event binding para search input e menu de categorias ---------- */
-        function setupServicesTableSearchAndFilters() {
-            const searchInput = document.querySelector('input[data-search-service]');
-            const categoryMenu = document.getElementById('category-filter-menu');
+  if (categoryMenu) {
+    categoryMenu.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      const a = ev.target.closest('[data-filter-category-id]');
+      if (!a) return;
 
-            if (searchInput) {
-                const onInput = debounce(() => {
-                    applyFilters();
-                }, 160);
-                searchInput.addEventListener('input', onInput);
+      categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => el.classList.remove('active'));
+      a.classList.add('active');
 
-                // botão de busca (se houver) mantém comportamento: aciona filtros
-                const btn = document.querySelector('[data-filter-serch-btn="true"]');
-                if (btn) btn.addEventListener('click', () => applyFilters());
+      // atualiza label do botão principal (se existir)
+      const activeLabel = document.querySelector('[data-filter-active-category="true"]');
+      if (activeLabel) activeLabel.textContent = a.getAttribute('data-filter-category-name') || a.textContent;
 
-                // limpa highlight ao perder foco (opcional)
-                searchInput.addEventListener('blur', () => {
-                    // setTimeout para permitir clique em itens
-                    setTimeout(() => {
-                        // se quiser esconder highlights ao perder foco, descomente a próxima linha:
-                        // renderServices(window._allServices);
-                    }, 180);
-                });
-            }
+      applyFilters();
+    });
+  }
+}
 
-            if (categoryMenu) {
-                // adiciona listener a todos itens (inclusive os inseridos dinamicamente)
-                categoryMenu.addEventListener('click', function (ev) {
-                    ev.preventDefault();
-                    const a = ev.target.closest('[data-filter-category-id]');
-                    if (!a) return;
-
-                    // remove active de outros itens
-                    categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => el.classList.remove('active'));
-                    a.classList.add('active');
-
-                    // atualiza label do botão principal (se existir)
-                    const activeLabel = document.querySelector('[data-filter-active-category="true"]');
-                    if (activeLabel) activeLabel.textContent = a.getAttribute('data-filter-category-name') || a.textContent;
-
-                    applyFilters();
-                });
-            }
-        }
-
+// Pequeno ajuste na função de filtro por categoria para aceitar 'all' de forma case-insensitive
+function filterServicesByCategoryId(categoryId, services) {
+  if (!categoryId) return services.slice();
+  const cid = String(categoryId).toLowerCase();
+  if (cid === 'all') return services.slice();
+  if (cid === 'favorites') {
+    // lógica de favoritos (se implementar) — por enquanto retorna todos
+    return services.slice();
+  }
+  return services.filter(s => {
+    const sCid = String(s.category_id || s.categoria || s.category_name || '').toLowerCase();
+    return sCid === cid;
+  });
+}
         /* ---------- fallback: se renderServices já foi chamado antes deste script, garante setup ---------- */
         (function ensureSetup() {
             // Se services já foram carregados antes deste script (por renderServices original), window._allServices foi setado? se não, tentamos extrair do DOM (não ideal).
