@@ -452,17 +452,18 @@
         }
 
         // helper: procura ícone/emoji no map categoryImages (case-insensitive)
-        function getCategoryImageForName(name) {
-            if (!name) return null;
-            const keys = Object.keys(categoryImages || {});
-            for (let k of keys) {
-                if (String(k).toLowerCase() === String(name).toLowerCase()) return categoryImages[k];
-            }
-            for (let k of keys) {
-                if (String(name).toLowerCase().includes(String(k).toLowerCase())) return categoryImages[k];
-            }
-            return null;
-        }
+function getCategoryImageForName(name) {
+  if (!name) return null;
+  const imagesMap = window.categoryImages || {}; // evita ReferenceError
+  const keys = Object.keys(imagesMap);
+  for (let k of keys) {
+    if (String(k).toLowerCase() === String(name).toLowerCase()) return imagesMap[k];
+  }
+  for (let k of keys) {
+    if (String(name).toLowerCase().includes(String(k).toLowerCase())) return imagesMap[k];
+  }
+  return null;
+}
 
         // Substitua sua updateCategories por esta versão que cria data-icon em cada option
         function updateCategories(services) {
