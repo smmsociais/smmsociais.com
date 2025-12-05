@@ -172,49 +172,116 @@
             color: #777;
         }
 
-        .custom-select-btn img {
-            width: 20px;
-            height: 20px;
-            object-fit: contain;
-            display: inline-block;
-        }
+/* Estilos para o custom select (deve ser consistente com outros seletores) */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
 
-        .custom-select-btn .emoji {
-            font-size: 18px;
-            display: inline-block;
-        }
+.custom-select-btn {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    transition: border-color 0.2s ease;
+}
 
-        .custom-select-list {
-            position: absolute;
-            left: 0;
-            right: 0;
-            z-index: 9999;
-            max-height: 240px;
-            overflow: auto;
-            box-shadow: 0 8px 22px rgba(0, 0, 0, .12);
-            background: #fff;
-            border: 1px solid #ddd;
-            margin-top: 6px;
-            display: none;
-        }
+.custom-select-btn:hover {
+    border-color: #bbb;
+}
 
-        .custom-option {
-            padding: 8px 10px;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            cursor: pointer;
-        }
+.custom-select-btn:focus {
+    outline: none;
+    border-color: #4d90fe;
+    box-shadow: 0 0 0 2px rgba(77, 144, 254, 0.2);
+}
 
-        .custom-option img {
-            width: 20px;
-            height: 20px;
-            object-fit: contain;
-        }
+.custom-select-btn[aria-expanded="true"] {
+    border-color: #4d90fe;
+}
 
-        .custom-option:hover {
-            background: #f7f7f7;
-        }
+.custom-select-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-select-list {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 4px;
+    display: none;
+}
+
+.custom-select-list .custom-option {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.custom-select-list .custom-option:last-child {
+    border-bottom: none;
+}
+
+.custom-select-list .custom-option:hover,
+.custom-select-list .custom-option:focus {
+    background-color: #f8f9fa;
+}
+
+.custom-select-list .custom-option.selected {
+    background-color: #e8f0fe;
+    color: #1a73e8;
+}
+
+/* Estilo para o emoji no select customizado */
+.custom-select-btn .emoji {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.custom-select-list .emoji {
+    font-size: 16px;
+    line-height: 1;
+    width: 20px;
+    text-align: center;
+}
+
+/* Estilo para imagens no select customizado */
+.custom-select-btn img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    display: inline-block;
+}
+
+.custom-select-list img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    display: inline-block;
+}
     </style>
     <script>
 
@@ -572,7 +639,6 @@ function createCustomCategoryDropdown(selectEl) {
   const wrapper = document.createElement('div');
   wrapper.className = 'custom-select-wrapper';
   wrapper.style.position = 'relative';
-  wrapper.style.display = 'inline-block';
   wrapper.style.width = selectEl.offsetWidth ? selectEl.offsetWidth + 'px' : '100%';
 
   // button (visível)
@@ -583,7 +649,13 @@ function createCustomCategoryDropdown(selectEl) {
   btn.style.display = 'flex';
   btn.style.alignItems = 'center';
   btn.style.gap = '8px';
-  btn.style.padding = '8px';
+  btn.style.padding = '8px 12px';
+  btn.style.border = '1px solid #ddd';
+  btn.style.borderRadius = '4px';
+  btn.style.background = '#fff';
+  btn.style.textAlign = 'left';
+  btn.style.cursor = 'pointer';
+  btn.style.fontSize = '14px';
   btn.setAttribute('aria-haspopup', 'listbox');
 
   // preview img / emoji
@@ -596,14 +668,18 @@ function createCustomCategoryDropdown(selectEl) {
 
   const iconEmoji = document.createElement('span');
   iconEmoji.className = 'emoji';
-  iconEmoji.style.fontSize = '18px';
+  iconEmoji.style.fontSize = '16px';
   iconEmoji.style.display = 'none';
+  iconEmoji.style.lineHeight = '1';
 
   const labelSpan = document.createElement('span');
   labelSpan.className = 'custom-select-label';
   labelSpan.style.flex = '1';
   labelSpan.style.textAlign = 'left';
-  labelSpan.textContent = selectEl.options[selectEl.selectedIndex]?.text || 'Categoria';
+  labelSpan.style.overflow = 'hidden';
+  labelSpan.style.textOverflow = 'ellipsis';
+  labelSpan.style.whiteSpace = 'nowrap';
+  labelSpan.textContent = selectEl.options[selectEl.selectedIndex]?.text || 'Selecione uma categoria';
 
   btn.appendChild(iconImg);
   btn.appendChild(iconEmoji);
@@ -618,12 +694,13 @@ function createCustomCategoryDropdown(selectEl) {
   list.style.right = '0';
   list.style.zIndex = '9999';
   list.style.maxHeight = '260px';
-  list.style.overflow = 'auto';
+  list.style.overflowY = 'auto';
   list.style.display = 'none';
   list.style.background = '#fff';
   list.style.border = '1px solid #ddd';
-  list.style.boxShadow = '0 8px 22px rgba(0,0,0,.12)';
-  list.style.marginTop = '6px';
+  list.style.borderRadius = '4px';
+  list.style.boxShadow = '0 2px 10px rgba(0,0,0,.1)';
+  list.style.marginTop = '4px';
 
   // build items from the select options
   function rebuild() {
@@ -636,8 +713,11 @@ function createCustomCategoryDropdown(selectEl) {
       item.style.display = 'flex';
       item.style.alignItems = 'center';
       item.style.gap = '8px';
-      item.style.padding = '8px 10px';
+      item.style.padding = '8px 12px';
       item.style.cursor = 'pointer';
+      item.style.fontSize = '14px';
+      item.style.color = '#333';
+      item.style.borderBottom = '1px solid #f5f5f5';
 
       const iconVal = opt.getAttribute('data-icon');
       if (iconVal) {
@@ -646,7 +726,10 @@ function createCustomCategoryDropdown(selectEl) {
           const sp = document.createElement('span');
           sp.className = 'emoji';
           sp.textContent = iconVal;
-          sp.style.fontSize = '18px';
+          sp.style.fontSize = '16px';
+          sp.style.lineHeight = '1';
+          sp.style.width = '20px';
+          sp.style.textAlign = 'center';
           item.appendChild(sp);
         } else {
           const im = document.createElement('img');
@@ -668,6 +751,13 @@ function createCustomCategoryDropdown(selectEl) {
       txt.style.flex = '1';
       item.appendChild(txt);
 
+      // Adiciona classe selected se for a opção atual
+      if (opt.selected) {
+        item.classList.add('selected');
+        item.style.backgroundColor = '#e8f0fe';
+        item.style.color = '#1a73e8';
+      }
+
       item.addEventListener('click', () => {
         selectEl.value = opt.value;
         selectEl.dispatchEvent(new Event('change', { bubbles: true }));
@@ -675,7 +765,22 @@ function createCustomCategoryDropdown(selectEl) {
         close();
       });
 
-      item.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') item.click(); });
+      item.addEventListener('keydown', (ev) => { 
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          item.click();
+        }
+      });
+
+      item.addEventListener('focus', () => {
+        item.style.backgroundColor = '#f8f9fa';
+      });
+
+      item.addEventListener('blur', () => {
+        if (!opt.selected) {
+          item.style.backgroundColor = '';
+        }
+      });
 
       list.appendChild(item);
     });
@@ -684,7 +789,28 @@ function createCustomCategoryDropdown(selectEl) {
   function updateButton() {
     const sel = selectEl.options[selectEl.selectedIndex];
     const iconVal = sel ? sel.getAttribute('data-icon') : null;
-    labelSpan.textContent = sel ? sel.textContent : 'Categoria';
+    labelSpan.textContent = sel ? sel.textContent : 'Selecione uma categoria';
+    
+    // Atualiza visualmente qual opção está selecionada na lista
+    const allOptions = list.querySelectorAll('.custom-option');
+    allOptions.forEach(opt => {
+      opt.classList.remove('selected');
+      opt.style.backgroundColor = '';
+      opt.style.color = '#333';
+    });
+    
+    if (sel && sel.value) {
+      const selectedOption = Array.from(list.querySelectorAll('.custom-option')).find(opt => {
+        const span = opt.querySelector('span:last-child');
+        return span && span.textContent === sel.textContent;
+      });
+      if (selectedOption) {
+        selectedOption.classList.add('selected');
+        selectedOption.style.backgroundColor = '#e8f0fe';
+        selectedOption.style.color = '#1a73e8';
+      }
+    }
+    
     if (!iconVal) {
       iconImg.style.display = 'none';
       iconEmoji.style.display = 'none';
@@ -702,16 +828,77 @@ function createCustomCategoryDropdown(selectEl) {
     }
   }
 
-  function open() { list.style.display = 'block'; btn.setAttribute('aria-expanded', 'true'); }
-  function close() { list.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); }
+  function open() { 
+    rebuild();
+    list.style.display = 'block'; 
+    btn.setAttribute('aria-expanded', 'true');
+    btn.style.borderColor = '#4d90fe';
+    btn.style.boxShadow = '0 0 0 2px rgba(77, 144, 254, 0.2)';
+  }
+  
+  function close() { 
+    list.style.display = 'none'; 
+    btn.setAttribute('aria-expanded', 'false');
+    btn.style.borderColor = '#ddd';
+    btn.style.boxShadow = 'none';
+  }
 
   btn.addEventListener('click', (ev) => {
     ev.preventDefault();
-    if (list.style.display === 'block') close(); else { rebuild(); open(); }
+    ev.stopPropagation();
+    if (list.style.display === 'block') {
+      close();
+    } else {
+      open();
+    }
+  });
+
+  btn.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      ev.preventDefault();
+      if (list.style.display === 'block') {
+        close();
+      } else {
+        open();
+      }
+    } else if (ev.key === 'Escape') {
+      close();
+    }
   });
 
   document.addEventListener('click', (ev) => {
-    if (!wrapper.contains(ev.target)) close();
+    if (!wrapper.contains(ev.target)) {
+      close();
+    }
+  });
+
+  // Navegação por teclado na lista
+  list.addEventListener('keydown', (ev) => {
+    const items = Array.from(list.querySelectorAll('.custom-option'));
+    const currentIndex = items.findIndex(item => item === document.activeElement);
+    
+    switch (ev.key) {
+      case 'ArrowDown':
+        ev.preventDefault();
+        const nextIndex = (currentIndex + 1) % items.length;
+        items[nextIndex]?.focus();
+        break;
+      case 'ArrowUp':
+        ev.preventDefault();
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+        items[prevIndex]?.focus();
+        break;
+      case 'Enter':
+      case ' ':
+        ev.preventDefault();
+        document.activeElement?.click();
+        break;
+      case 'Escape':
+        ev.preventDefault();
+        close();
+        btn.focus();
+        break;
+    }
   });
 
   // insert into DOM: hide native select but keep it for form semantics
