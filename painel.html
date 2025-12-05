@@ -505,48 +505,41 @@
         }
 
         // Substitua sua updateCategories por esta versão que cria data-icon em cada option
-        function updateCategories(services) {
-            const categorySelect = document.getElementById('orderform-category');
-            if (!categorySelect) return;
+function updateCategories(services) {
+    const categorySelect = document.getElementById('orderform-category');
+    if (!categorySelect) return;
 
-            // Limpar categorias existentes, mantendo apenas a opção padrão
-            while (categorySelect.options.length > 1) {
-                categorySelect.remove(1);
-            }
+    // Limpar categorias existentes, mantendo apenas a opção padrão
+    while (categorySelect.options.length > 1) {
+        categorySelect.remove(1);
+    }
 
-            const categories = new Map(); // use Map pra guardar também o icon
+    const categories = new Map();
 
-            services.forEach(service => {
-                const name = (service.categoria || service.category_name || service.category || '').toString().trim();
-                if (!name) return;
-                if (categories.has(name)) return;
+    services.forEach(service => {
+        const name = (service.categoria || service.category_name || service.category || '').toString().trim();
+        if (!name) return;
+        if (categories.has(name)) return;
 
-                // prioridade: icon enviado pelo serviço, senão tenta mapear pelo nome
-                let icon = service.category_icon || getCategoryImageForName(name) || null;
+        let icon = service.category_icon || getCategoryImageForName(name) || null;
+        categories.set(name, icon);
+    });
 
-                // se icon for emoji curto (ex.: "❤️"), mantemos como texto; se for URL, mantemos a URL
-                categories.set(name, icon);
-            });
-
-            // --- preencher options e garantir data-icon sempre presente ---
-            categories.forEach((icon, name) => {
-                const option = document.createElement('option');
-                option.value = name;
-
-                const isEmoji = icon && typeof icon === 'string' && icon.length <= 4 && /\p{Emoji}/u.test(icon);
-                if (isEmoji) {
-                    // coloca o emoji também no texto para compatibilidade
-                    option.textContent = `${icon} ${name}`;
-                    option.setAttribute('data-icon', icon); // **IMPORTANTE**: seta sempre data-icon
-                } else {
-                    option.textContent = name;
-                    if (icon) {
-                        option.setAttribute('data-icon', icon); // imagem (URL)
-                    }
-                }
-
-                categorySelect.appendChild(option);
-            });
+    // --- preencher options sem duplicar emoji no texto ---
+    categories.forEach((icon, name) => {
+        const option = document.createElement('option');
+        option.value = name;
+        
+        // IMPORTANTE: NÃO adicionar o emoji no textContent
+        option.textContent = name;  // ← APENAS O NOME, sem emoji!
+        
+        // Adicionar o ícone apenas no data-icon
+        if (icon) {
+            option.setAttribute('data-icon', icon);
+        }
+        
+        categorySelect.appendChild(option);
+    });
 
             // ---------------- custom dropdown (substitui select visualmente) ----------------
             function createCustomCategoryDropdown(selectEl) {
