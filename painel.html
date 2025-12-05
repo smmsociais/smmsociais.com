@@ -108,6 +108,69 @@
             filter: invert(1);
         }
 
+        /* Search results (lista de serviços sugeridos) */
+        #service-search-results {
+            position: relative;
+            margin-top: 6px;
+            max-height: 360px;
+            overflow: auto;
+            border-radius: 6px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            background: #fff;
+            border: 1px solid #eee;
+            z-index: 9998;
+            font-size: 14px;
+        }
+
+        .service-result-item {
+            padding: 10px 12px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+        }
+
+        .service-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .service-result-item:hover {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .service-result-icon {
+            font-size: 20px;
+            width: 36px;
+            text-align: center;
+            line-height: 20px;
+        }
+
+        .service-result-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .service-result-title {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .service-result-sub {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-no-results {
+            padding: 12px;
+            color: #777;
+        }
     </style>
     <script>
 
@@ -500,144 +563,6 @@ function getCategoryImageForName(name) {
                     }
                 }
             }
-
-// cria um custom dropdown que substitui visualmente o select
-function createCustomCategoryDropdown(selectEl) {
-  if (!selectEl) return;
-
-  // não recriar se já existe
-  if (selectEl.__custom_inited) return;
-  selectEl.__custom_inited = true;
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'custom-select-wrapper';
-
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'custom-select-btn';
-  btn.setAttribute('aria-haspopup','listbox');
-
-  const iconImg = document.createElement('img');
-  iconImg.style.display = 'none';
-  iconImg.alt = '';
-
-  const iconEmoji = document.createElement('span');
-  iconEmoji.className = 'emoji';
-  iconEmoji.style.display = 'none';
-
-  const labelSpan = document.createElement('span');
-  labelSpan.className = 'custom-select-label';
-  labelSpan.textContent = selectEl.options[selectEl.selectedIndex]?.text || 'Categoria';
-
-  btn.appendChild(iconImg);
-  btn.appendChild(iconEmoji);
-  btn.appendChild(labelSpan);
-
-  const list = document.createElement('div');
-  list.className = 'custom-select-list';
-  list.setAttribute('role','listbox');
-
-  // preencher itens a partir das options do select (data-icon pode ser emoji ou url)
-  function rebuildList() {
-    list.innerHTML = '';
-    Array.from(selectEl.options).forEach(opt => {
-      if (!opt.value) return; // pular opção padrão
-      const item = document.createElement('div');
-      item.className = 'custom-option';
-      item.tabIndex = 0;
-      const iconVal = opt.getAttribute('data-icon');
-
-      if (iconVal) {
-        const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
-        if (isEmoji) {
-          const sp = document.createElement('span');
-          sp.className = 'emoji';
-          sp.textContent = iconVal;
-          item.appendChild(sp);
-        } else {
-          const im = document.createElement('img');
-          im.src = iconVal;
-          im.alt = '';
-          item.appendChild(im);
-        }
-      } else {
-        // pequeno placeholder para alinhamento (opcional)
-        const ph = document.createElement('span');
-        ph.style.width = '20px';
-        item.appendChild(ph);
-      }
-
-      const txt = document.createElement('span');
-      txt.textContent = opt.textContent;
-      item.appendChild(txt);
-
-      // click set value
-      item.addEventListener('click', () => {
-        selectEl.value = opt.value;
-        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-        // atualizar label
-        updateBtn();
-        closeList();
-      });
-
-      item.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter') item.click();
-      });
-
-      list.appendChild(item);
-    });
-  }
-
-  function updateBtn() {
-    const sel = selectEl.options[selectEl.selectedIndex];
-    const iconVal = sel ? sel.getAttribute('data-icon') : null;
-    labelSpan.textContent = sel ? sel.textContent : 'Categoria';
-    if (!iconVal) {
-      iconImg.style.display = 'none';
-      iconEmoji.style.display = 'none';
-      return;
-    }
-    const isEmoji = iconVal.length <= 4 && /\p{Emoji}/u.test(iconVal);
-    if (isEmoji) {
-      iconEmoji.textContent = iconVal;
-      iconEmoji.style.display = 'inline-block';
-      iconImg.style.display = 'none';
-    } else {
-      iconImg.src = iconVal;
-      iconImg.style.display = 'inline-block';
-      iconEmoji.style.display = 'none';
-    }
-  }
-
-  function openList() { list.style.display = 'block'; btn.setAttribute('aria-expanded','true'); }
-  function closeList() { list.style.display = 'none'; btn.setAttribute('aria-expanded','false'); }
-
-  btn.addEventListener('click', (ev) => {
-    ev.preventDefault();
-    if (list.style.display === 'block') closeList(); else { rebuildList(); openList(); }
-  });
-
-  document.addEventListener('click', (ev) => {
-    if (!wrapper.contains(ev.target)) closeList();
-  });
-
-  // colocar wrapper no DOM: substitui visualmente o select (mas não remove o select)
-  selectEl.style.display = 'none';
-  selectEl.parentNode.insertBefore(wrapper, selectEl);
-  wrapper.appendChild(btn);
-  wrapper.appendChild(list);
-
-  // sincronizar mudanças vindas do código (ex.: selectEl.selectedIndex = 1)
-  selectEl.addEventListener('change', updateBtn);
-
-  // init
-  updateBtn();
-}
-
-// uso: depois que updateCategories preencher o select, chama:
-const catSelect = document.getElementById('orderform-category');
-createCustomCategoryDropdown(catSelect);
-
 
             // ligar listener para mudança e também chamar agora
             categorySelect.addEventListener('change', refreshCategoryIcon);
