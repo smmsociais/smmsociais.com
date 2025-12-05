@@ -814,11 +814,44 @@ function filterServicesByCategoryId(categoryId, services) {
   return services.filter(s => String(s.category_id || s.categoria || s.category_name || '').toLowerCase() === String(categoryId).toLowerCase());
 }
 
-/* ---------- Substitui a função renderServices(original) ---------- */
-/* Cole/replace esta versão no final do seu script (ela usa os mesmos nomes internos) */
+// ----- Substitua a função loadServices atual por esta (guarda a cópia original) -----
+function loadServices() {
+    return fetch('https://smmsociais.com/api/servico')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao carregar serviços da API');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // salva uma cópia imutável da lista original para usar nos filtros
+            window._allServicesOriginal = Array.isArray(data) ? data.slice() : [];
+            // também mantém compatibilidade com _allServices
+            window._allServices = window._allServicesOriginal.slice();
+
+            // renderiza usando a lista original na primeira carga
+            renderServices(window._allServicesOriginal);
+            renderCategories(window._allServicesOriginal);
+            return data;
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            const tbody = document.getElementById('service-tbody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+            }
+            // garante que existam arrays mesmo no erro para evitar outros problemas
+            window._allServicesOriginal = window._allServicesOriginal || [];
+            window._allServices = window._allServices || [];
+            return [];
+        });
+}
+
+// ----- Substitua renderServices pela versão abaixo (NÃO sobrescreve a cópia original) -----
 function renderServices(services) {
-    // Salva cópia completa para filtros posteriores
-    window._allServices = services || [];
+    // NÃO sobrescrever window._allServicesOriginal aqui!
+    // Apenas atualiza _allServices com a lista atualmente renderizada (útil para outras funções, se necessário)
+    window._allServices = Array.isArray(services) ? services.slice() : [];
 
     const tbody = document.getElementById('service-tbody');
     const loadingRow = document.getElementById('loading-row');
@@ -874,7 +907,6 @@ function renderServices(services) {
             const maxOrder = service.maximo || '-';
             const avgTime = service.tempo_medio || '-';
 
-            // Construir a célula de descrição com botões Visualizar + Selecionar
             const descButtons = `
                 ${service.descricao ? `
                 <div class="component_button_view" style="display:inline-block;margin-right:8px">
@@ -901,7 +933,6 @@ function renderServices(services) {
 
             const serviceRow = document.createElement('tr');
 
-            // Use highlight na exibição do nome com base em input atual (se houver)
             const currentSearchInput = document.querySelector('input[data-search-service]');
             const currentTerm = currentSearchInput ? (currentSearchInput.value || '') : '';
             const highlightedName = highlight(service.nome || '', currentTerm);
@@ -942,19 +973,24 @@ function renderServices(services) {
     initializeServiceSelectionButtons();
 }
 
-/* ---------- Função que aplica filtros (termo + categoria) e re-renderiza ---------- */
+// ----- Substitua applyFilters por esta versão (usa a cópia original como base) -----
 function applyFilters() {
   const input = document.querySelector('input[data-search-service]');
   const term = input ? input.value.trim() : '';
+
+  // pegar categoria ativa
   const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]');
   const categoryId = activeCategoryEl ? activeCategoryEl.getAttribute('data-filter-category-id') : 'All';
 
-  // começa com todos
-  let filtered = window._allServices.slice();
+  // fonte inicial: a cópia original salva na primeira carga
+  const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : (Array.isArray(window._allServices) ? window._allServices.slice() : []);
+
+  let filtered = base;
+
   if (categoryId && categoryId !== 'All') filtered = filterServicesByCategoryId(categoryId, filtered);
   if (term) filtered = filterServicesByTerm(term, filtered);
 
-  // re-renderiza (renderServices agrupa por categoria novamente)
+  // renderiza a lista filtrada (renderServices não sobrescreve a original)
   renderServices(filtered);
 }
 
