@@ -10,9 +10,8 @@
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
     <!-- Adicionando Bootstrap CSS adicional para garantir funcionamento -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- CSS para controle de visibilidade da página -->
     <style>
+        /* Initial Load */
         body {
             visibility: hidden;
             opacity: 0;
@@ -33,8 +32,86 @@
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
         }
-    </style>
 
+        /* Remover contornos de foco de todos os elementos do menu */
+        .navbar a:focus,
+        .navbar button:focus,
+        .nav-link:focus,
+        .component-navbar-nav-link:focus,
+        .component-sidebar__menu-item-link:focus,
+        .navbar-toggler:focus,
+        .btn:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Remover contorno específico da sidebar */
+        .component-sidebar__menu a:focus,
+        .sidebar-block__left-menu a:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Para navegadores WebKit (Chrome, Safari, Edge) */
+        .navbar a:focus-visible,
+        .nav-link:focus-visible {
+            outline: none !important;
+        }
+
+        /* Para a navbar principal */
+        .component_private_navbar a:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Alterar cor do ícone do menu hambúrguer para branco */
+        .navbar-toggler .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+        }
+
+        /* Cor da borda do botão */
+        .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.5) !important;
+        }
+
+        /* Garantir que o botão seja visível em fundos escuros */
+        .navbar-toggler:hover {
+            border-color: rgba(255, 255, 255, 0.8) !important;
+        }
+
+        /* Alternativamente, se quiser usar CSS puro sem SVG */
+        .navbar-toggler-icon.custom-white {
+            background-image: none !important;
+            position: relative;
+            width: 30px;
+            height: 24px;
+        }
+
+        .navbar-toggler-icon.custom-white::before,
+        .navbar-toggler-icon.custom-white::after,
+        .navbar-toggler-icon.custom-white span {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-toggler-icon.custom-white::before {
+            top: 0;
+        }
+
+        .navbar-toggler-icon.custom-white span {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .navbar-toggler-icon.custom-white::after {
+            bottom: 0;
+        }
+    </style>
     <script>
         // Função para obter o token do localStorage
         function loadToken() {
@@ -155,12 +232,10 @@
                                                         style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
                                         </a>
                                     </div>
-                                    <button class="navbar-toggler" type="button" data-toggle="collapse"
-                                        data-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
+                                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
                                         aria-expanded="false" aria-label="Toggle navigation">
-                                        <span class="navbar-burger">
-                                            <span class="navbar-burger-line"></span>
-                                        </span>
+                                        <span class="navbar-toggler-icon"></span>
                                     </button>
                                 </div>
                                 <div class="collapse navbar-collapse" id="navbar-collapse-52">
@@ -170,20 +245,20 @@
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/painel">
-                                                    Novo pedido
+                                                    href="painel/">
+                                                    Novo Pedido
                                                 </a>
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/services">
                                                     Serviços
                                                 </a>
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
+                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private component-navbar-nav-link-active__navbar-private"
                                                     href="/orders">
                                                     Ordens
                                                 </a>
@@ -199,22 +274,16 @@
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/affiliates">
-                                                    Meus indicados
+                                                    Meus Indicados
                                                 </a>
                                             </li>
                                             <li
                                                 class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
                                                 <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
                                                     href="/massorder">
-                                                    Mass order
+                                                    Pedido em Massa
                                                 </a>
                                             </li>
-                                            <li
-                                                class="nav-item component-navbar-nav-item component-navbar-private-nav-item">
-                                                <a class="component-navbar-nav-link  component-navbar-nav-link__navbar-private "
-                                                    href="/suporte">
-                                                    Suporte
-                                                </a>
                                             </li>
                                         </ul>
                                         <ul class="navbar-nav navbar-nav-currencies">
@@ -256,15 +325,15 @@
                             <ul class="sidebar-block__left-menu editor__component-wrapper">
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/painel">
-                                        Novo pedido
+                                        Novo Pedido
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
+                                <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/services">
                                         Serviços
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item ">
+                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
                                     <a class="component-sidebar__menu-item-link" href="/orders">
                                         Ordens
                                     </a>
@@ -273,21 +342,17 @@
                                     <a class="component-sidebar__menu-item-link" href="/addfunds">
                                         Adicionar Saldo
                                     </a>
-                                </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/affiliates">
-                                        Meus indicados
+                                        Meus Indicados
                                     </a>
                                 </li>
                                 <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/massorder">
-                                        Mass order
+                                        Pedido em Massa
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item ">
-                                    <a class="component-sidebar__menu-item-link" href="/suporte">
-                                        Suporte
-                                    </a>
+                                </a>
                                 </li>
                             </ul>
                         </div>
