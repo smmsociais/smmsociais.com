@@ -6,10 +6,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Services</title>
-    
-    <!-- Adicionar Font Awesome para os ícones de estrela -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
         /* Initial Load */
         body {
@@ -52,7 +48,9 @@
             left: 15px;
             transform: translateY(-50%);
             width: 30px;
+            /* Diminuído de 40px para 24px */
             height: 30px;
+            /* Diminuído de 40px para 24px */
             object-fit: contain;
             z-index: 1;
         }
@@ -63,12 +61,14 @@
             left: 15px;
             transform: translateY(-50%);
             font-size: 30px;
+            /* Tamanho adequado para emoji */
             z-index: 1;
         }
 
         .category-content {
             position: relative;
             padding-left: 40px;
+            /* Espaço para a imagem/emoji */
         }
 
         .services-category h4 {
@@ -76,25 +76,6 @@
             line-height: 1.2;
         }
 
-        /* Estilo para estrela de favoritos */
-        .favorite-star {
-            color: #ffc107; /* Cor amarela para estrela */
-            cursor: pointer;
-            font-size: 18px;
-            transition: all 0.2s ease;
-        }
-
-        .favorite-star:hover {
-            transform: scale(1.2);
-        }
-
-        .favorite-star.fas {
-            color: #ffc107; /* Estrela cheia - amarelo */
-        }
-
-        .favorite-star.far {
-            color: #ccc; /* Estrela vazia - cinza */
-        }
 
         /* Highlight simples para termo buscado */
         .service-highlight {
@@ -107,14 +88,11 @@
         // Mapeamento de categorias para imagens - CORRIGIDO para emoji
         const categoryImages = {
             'Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/9c93b12b9b4044c5e96392fbaf09bb42e74cb16a/instagram.png?raw=true',
-            'Curtidas no Instagram': '❤️',
+            'Curtidas no Instagram': '❤️', // Agora é tratado como emoji
             'Seguidores Brasileiros no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
             'Curtidas Brasileiras no Instagram': 'https://github.com/smmsociais/smmsociais.com/blob/main/brasil.png?raw=true',
             'TikTok': 'https://github.com/smmsociais/smmsociais.com/blob/main/tiktok.png?raw=true'
         };
-
-        // Armazenar favoritos localmente
-        let userFavorites = JSON.parse(localStorage.getItem('serviceFavorites')) || [];
 
         // Função para verificar se é um emoji
         function isEmoji(str) {
@@ -138,6 +116,7 @@
 
             if (!token) {
                 console.error("Token não encontrado.");
+                // Definir saldo como R$ 0,00 em caso de erro
                 const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
                 if (balanceElement) {
                     balanceElement.textContent = 'R$ 0,00';
@@ -159,11 +138,14 @@
                 }
 
                 const balanceData = await response.json();
+
+                // Formatar o saldo como moeda brasileira
                 const formattedBalance = new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
                     currency: 'BRL'
                 }).format(balanceData.saldo || 0);
 
+                // Atualizar o saldo na navbar
                 const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
                 if (balanceElement) {
                     balanceElement.textContent = formattedBalance;
@@ -173,6 +155,7 @@
 
             } catch (error) {
                 console.error('Erro ao carregar saldo:', error);
+                // Definir saldo como R$ 0,00 em caso de erro
                 const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
                 if (balanceElement) {
                     balanceElement.textContent = 'R$ 0,00';
@@ -233,59 +216,7 @@
                 });
         }
 
-        // Função para alternar favorito
-        function toggleFavorite(serviceId) {
-            const index = userFavorites.indexOf(serviceId);
-            
-            if (index === -1) {
-                // Adicionar aos favoritos
-                userFavorites.push(serviceId);
-            } else {
-                // Remover dos favoritos
-                userFavorites.splice(index, 1);
-            }
-            
-            // Salvar no localStorage
-            localStorage.setItem('serviceFavorites', JSON.stringify(userFavorites));
-            
-            // Atualizar ícone
-            updateFavoriteIcon(serviceId);
-            
-            // Se estiver na view de favoritos, aplicar filtro
-            const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]');
-            if (activeCategoryEl && activeCategoryEl.getAttribute('data-filter-category-id') === 'favorites') {
-                applyFilters();
-            }
-            
-            return index === -1; // Retorna true se foi adicionado, false se foi removido
-        }
-
-        // Função para atualizar ícone de favorito
-        function updateFavoriteIcon(serviceId) {
-            const starElement = document.querySelector(`[data-favorite-service-id="${serviceId}"] [data-favorite-icon]`);
-            if (starElement) {
-                if (userFavorites.includes(parseInt(serviceId))) {
-                    starElement.className = 'fas fa-star favorite-star';
-                } else {
-                    starElement.className = 'far fa-star favorite-star';
-                }
-            }
-        }
-
-        // Função para inicializar favoritos
-        function initializeFavorites() {
-            // Adicionar event listeners para as estrelas
-            document.addEventListener('click', function(e) {
-                const favoriteLink = e.target.closest('[data-favorite-service-id]');
-                if (favoriteLink) {
-                    e.preventDefault();
-                    const serviceId = favoriteLink.getAttribute('data-favorite-service-id');
-                    toggleFavorite(serviceId);
-                }
-            });
-        }
-
-        // Função para renderizar os serviços na tabela - ATUALIZADA
+        // Função para renderizar os serviços na tabela - ATUALIZADA (sem estrela de favoritos)
         function renderServices(services) {
             const tbody = document.getElementById('service-tbody');
             const loadingRow = document.getElementById('loading-row');
@@ -294,7 +225,7 @@
             tbody.innerHTML = '';
 
             if (!services || services.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Nenhum serviço disponível</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Nenhum serviço disponível</td></tr>';
                 return;
             }
 
@@ -328,10 +259,12 @@
                 // Adicionar imagem ou emoji se existir para esta categoria
                 if (categoryImage) {
                     if (isEmoji(categoryImage)) {
+                        // Se for emoji, usar span em vez de img
                         categoryContent += `
                             <span class="category-emoji">${categoryImage}</span>
                         `;
                     } else {
+                        // Se for URL de imagem, usar img
                         categoryContent += `
                             <img src="${categoryImage}" alt="${categoryName}" class="category-image">
                         `;
@@ -349,20 +282,10 @@
                     const minOrder = service.minimo || '-';
                     const maxOrder = service.maximo || '-';
                     const avgTime = service.tempo_medio || '-';
-                    
-                    // Verificar se o serviço está nos favoritos
-                    const isFavorite = userFavorites.includes(parseInt(service.id_servico));
-                    const starClass = isFavorite ? 'fas fa-star favorite-star' : 'far fa-star favorite-star';
 
                     const serviceRow = document.createElement('tr');
 
                     serviceRow.innerHTML = `
-                        <td data-label="Favorite services">
-                            <a href="#" data-favorite-service-id="${service.id_servico}">
-                                <span data-favorite-icon class="${starClass}"></span>
-                            </a>
-                        </td>
-
                         <td data-label="ID">${service.id_servico}</td>
 
                         <td data-label="Serviço" class="table-service">
@@ -388,7 +311,6 @@
                                     data-min="${minOrder}"
                                     data-max="${maxOrder}"
                                     data-target="#service-description-55">
-                                    Ver Descrição
                                 </button>
                             </div>
                             ` : ''}
@@ -397,13 +319,6 @@
                                 ${service.descricao.replace(/\n/g, "<br>")}
                             </div>
                             ` : ''}
-                            <div style="display:inline-block; margin-left: 10px;">
-                                <button class="btn btn-big-primary btn-select-service"
-                                    data-service-id="${service.id_servico}"
-                                    data-service-name="${service.nome}">
-                                    Selecionar
-                                </button>
-                            </div>
                         </td>
                     `;
 
@@ -413,48 +328,53 @@
 
             initializeServiceDescriptionButtons();
             initializeServiceSelectionButtons();
-            initializeFavorites();
         }
 
         // helper: transforma "Seguidores Instagram" -> "seguidores-instagram"
         function slugify(str) {
             return String(str || '')
-                .normalize('NFKD')
-                .replace(/[\u0300-\u036f]/g, '')
+                .normalize('NFKD')               // normaliza acentos
+                .replace(/[\u0300-\u036f]/g, '') // remove diacríticos
                 .toLowerCase()
                 .trim()
-                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/[^a-z0-9]+/g, '-')     // não alfanum -> -
                 .replace(/^-+|-+$/g, '');
         }
 
         // helper: procura ícone/emoji no map categoryImages (case-insensitive)
         function getCategoryImageForName(name) {
             if (!name) return null;
+            // primeiro tenta match exato case-insensitive
             const keys = Object.keys(categoryImages);
             for (let k of keys) {
                 if (String(k).toLowerCase() === String(name).toLowerCase()) return categoryImages[k];
             }
+            // tenta contains (ex.: "Instagram" para "Seguidores Instagram")
             for (let k of keys) {
                 if (String(name).toLowerCase().includes(String(k).toLowerCase())) return categoryImages[k];
             }
             return null;
         }
 
-        // Função para renderizar categorias
+        // Substitua sua função renderCategories por esta
         function renderCategories(services) {
             const categoryMenu = document.getElementById('category-filter-menu');
             if (!categoryMenu) return;
 
+            // limpa as categorias dinâmicas (mantém o item "Todas as categorias" se existir)
             const preserve = [];
+            // coleta itens que já existem com data-filter-category-id="all"
             categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => {
                 const id = (el.getAttribute('data-filter-category-id') || '').toLowerCase();
-                if (id === 'all' || id === 'favorites') preserve.push(el);
+                if (id === 'all') preserve.push(el);
             });
             categoryMenu.innerHTML = '';
+            // re-insere preserve no topo (mantém "Todas as categorias")
             preserve.forEach(el => categoryMenu.appendChild(el));
 
             const seen = new Set();
             services.forEach(service => {
+                // obtém nome da categoria (prioriza campos existentes)
                 const rawName = service.category_name || service.categoria || service.category || 'Outros';
                 const name = String(rawName).trim();
                 if (!name) return;
@@ -462,14 +382,16 @@
                 if (seen.has(slug)) return;
                 seen.add(slug);
 
+                // determina ícone/emoji: primeiro campo service.category_icon, depois map categoryImages
                 let icon = service.category_icon || getCategoryImageForName(name) || null;
 
                 const categoryItem = document.createElement('a');
                 categoryItem.className = 'dropdown-item d-flex align-items-center text-decoration-none';
                 categoryItem.href = '#';
-                categoryItem.setAttribute('data-filter-category-id', slug);
+                categoryItem.setAttribute('data-filter-category-id', slug); // ex.: 'seguidores-instagram'
                 categoryItem.setAttribute('data-filter-category-name', name);
 
+                // monta innerHTML com img ou emoji (se for emoji, detecta)
                 let iconHtml = '';
                 if (icon) {
                     if (isEmoji(icon)) {
@@ -478,17 +400,20 @@
                         iconHtml = `<img src="${icon}" alt="${name}" style="width:20px;height:20px;object-fit:contain;margin-right:8px">`;
                     }
                 } else {
+                    // fallback ícone genérico
                     iconHtml = `<span class="align-middle mr-1" style="width:20px;text-align:center">🔧</span>`;
                 }
 
                 categoryItem.innerHTML = `
-                    ${iconHtml}
-                    <div>${name}</div>
-                `;
+      ${iconHtml}
+      <div>${name}</div>
+    `;
 
+                // append (insere depois do "Todas as categorias")
                 categoryMenu.appendChild(categoryItem);
             });
 
+            // garante que exista um item 'all' (se não houver, cria)
             if (!categoryMenu.querySelector('[data-filter-category-id="all"], [data-filter-category-id="All"]')) {
                 const allItem = document.createElement('a');
                 allItem.className = 'dropdown-item active';
@@ -515,6 +440,7 @@
                     if (contentElement) {
                         document.querySelector('.service-description-content').innerHTML = contentElement.innerHTML;
 
+                        // Atualizar o botão de criar pedido rápido
                         const quickOrderBtn = document.getElementById('createQuickOrder');
                         quickOrderBtn.setAttribute('data-service-id', serviceId);
                         quickOrderBtn.setAttribute('data-service-name', serviceName);
@@ -524,9 +450,11 @@
                 });
             });
 
+            // Event listener para o botão de criar pedido rápido no modal
             document.getElementById('createQuickOrder').addEventListener('click', function () {
                 const serviceId = this.getAttribute('data-service-id');
                 if (serviceId) {
+                    // Redirecionar para a página de painel com o parâmetro do serviço
                     window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
                 }
             });
@@ -538,7 +466,11 @@
             selectButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     const serviceId = this.getAttribute('data-service-id');
-                    window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
+                    const serviceName = this.getAttribute('data-service-name');
+                    {
+                        // Redirecionar para a página de painel com o parâmetro do serviço
+                        window.location.href = `https://smmsociais.com/painel?service=${serviceId}`;
+                    }
                 });
             });
         }
@@ -736,21 +668,12 @@
                                                                 aria-expanded="false">
                                                                 <span class="fal fa-filter"></span>
                                                                 <span class="services-filter__active-category"
-                                                                    data-filter-active-category="true">Todas as categorias</span>
+                                                                    data-filter-active-category="true"></span>
                                                             </a>
                                                             <div class="dropdown-menu" id="category-filter-menu">
                                                                 <a class="dropdown-item active" href="#"
-                                                                    data-filter-category-id="all"
-                                                                    data-filter-category-name="Todas as categorias">
-                                                                    Todas as categorias
-                                                                </a>
-                                                                <a class="dropdown-item d-flex align-items-center text-decoration-none"
-                                                                    href="#" data-filter-category-id="favorites"
-                                                                    data-filter-category-name="Serviços Favoritos">
-                                                                    <span class="fas fa-star align-middle mr-1"
-                                                                        style="min-width: 18px; color: #ffc107;"></span>
-                                                                    <div>Serviços Favoritos</div>
-                                                                </a>
+                                                                    data-filter-category-id="All"
+                                                                    data-filter-category-name="Todas as categorias">Todas as categorias</a>
                                                                 <!-- Categories will be loaded dynamically from API -->
                                                             </div>
                                                         </div>
@@ -781,7 +704,6 @@
                                                 <table class="table" id="service-table-55">
                                                     <thead>
                                                         <tr>
-                                                            <th style="width: 42px">Favorito</th>
                                                             <th>ID</th>
                                                             <th class="nowrap">Serviço</th>
                                                             <th class="nowrap">Preço por 1000</th>
@@ -795,13 +717,13 @@
                                                                         title="The average completion time is calculated based on the completion times of the latest orders."></span>
                                                                 </div>
                                                             </th>
-                                                            <th class="hidden-xs hidden-sm service-description__th">Ações</th>
+                                                            <th class="hidden-xs hidden-sm service-description__th">
                                                         </tr>
                                                     </thead>
                                                     <tbody id="service-tbody">
                                                         <!-- Services will be loaded dynamically from API -->
                                                         <tr id="loading-row">
-                                                            <td colspan="8" class="text-center py-4">
+                                                            <td colspan="7" class="text-center py-4">
                                                                 <div class="spinner-border" role="status">
                                                                     <span class="sr-only">Carregando serviços...</span>
                                                                 </div>
@@ -856,9 +778,10 @@
     <script type="text/javascript">
     </script>
 
-    <!-- Script principal -->
+    <!-- Script para garantir que a página apareça apenas após todas as APIs terminarem -->
     <script>
         (function () {
+            // mostra um overlay loader enquanto aguarda
             const loader = document.createElement('div');
             loader.id = 'page-loader';
             loader.innerHTML = `
@@ -868,50 +791,56 @@
                 </div>`;
             document.body.appendChild(loader);
 
+            // --- opcional: esperar window.load para garantir recursos externos carregados ---
             const windowLoadPromise = new Promise(resolve => {
                 if (document.readyState === 'complete') return resolve();
                 window.addEventListener('load', resolve);
             });
 
+            // Executar fillAndHideInput imediatamente (não depende de APIs)
             fillAndHideInput();
 
+            // --- Promise principal: saldo + serviços (+ window.load) ---
             const saldoPromise = loadUserBalance();
             const servicesPromise = loadServices();
 
             Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
                 .then(() => {
+                    // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
-                    setupFilterHandlers();
                 })
                 .catch(err => {
+                    // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
                     console.error('Erro ao carregar dados principais:', err);
                     document.body.classList.add('loaded');
                     const tbody = document.getElementById('service-tbody');
                     if (tbody && tbody.innerHTML.trim() === '') {
-                        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
                     }
                 })
                 .finally(() => {
+                    // remover loader visual
                     if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
                 });
 
+            // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
             setTimeout(() => {
                 if (!document.body.classList.contains('loaded')) {
                     console.warn('Fallback: exibindo página após timeout.');
                     document.body.classList.add('loaded');
                     if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
                 }
-            }, 15000);
+            }, 15000); // 15s — opcional, ajuste conforme necessidade
         })();
 
-        /* ---------- Configuração de filtros ---------- */
-        window._allServicesOriginal = window._allServicesOriginal || [];
-        
+        /* ---------- Helpers e armazenamento global ---------- */
+        window._allServices = window._allServices || [];
         function debounce(fn, wait = 180) {
             let t;
             return function (...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), wait); };
         }
 
+        /* highlight seguro: substitui ocorrências do termo por <span class="service-highlight">term</span> */
         function highlight(text = '', term = '') {
             if (!term) return text;
             try {
@@ -921,6 +850,7 @@
             } catch (e) { return text; }
         }
 
+        /* Filtra serviços por termo (procura em nome, descrição, rede e tipo) */
         function filterServicesByTerm(term, services) {
             term = String(term || '').trim().toLowerCase();
             if (!term) return services.slice();
@@ -930,32 +860,163 @@
             });
         }
 
-        // Função para filtrar por favoritos
-        function filterServicesByFavorites(services) {
-            return services.filter(s => userFavorites.includes(parseInt(s.id_servico)));
+        // ----- Substitua a função loadServices atual por esta (guarda a cópia original) -----
+        function loadServices() {
+            return fetch('https://smmsociais.com/api/servico')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar serviços da API');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // salva uma cópia imutável da lista original para usar nos filtros
+                    window._allServicesOriginal = Array.isArray(data) ? data.slice() : [];
+                    // também mantém compatibilidade com _allServices
+                    window._allServices = window._allServicesOriginal.slice();
+
+                    // renderiza usando a lista original na primeira carga
+                    renderServices(window._allServicesOriginal);
+                    renderCategories(window._allServicesOriginal);
+                    return data;
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    const tbody = document.getElementById('service-tbody');
+                    if (tbody) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Erro ao carregar serviços. Tente novamente mais tarde.</td></tr>';
+                    }
+                    // garante que existam arrays mesmo no erro para evitar outros problemas
+                    window._allServicesOriginal = window._allServicesOriginal || [];
+                    window._allServices = window._allServices || [];
+                    return [];
+                });
         }
 
+        // ----- Substitua renderServices pela versão abaixo (NÃO sobrescreve a cópia original) -----
+        function renderServices(services) {
+            // NÃO sobrescrever window._allServicesOriginal aqui!
+            // Apenas atualiza _allServices com a lista atualmente renderizada (útil para outras funções, se necessário)
+            window._allServices = Array.isArray(services) ? services.slice() : [];
+
+            const tbody = document.getElementById('service-tbody');
+            const loadingRow = document.getElementById('loading-row');
+
+            if (loadingRow) loadingRow.remove();
+            tbody.innerHTML = '';
+
+            if (!services || services.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Nenhum serviço disponível</td></tr>';
+                return;
+            }
+
+            // AGRUPAR POR CATEGORIA
+            const servicesByCategory = {};
+            services.forEach(service => {
+                const categoryName = service.categoria || service.category_name || "Outros";
+                if (!servicesByCategory[categoryName]) servicesByCategory[categoryName] = [];
+                servicesByCategory[categoryName].push(service);
+            });
+
+            // RENDERIZA POR CATEGORIA
+            Object.keys(servicesByCategory).forEach(categoryName => {
+                const categoryServices = servicesByCategory[categoryName];
+                const categoryImage = categoryImages[categoryName];
+
+                // Linha de título da categoria
+                const categoryRow = document.createElement('tr');
+                categoryRow.className = 'services-list-category-title';
+
+                let categoryContent = `
+            <td colspan="100%" class="style-bg-primary-alpha-20 style-text-primary services-category editor__component-wrapper">
+                <div class="category-content">
+                    <h4>${categoryName}</h4>
+                </div>
+        `;
+
+                if (categoryImage) {
+                    if (isEmoji(categoryImage)) {
+                        categoryContent += `<span class="category-emoji">${categoryImage}</span>`;
+                    } else {
+                        categoryContent += `<img src="${categoryImage}" alt="${categoryName}" class="category-image">`;
+                    }
+                }
+
+                categoryContent += `</td>`;
+                categoryRow.innerHTML = categoryContent;
+                tbody.appendChild(categoryRow);
+
+                // Serviços
+                categoryServices.forEach(service => {
+                    const pricePer1000 = service.preco_1000 ? `R$ ${parseFloat(service.preco_1000).toFixed(2)}` : '-';
+                    const minOrder = service.minimo || '-';
+                    const maxOrder = service.maximo || '-';
+                    const avgTime = service.tempo_medio || '-';
+
+                    const descButtons = `
+    <div style="display:inline-block">
+        <button class="btn btn-big-primary btn-select-service"
+            data-service-id="${service.id_servico}"
+            data-service-name="${service.nome}">
+            Selecionar
+        </button>
+    </div>
+`;
+
+                    const serviceRow = document.createElement('tr');
+
+                    const currentSearchInput = document.querySelector('input[data-search-service]');
+                    const currentTerm = currentSearchInput ? (currentSearchInput.value || '') : '';
+                    const highlightedName = highlight(service.nome || '', currentTerm);
+
+                    serviceRow.innerHTML = `
+                <td data-label="ID">${service.id_servico}</td>
+
+                <td data-label="Serviço" class="table-service">
+                    ${highlightedName}
+                </td>
+
+                <td data-label="Preço por 1000">${pricePer1000}</td>
+
+                <td data-label="Pedido mínimo">${minOrder}</td>
+
+                <td data-label="Pedido máximo">${maxOrder}</td>
+
+                <td data-label="Tempo médio" class="nowrap">${avgTime}</td>
+
+                <td data-label="" class="services-list__description">
+                    ${service.descricao ? `<div class="d-none" id="service-description-id-55-${service.id_servico}">${service.descricao.replace(/\n/g, "<br>")}</div>` : ''}
+                    ${descButtons}
+                </td>
+            `;
+
+                    tbody.appendChild(serviceRow);
+                });
+            });
+
+            // Inicializa listeners dos botões recém-criados
+            initializeServiceDescriptionButtons();
+            initializeServiceSelectionButtons();
+        }
+
+        // ----- Substitua applyFilters por esta versão (usa a cópia original como base) -----
         function applyFilters() {
             const input = document.querySelector('input[data-search-service]');
             const term = input ? input.value.trim() : '';
 
+            // pegar categoria ativa
             const activeCategoryEl = document.querySelector('#category-filter-menu .active[data-filter-category-id]');
-            const categoryId = activeCategoryEl ? activeCategoryEl.getAttribute('data-filter-category-id') : 'all';
+            const categoryId = activeCategoryEl ? activeCategoryEl.getAttribute('data-filter-category-id') : 'All';
 
-            const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : [];
+            // fonte inicial: a cópia original salva na primeira carga
+            const base = Array.isArray(window._allServicesOriginal) ? window._allServicesOriginal.slice() : (Array.isArray(window._allServices) ? window._allServices.slice() : []);
 
             let filtered = base;
 
-            // Aplicar filtro de categoria
-            if (categoryId === 'favorites') {
-                filtered = filterServicesByFavorites(filtered);
-            } else if (categoryId && categoryId !== 'all') {
-                filtered = filterServicesByCategoryId(categoryId, filtered);
-            }
-
-            // Aplicar filtro de busca
+            if (categoryId && categoryId !== 'All') filtered = filterServicesByCategoryId(categoryId, filtered);
             if (term) filtered = filterServicesByTerm(term, filtered);
 
+            // renderiza a lista filtrada (renderServices não sobrescreve a original)
             renderServices(filtered);
         }
 
@@ -969,7 +1030,8 @@
             });
         }
 
-        function setupFilterHandlers() {
+        /* ---------- Event binding para search input e menu de categorias ---------- */
+        function setupServicesTableSearchAndFilters() {
             const searchInput = document.querySelector('input[data-search-service]');
             const categoryMenu = document.getElementById('category-filter-menu');
 
@@ -979,19 +1041,32 @@
                 }, 160);
                 searchInput.addEventListener('input', onInput);
 
+                // botão de busca (se houver) mantém comportamento: aciona filtros
                 const btn = document.querySelector('[data-filter-serch-btn="true"]');
                 if (btn) btn.addEventListener('click', () => applyFilters());
+
+                // limpa highlight ao perder foco (opcional)
+                searchInput.addEventListener('blur', () => {
+                    // setTimeout para permitir clique em itens
+                    setTimeout(() => {
+                        // se quiser esconder highlights ao perder foco, descomente a próxima linha:
+                        // renderServices(window._allServices);
+                    }, 180);
+                });
             }
 
             if (categoryMenu) {
+                // adiciona listener a todos itens (inclusive os inseridos dinamicamente)
                 categoryMenu.addEventListener('click', function (ev) {
                     ev.preventDefault();
                     const a = ev.target.closest('[data-filter-category-id]');
                     if (!a) return;
 
+                    // remove active de outros itens
                     categoryMenu.querySelectorAll('[data-filter-category-id]').forEach(el => el.classList.remove('active'));
                     a.classList.add('active');
 
+                    // atualiza label do botão principal (se existir)
                     const activeLabel = document.querySelector('[data-filter-active-category="true"]');
                     if (activeLabel) activeLabel.textContent = a.getAttribute('data-filter-category-name') || a.textContent;
 
@@ -999,6 +1074,13 @@
                 });
             }
         }
+
+        /* ---------- fallback: se renderServices já foi chamado antes deste script, garante setup ---------- */
+        (function ensureSetup() {
+            // Se services já foram carregados antes deste script (por renderServices original), window._allServices foi setado? se não, tentamos extrair do DOM (não ideal).
+            // Normalmente renderServices foi sobrescrita e será chamada novamente via loadServices; agora apenas ligamos os handlers.
+            setupServicesTableSearchAndFilters();
+        })();
     </script>
 
 </body>
