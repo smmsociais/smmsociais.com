@@ -176,16 +176,11 @@ if (url.startsWith("/api/account")) {
     if (!usuario) {
       return res.status(404).json({ error: "Usuário não encontrado." });
     }
- 
+
+    // ============================
+    //          GET
+    // ============================
     if (method === "GET") {
-      let actionHistory = null;
-
-      if (usuario.historico_acoes?.length > 0) {
-        actionHistory = await ActionHistory.findOne({
-          _id: { $in: usuario.historico_acoes }
-        }).sort({ data: -1 });
-      }
-
       return res.status(200).json({
         nome_usuario: usuario.nome,
         email: usuario.email,
@@ -195,39 +190,50 @@ if (url.startsWith("/api/account")) {
       });
     }
 
+    // ============================
+    //          PUT (atualizar perfil)
+    // ============================
     if (method === "PUT") {
-      const { nome_usuario, email, senha } = req.body;
+      const { nome_usuario, email, senha_atual, nova_senha } = req.body;
 
-      // Validação da senha se for fornecida
-      if (senha) {
-        if (senha.length < 6) {
-          return res.status(400).json({ 
-            error: "A senha deve ter no mínimo 6 caracteres." 
+      // OBJETO PARA ATUALIZAÇÃO
+      const updateFields = {
+        nome: nome_usuario || usuario.nome,
+        email: email || usuario.email
+      };
+
+      // ============================
+      //     ALTERAÇÃO DE SENHA
+      // ============================
+      if (nova_senha) {
+
+        // Verifica tamanho mínimo
+        if (nova_senha.length < 6) {
+          return res.status(400).json({
+            error: "A nova senha deve ter no mínimo 6 caracteres."
           });
         }
-        
-        // Aqui você pode adicionar outras validações se necessário
-        // Por exemplo: verificar complexidade, caracteres especiais, etc.
-        
-        // ⚠️ IMPORTANTE: Adicionar criptografia da senha
-        // Exemplo com bcrypt (se estiver usando):
-        // updateFields.senha = await bcrypt.hash(senha, 10);
-      }
 
-      const updateFields = { 
-        nome: nome_usuario || usuario.nome, 
-        email: email || usuario.email 
-      };
-      
-      if (senha) {
-        updateFields.senha = senha; // ⚠️ Criptografar se necessário
-      }
+        // Exige senha_atual
+        if (!senha_atual) {
+          return res.status(400).json({
+            error: "Você deve informar a senha atual para alterar a senha."
+          });
+        }
 
-      // Verificar se há algo para atualizar
-      if (Object.keys(updateFields).length === 0) {
-        return res.status(400).json({ 
-          error: "Nenhum dado fornecido para atualização." 
-        });
+        // Verifica se a senha atual está correta
+        const bcrypt = require("bcryptjs");
+        const senhaCorreta = await bcrypt.compare(senha_atual, usuario.senha);
+
+        if (!senhaCorreta) {
+          return res.status(403).json({
+            error: "Senha atual incorreta."
+          });
+        }
+
+        // Se passou, gera hash da nova senha
+        const salt = await bcrypt.genSalt(10);
+        updateFields.senha = await bcrypt.hash(nova_senha, salt);
       }
 
       const usuarioAtualizado = await User.findOneAndUpdate(
@@ -240,7 +246,7 @@ if (url.startsWith("/api/account")) {
         return res.status(404).json({ error: "Usuário não encontrado." });
       }
 
-      return res.status(200).json({ 
+      return res.status(200).json({
         message: "Perfil atualizado com sucesso!",
         user: {
           nome_usuario: usuarioAtualizado.nome,
@@ -248,11 +254,13 @@ if (url.startsWith("/api/account")) {
         }
       });
     }
+
   } catch (error) {
     console.error("💥 Erro ao processar /account:", error);
     return res.status(500).json({ error: "Erro ao processar perfil." });
   }
 }
+
 
 // Rota: /api/massorder
 if (url.startsWith("/api/massorder")) {
