@@ -186,22 +186,48 @@ if (url.startsWith("/api/account")) {
         }).sort({ data: -1 });
       }
 
-// dentro do bloco if (method === "GET") { ... }
-return res.status(200).json({
-  nome_usuario: usuario.nome,
-  email: usuario.email,
-  token: usuario.token,
-  userId: usuario._id ? String(usuario._id) : null, // <-- adiciona userId
-  id: usuario._id ? String(usuario._id) : null      // <-- alias opcional
-});
+      return res.status(200).json({
+        nome_usuario: usuario.nome,
+        email: usuario.email,
+        token: usuario.token,
+        userId: usuario._id ? String(usuario._id) : null,
+        id: usuario._id ? String(usuario._id) : null
+      });
     }
 
     if (method === "PUT") {
       const { nome_usuario, email, senha } = req.body;
 
-      const updateFields = { nome: nome_usuario, email };
+      // Validação da senha se for fornecida
+      if (senha) {
+        if (senha.length < 6) {
+          return res.status(400).json({ 
+            error: "A senha deve ter no mínimo 6 caracteres." 
+          });
+        }
+        
+        // Aqui você pode adicionar outras validações se necessário
+        // Por exemplo: verificar complexidade, caracteres especiais, etc.
+        
+        // ⚠️ IMPORTANTE: Adicionar criptografia da senha
+        // Exemplo com bcrypt (se estiver usando):
+        // updateFields.senha = await bcrypt.hash(senha, 10);
+      }
+
+      const updateFields = { 
+        nome: nome_usuario || usuario.nome, 
+        email: email || usuario.email 
+      };
+      
       if (senha) {
         updateFields.senha = senha; // ⚠️ Criptografar se necessário
+      }
+
+      // Verificar se há algo para atualizar
+      if (Object.keys(updateFields).length === 0) {
+        return res.status(400).json({ 
+          error: "Nenhum dado fornecido para atualização." 
+        });
       }
 
       const usuarioAtualizado = await User.findOneAndUpdate(
@@ -214,7 +240,13 @@ return res.status(200).json({
         return res.status(404).json({ error: "Usuário não encontrado." });
       }
 
-      return res.status(200).json({ message: "Perfil atualizado com sucesso!" });
+      return res.status(200).json({ 
+        message: "Perfil atualizado com sucesso!",
+        user: {
+          nome_usuario: usuarioAtualizado.nome,
+          email: usuarioAtualizado.email
+        }
+      });
     }
   } catch (error) {
     console.error("💥 Erro ao processar /account:", error);
