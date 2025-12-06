@@ -89,6 +89,7 @@
                 transform: translateX(100%);
                 opacity: 0;
             }
+
             to {
                 transform: translateX(0);
                 opacity: 1;
@@ -100,6 +101,7 @@
                 transform: translateX(0);
                 opacity: 1;
             }
+
             to {
                 transform: translateX(100%);
                 opacity: 0;
@@ -148,24 +150,24 @@
         // Função para inicializar o sistema de notificações
         function initNotificationSystem() {
             if (notifications) return notifications;
-            
+
             notifications = {
                 container: null,
-                
-                initContainer: function() {
+
+                initContainer: function () {
                     // Verificar se o body já está disponível
                     if (!document.body) {
                         console.warn('document.body não está disponível ainda');
                         return false;
                     }
-                    
+
                     this.container = document.createElement('div');
                     this.container.className = 'notifications-container';
                     document.body.appendChild(this.container);
                     return true;
                 },
 
-                show: function(message, type = 'info', duration = 5000) {
+                show: function (message, type = 'info', duration = 5000) {
                     // Se o container não foi inicializado, tentar inicializar
                     if (!this.container) {
                         if (!this.initContainer()) {
@@ -176,26 +178,26 @@
 
                     const notification = document.createElement('div');
                     notification.className = `notification ${type}`;
-                    
+
                     const content = document.createElement('div');
                     content.className = 'notification-content';
                     content.textContent = message;
-                    
+
                     const closeBtn = document.createElement('button');
                     closeBtn.className = 'notification-close';
                     closeBtn.innerHTML = '&times;';
                     closeBtn.onclick = () => this.hide(notification);
-                    
+
                     notification.appendChild(content);
                     notification.appendChild(closeBtn);
                     this.container.appendChild(notification);
-                    
+
                     if (duration > 0) {
                         setTimeout(() => this.hide(notification), duration);
                     }
                 },
 
-                hide: function(notification) {
+                hide: function (notification) {
                     if (notification && notification.parentNode) {
                         notification.classList.add('hiding');
                         setTimeout(() => {
@@ -206,7 +208,7 @@
                     }
                 },
 
-                clear: function() {
+                clear: function () {
                     if (this.container) {
                         while (this.container.firstChild) {
                             this.container.removeChild(this.container.firstChild);
@@ -214,7 +216,7 @@
                     }
                 }
             };
-            
+
             return notifications;
         }
 
@@ -225,15 +227,15 @@
             if (oldFeedback) {
                 oldFeedback.remove();
             }
-            
+
             // Cria novo feedback
             const feedback = document.createElement('div');
             feedback.className = `form-feedback ${type}`;
             feedback.textContent = message;
-            
+
             // Insere no início do formulário
             form.insertBefore(feedback, form.firstChild);
-            
+
             // Remove após 5 segundos
             setTimeout(() => {
                 if (feedback.parentNode) {
@@ -308,9 +310,6 @@
 
             if (!token) {
                 console.error("Token não encontrado.");
-                if (notifications) {
-                    notifications.show("Sessão expirada, faça login novamente.", "error", 5000);
-                }
                 setTimeout(() => {
                     window.location.href = "/login";
                 }, 2000);
@@ -337,18 +336,10 @@
                 document.getElementById('email').value = accountData.email || '';
                 document.getElementById('current-email').value = accountData.email || '';
 
-                // Exibir mensagem de sucesso se houver na resposta
-                if (accountData.message && notifications) {
-                    notifications.show(accountData.message, "success", 3000);
-                }
-
                 return accountData;
 
             } catch (error) {
                 console.error('Erro:', error);
-                if (notifications) {
-                    notifications.show(error.message || 'Erro ao carregar dados da conta', "error", 5000);
-                }
                 return {};
             }
         }
@@ -359,9 +350,6 @@
 
             if (!token) {
                 console.error('Token não encontrado');
-                if (notifications) {
-                    notifications.show('Sessão expirada. Faça login novamente.', "error", 5000);
-                }
                 return false;
             }
 
@@ -378,22 +366,13 @@
                 const result = await response.json();
 
                 if (!response.ok) {
-                    if (notifications) {
-                        notifications.show(result.error || 'Erro ao atualizar dados', "error", 5000);
-                    }
                     return false;
                 }
 
-                if (notifications) {
-                    notifications.show(result.message || 'Dados atualizados com sucesso!', "success", 3000);
-                }
                 return true;
 
             } catch (error) {
                 console.error('Erro:', error);
-                if (notifications) {
-                    notifications.show('Erro ao atualizar dados da conta', "error", 5000);
-                }
                 return false;
             }
         }
@@ -1066,7 +1045,7 @@
         (function () {
             // Inicializar o sistema de notificações primeiro
             initNotificationSystem();
-            
+
             // mostra um overlay loader enquanto aguarda
             const loader = document.createElement('div');
             loader.id = 'page-loader';
@@ -1101,9 +1080,6 @@
                     })
                     .catch(err => {
                         console.error('Erro ao carregar saldo (fallback):', err);
-                        if (notifications) {
-                            notifications.show('Erro ao carregar saldo', 'error', 5000);
-                        }
                         const el = document.querySelector('.component-navbar-balance-item__navbar-private');
                         if (el) el.textContent = 'R$ 0,00';
                         return { saldo: 0 };
@@ -1155,9 +1131,6 @@
                         resolve();
                     } catch (error) {
                         console.error('Erro na inicialização das funções da página:', error);
-                        if (notifications) {
-                            notifications.show('Erro na inicialização da página', 'error', 3000);
-                        }
                         resolve(); // Resolve mesmo com erro para não travar a página
                     }
                 });
@@ -1186,9 +1159,6 @@
                 if (languageForm) {
                     languageForm.addEventListener('submit', function (e) {
                         e.preventDefault();
-                        if (notifications) {
-                            notifications.show('Configuração de idioma salva!', 'success', 3000);
-                        }
                         // Aqui você pode adicionar a lógica para salvar o idioma se necessário
                     });
                 }
@@ -1198,9 +1168,6 @@
                 if (timezoneForm) {
                     timezoneForm.addEventListener('submit', function (e) {
                         e.preventDefault();
-                        if (notifications) {
-                            notifications.show('Fuso horário salvo!', 'success', 3000);
-                        }
                         // Aqui você pode adicionar a lógica para salvar o fuso horário se necessário
                     });
                 }
@@ -1210,9 +1177,6 @@
                 if (apiKeyForm) {
                     apiKeyForm.addEventListener('submit', function (e) {
                         e.preventDefault();
-                        if (notifications) {
-                            notifications.show('Nova chave de API gerada com sucesso!', 'success', 3000);
-                        }
                         // Aqui você pode adicionar a lógica para gerar nova chave de API
                     });
                 }
@@ -1222,9 +1186,6 @@
                 if (twoFactorForm) {
                     twoFactorForm.addEventListener('submit', function (e) {
                         e.preventDefault();
-                        if (notifications) {
-                            notifications.show('Código de verificação enviado para o seu e-mail!', 'success', 3000);
-                        }
                         // Aqui você pode adicionar a lógica para 2FA
                     });
                 }
@@ -1247,16 +1208,10 @@
                 .then(() => {
                     // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
-                    if (notifications) {
-                        notifications.show('Dados da conta carregados com sucesso!', 'success', 2000);
-                    }
                 })
                 .catch(err => {
                     // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
                     console.error('Erro ao carregar dados principais:', err);
-                    if (notifications) {
-                        notifications.show('Erro ao carregar dados da página', 'error', 5000);
-                    }
                     document.body.classList.add('loaded');
                 })
                 .finally(() => {
@@ -1268,9 +1223,6 @@
             setTimeout(() => {
                 if (!document.body.classList.contains('loaded')) {
                     console.warn('Fallback: exibindo página após timeout.');
-                    if (notifications) {
-                        notifications.show('Página carregada com atraso', 'warning', 3000);
-                    }
                     document.body.classList.add('loaded');
                     if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
                 }
