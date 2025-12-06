@@ -196,71 +196,31 @@ if (url.startsWith("/api/account")) {
     }
 
     if (method === "PUT") {
-      const { nome_usuario, email, senha, senha_atual } = req.body;
+      const { nome_usuario, email, senha } = req.body;
 
-      // Inicializar array para erros
-      const errors = [];
-
-      // Validação básica dos campos
-      if (nome_usuario && nome_usuario.trim().length < 2) {
-        errors.push("O nome deve ter pelo menos 2 caracteres.");
-      }
-
-      if (email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-          errors.push("Formato de email inválido.");
-        }
-      }
-
-      // Se tentar alterar a senha, é obrigatório fornecer a senha atual
+      // Validação da senha se for fornecida
       if (senha) {
-        if (!senha_atual) {
-          errors.push("Para alterar a senha, é necessário fornecer a senha atual.");
-        } else {
-          // Verificar se a senha atual está correta
-          // ⚠️ NOTA: Se estiver usando bcrypt, substitua por:
-          // const isPasswordValid = await bcrypt.compare(senha_atual, usuario.senha);
-          const isPasswordValid = (senha_atual === usuario.senha);
-          
-          if (!isPasswordValid) {
-            errors.push("Senha atual incorreta.");
-          }
-          
-          // Validar a nova senha
-          if (senha.length < 6) {
-            errors.push("A nova senha deve ter no mínimo 6 caracteres.");
-          }
-          
-          // Verificar se a nova senha é diferente da atual
-          if (senha === senha_atual) {
-            errors.push("A nova senha não pode ser igual à senha atual.");
-          }
+        if (senha.length < 6) {
+          return res.status(400).json({ 
+            error: "A senha deve ter no mínimo 6 caracteres." 
+          });
         }
-      }
-
-      // Retornar erros se houver
-      if (errors.length > 0) {
-        return res.status(400).json({ 
-          error: "Erro de validação",
-          details: errors
-        });
-      }
-
-      const updateFields = {};
-      
-      // Adicionar campos para atualização se fornecidos
-      if (nome_usuario) updateFields.nome = nome_usuario.trim();
-      if (email) updateFields.email = email.trim();
-      
-      if (senha) {
-        // ⚠️ IMPORTANTE: Criptografar a nova senha antes de salvar
+        
+        // Aqui você pode adicionar outras validações se necessário
+        // Por exemplo: verificar complexidade, caracteres especiais, etc.
+        
+        // ⚠️ IMPORTANTE: Adicionar criptografia da senha
         // Exemplo com bcrypt (se estiver usando):
         // updateFields.senha = await bcrypt.hash(senha, 10);
-        updateFields.senha = senha; // ⚠️ Apenas para exemplo - criptografar na prática!
-        
-        // Opcional: Registrar data da última alteração de senha
-        updateFields.ultima_alteracao_senha = new Date();
+      }
+
+      const updateFields = { 
+        nome: nome_usuario || usuario.nome, 
+        email: email || usuario.email 
+      };
+      
+      if (senha) {
+        updateFields.senha = senha; // ⚠️ Criptografar se necessário
       }
 
       // Verificar se há algo para atualizar
@@ -284,8 +244,7 @@ if (url.startsWith("/api/account")) {
         message: "Perfil atualizado com sucesso!",
         user: {
           nome_usuario: usuarioAtualizado.nome,
-          email: usuarioAtualizado.email,
-          // Não retornar a senha, mesmo criptografada
+          email: usuarioAtualizado.email
         }
       });
     }
