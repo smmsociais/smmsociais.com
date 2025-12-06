@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Orders - Processando</title>
+    <title>Ordens - Processando</title>
     <style>
         /* Initial Load */
         body {
@@ -323,12 +323,12 @@
                 return;
             }
 
-            // Ordenar por data de criação (mais recentes primeiro)
-            const sortedOrders = orders.sort((a, b) => {
-                const dateA = new Date(a.dataCriacao || a.createdAt || a.date || a.data);
-                const dateB = new Date(b.dataCriacao || b.createdAt || b.date || b.data);
-                return dateB - dateA;
-            });
+// Ordenar por data de criação (mais recentes primeiro)
+const sortedOrders = orders.sort((a, b) => {
+    const dateA = new Date(a.dataCriacao || a.createdAt || a.date || a.data);
+    const dateB = new Date(b.dataCriacao || b.createdAt || b.date || b.data);
+    return dateB - dateA; // Inverta a ordem: dateB - dateA
+});
 
             tbody.innerHTML = sortedOrders.map(order => {
                 // Formatar a data
@@ -359,7 +359,7 @@
 
                 return `
                     <tr class="table-secondary">
-                        <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : order.id || 'N/A'}</td>
+                        <td data-label="ID">${order.id || (order._id ? order._id.toString().substring(0, 8) : 'N/A')}</td>
                         <td data-label="Data de Criação">
                             <span class="nowrap">${formattedDate}</span>
                             <span class="nowrap">${formattedTime}</span>
