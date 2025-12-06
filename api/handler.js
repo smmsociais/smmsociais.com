@@ -178,65 +178,59 @@ if (url.startsWith("/api/account")) {
     }
 
     // ============================
-    //          GET
+    //            GET
     // ============================
     if (method === "GET") {
       return res.status(200).json({
         nome_usuario: usuario.nome,
         email: usuario.email,
         token: usuario.token,
-        userId: usuario._id ? String(usuario._id) : null,
-        id: usuario._id ? String(usuario._id) : null
+        userId: String(usuario._id),
+        id: String(usuario._id)
       });
     }
 
     // ============================
-    //          PUT (atualizar perfil)
+    //            PUT
     // ============================
     if (method === "PUT") {
       const { nome_usuario, email, senha_atual, nova_senha } = req.body;
 
-      // OBJETO PARA ATUALIZAÇÃO
       const updateFields = {
         nome: nome_usuario || usuario.nome,
         email: email || usuario.email
       };
 
-// ============================
-//     ALTERAÇÃO DE SENHA
-// ============================
-if (nova_senha) {
+      // ============================
+      //     ALTERAÇÃO DE SENHA
+      // ============================
+      if (nova_senha) {
 
-  if (nova_senha.length < 6) {
-    return res.status(400).json({
-      error: "A nova senha deve ter no mínimo 6 caracteres."
-    });
-  }
+        if (nova_senha.length < 6) {
+          return res.status(400).json({
+            error: "A nova senha deve ter no mínimo 6 caracteres."
+          });
+        }
 
-  if (!senha_atual) {
-    return res.status(400).json({
-      error: "Você deve informar a senha atual para alterar a senha."
-    });
-  }
-  
-console.log("Senha enviada:", senha_atual);
-console.log("Senha no banco:", usuario.senha);
+        if (!senha_atual) {
+          return res.status(400).json({
+            error: "Você deve informar a senha atual para alterar a senha."
+          });
+        }
 
-  // Importação dinâmica do bcryptjs (compatível com Vercel/ESM)
-  const bcrypt = await import("bcryptjs");
-  const bcryptjs = bcrypt.default;
+        console.log("Senha enviada:", senha_atual);
+        console.log("Senha no banco:", usuario.senha);
 
-  const senhaCorreta = await bcryptjs.compare(senha_atual, usuario.senha);
+        // 👉 COMPARAÇÃO DIRETA, SEM BCRYPT
+        if (senha_atual !== usuario.senha) {
+          return res.status(403).json({
+            error: "Senha atual incorreta."
+          });
+        }
 
-  if (!senhaCorreta) {
-    return res.status(403).json({
-      error: "Senha atual incorreta."
-    });
-  }
-
-  const salt = await bcryptjs.genSalt(10);
-  updateFields.senha = await bcryptjs.hash(nova_senha, salt);
-}
+        // 👉 SALVA A NOVA SENHA DIRETO (TEXTO PURO)
+        updateFields.senha = nova_senha;
+      }
 
       const usuarioAtualizado = await User.findOneAndUpdate(
         { token },
@@ -262,7 +256,6 @@ console.log("Senha no banco:", usuario.senha);
     return res.status(500).json({ error: "Erro ao processar perfil." });
   }
 }
-
 
 // Rota: /api/massorder
 if (url.startsWith("/api/massorder")) {
