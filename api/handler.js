@@ -218,6 +218,9 @@ if (nova_senha) {
       error: "Você deve informar a senha atual para alterar a senha."
     });
   }
+  
+console.log("Senha enviada:", senha_atual);
+console.log("Senha no banco:", usuario.senha);
 
   // Importação dinâmica do bcryptjs (compatível com Vercel/ESM)
   const bcrypt = await import("bcryptjs");
