@@ -92,38 +92,6 @@
             }
         }
 
-        // Função para carregar serviços (necessária para o Promise.all)
-        async function loadServices() {
-            try {
-                const token = loadToken();
-
-                if (!token) {
-                    console.error("Token não encontrado para carregar serviços.");
-                    return [];
-                }
-
-                const response = await fetch('https://smmsociais.com/api/servico', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Erro ao carregar serviços');
-                }
-
-                const servicesData = await response.json();
-                console.log('Serviços carregados:', servicesData);
-
-                return servicesData;
-            } catch (error) {
-                console.error('Erro ao carregar serviços:', error);
-                return [];
-            }
-        }
-
         // Função para carregar dados da conta
         async function loadAccountData() {
             const token = loadToken();
@@ -148,7 +116,6 @@
 
                 const accountData = await response.json();
 
-                document.getElementById('username').value = accountData.nome_usuario || '';
                 document.getElementById('email').value = accountData.email || '';
                 document.getElementById('current-email').value = accountData.email || '';
 
@@ -204,14 +171,6 @@
 
             return await updateAccountData({
                 senha: newPassword
-            });
-        }
-
-        // Função para alterar email
-        async function changeEmail(newEmail, currentPassword) {
-            return await updateAccountData({
-                email: newEmail,
-                senha: currentPassword
             });
         }
 
@@ -460,37 +419,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="component_card">
-                                        <div class="card account-card">
-                                            <form class="component_form_group" method="post" action="">
-                                                <div class="">
-                                                    <div class="form-group">
-                                                        <label>Idioma</label>
-                                                        <div class="d-flex">
-                                                            <div class="w-100">
-                                                                <select class="form-control" id="language"
-                                                                    name="SettingsFrom[lang]">
-                                                                    <option value="bp" selected>Portuguese (Brazil)
-                                                                    </option>
-                                                                </select>
-                                                            </div>
-                                                            <div class="account-button-right">
-                                                                <div class="component_button_save">
-                                                                    <input type="hidden" name="_csrf"
-                                                                        value="HU2qAvzz-7jES0jgZCgrXNOxjtc_-hWcZMhDG1tbFc17Feh7l7ie0YEzergiY2kQ6ofmmlOlYcQCm3VxHRFUqQ==">
-                                                                    <button type="submit"
-                                                                        class="btn btn-block btn-big-primary"
-                                                                        type="submit">
-                                                                        Salvar
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
+
                                     <div class="component_card">
                                         <div class="card account-card">
                                             <form class="component_form_group" method="post" action="">
@@ -700,6 +629,37 @@
                                     </div>
                                     <div class="component_card">
                                         <div class="card account-card">
+                                            <form class="component_form_group" method="post" action="">
+                                                <div class="">
+                                                    <div class="form-group">
+                                                        <label>Idioma</label>
+                                                        <div class="d-flex">
+                                                            <div class="w-100">
+                                                                <select class="form-control" id="language"
+                                                                    name="SettingsFrom[lang]">
+                                                                    <option value="bp" selected>Portuguese (Brazil)
+                                                                    </option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="account-button-right">
+                                                                <div class="component_button_save">
+                                                                    <input type="hidden" name="_csrf"
+                                                                        value="HU2qAvzz-7jES0jgZCgrXNOxjtc_-hWcZMhDG1tbFc17Feh7l7ie0YEzergiY2kQ6ofmmlOlYcQCm3VxHRFUqQ==">
+                                                                    <button type="submit"
+                                                                        class="btn btn-block btn-big-primary"
+                                                                        type="submit">
+                                                                        Salvar
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <div class="component_card">
+                                        <div class="card account-card">
                                             <div style=" display: none; "
                                                 class="alert alert-dismissible alert-danger mr-2 mb-3 ">
                                                 <button type="button" class="close">&times;</button>
@@ -818,14 +778,9 @@
     </div>
     <!-- Notifications wrapper -->
     <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
-    <script type="text/javascript" src="https://storage.perfectcdn.com/global/i1iurhd1aoznbme6.js">
-    </script>
-    <script type="text/javascript" src="https://storage.perfectcdn.com/global/jq8derbjf313z5ai.js">
-    </script>
-    <script type="text/javascript" src="https://storage.perfectcdn.com/global/2t0wrbkqkg6p2yz4.js">
-    </script>
-    <script type="text/javascript" src="https://storage.perfectcdn.com/global/zfq5snh4og5je3zk.js">
-    </script>
+
+    <!-- Adicionando Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Script para controle de carregamento da página -->
     <script>
@@ -952,30 +907,6 @@
 
                         if (await changePassword(currentPassword, newPassword, confirmPassword)) {
                             this.reset();
-                        }
-                    });
-                }
-
-                // Configurar modal de alteração de email
-                const changeEmailLink = document.getElementById('changeEmailLink');
-                const changeEmailForm = document.getElementById('changeEmailForm');
-
-                if (changeEmailLink && changeEmailForm) {
-                    changeEmailLink.addEventListener('click', function () {
-                        $('#changeEmailModal').modal('show');
-                    });
-
-                    changeEmailForm.addEventListener('submit', async function (e) {
-                        e.preventDefault();
-
-                        const newEmail = document.getElementById('new-email').value;
-                        const currentPassword = document.getElementById('current-password').value;
-
-                        if (await changeEmail(newEmail, currentPassword)) {
-                            $('#changeEmailModal').modal('hide');
-                            this.reset();
-                            // Recarregar dados para mostrar novo email
-                            loadAccountData();
                         }
                     });
                 }
