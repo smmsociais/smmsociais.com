@@ -8,8 +8,7 @@
     <title>Minha Conta - SMM SOCIAIS</title>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
-    <!-- Adicionando Bootstrap CSS adicional para garantir funcionamento -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- CSS para controle de visibilidade da página -->
     <style>
         body {
             visibility: hidden;
@@ -539,6 +538,10 @@
                 setTimeout(fillAndHideInput, 100);
             }
         }
+    </script>
+
+    <script>
+        window.modules = {};
     </script>
 </head>
 
@@ -1113,18 +1116,10 @@
     <!-- Adicionando Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script type="text/javascript">
+    <!-- Script para controle de carregamento da página -->
+    <script>
+        /* script para garantir que a página apareça apenas após todas as APIs terminarem */
         (function () {
-            // Função utilitária para encontrar o alvo do botão (data-target ou aria-controls)
-            function resolveTarget(button) {
-                const targetSelector = button.getAttribute('data-target') || button.getAttribute('data-bs-target') || ('#' + (button.getAttribute('aria-controls') || ''));
-                if (!targetSelector) return null;
-                try {
-                    return document.querySelector(targetSelector);
-                } catch (e) {
-                    return null;
-                }
-            }
             // Inicializar o sistema de notificações primeiro
             initNotificationSystem();
 
