@@ -208,6 +208,36 @@
                 margin-bottom: 20px;
             }
         }
+
+        /* Estilo do botão do WhatsApp */
+        #whatsapp-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #25d366;
+            border-radius: 50%;
+            padding: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            transition: transform .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            text-decoration: none;
+        }
+
+        #whatsapp-button:hover {
+            transform: scale(1.1);
+            background-color: #1da851;
+        }
+
+        #whatsapp-button img {
+            width: 32px;
+            height: 32px;
+            filter: invert(1);
+        }
     </style>
 
     <script>
@@ -1009,6 +1039,10 @@
             }
         });
     </script>
+    <!-- Botão do WhatsApp para suporte -->
+    <a href="https://wa.me/5582999801112?text=Olá,%20preciso%20de%20ajuda" target="_blank" id="whatsapp-button">
+        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg" alt="WhatsApp">
+    </a>
 </body>
 
 </html>
