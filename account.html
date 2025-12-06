@@ -6,8 +6,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Minha Conta - SMM SOCIAIS</title>
-
-    <!-- CSS para controle de visibilidade da página -->
+    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
+    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
+    <!-- Adicionando Bootstrap CSS adicional para garantir funcionamento -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             visibility: hidden;
@@ -140,6 +142,85 @@
             background-color: #fff3cd;
             color: #856404;
             border: 1px solid #ffeaa7;
+        }
+
+        /* Remover contornos de foco de todos os elementos do menu */
+        .navbar a:focus,
+        .navbar button:focus,
+        .nav-link:focus,
+        .component-navbar-nav-link:focus,
+        .component-sidebar__menu-item-link:focus,
+        .navbar-toggler:focus,
+        .btn:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Remover contorno específico da sidebar */
+        .component-sidebar__menu a:focus,
+        .sidebar-block__left-menu a:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Para navegadores WebKit (Chrome, Safari, Edge) */
+        .navbar a:focus-visible,
+        .nav-link:focus-visible {
+            outline: none !important;
+        }
+
+        /* Para a navbar principal */
+        .component_private_navbar a:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Alterar cor do ícone do menu hambúrguer para branco */
+        .navbar-toggler .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+        }
+
+        /* Cor da borda do botão */
+        .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.5) !important;
+        }
+
+        /* Garantir que o botão seja visível em fundos escuros */
+        .navbar-toggler:hover {
+            border-color: rgba(255, 255, 255, 0.8) !important;
+        }
+
+        /* Alternativamente, se quiser usar CSS puro sem SVG */
+        .navbar-toggler-icon.custom-white {
+            background-image: none !important;
+            position: relative;
+            width: 30px;
+            height: 24px;
+        }
+
+        .navbar-toggler-icon.custom-white::before,
+        .navbar-toggler-icon.custom-white::after,
+        .navbar-toggler-icon.custom-white span {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-toggler-icon.custom-white::before {
+            top: 0;
+        }
+
+        .navbar-toggler-icon.custom-white span {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .navbar-toggler-icon.custom-white::after {
+            bottom: 0;
         }
     </style>
 
@@ -459,11 +540,6 @@
             }
         }
     </script>
-    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
-    <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
-    <script>
-        window.modules = {};
-    </script>
 </head>
 
 <body class="body  body-internal">
@@ -483,12 +559,10 @@
                                                         style="font-weight: bold">SMM SOCIAIS</strong></span></h3>
                                         </a>
                                     </div>
-                                    <button class="navbar-toggler" type="button" data-toggle="collapse"
-                                        data-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
+                                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#navbar-collapse-52" aria-controls="navbar-collapse-52"
                                         aria-expanded="false" aria-label="Toggle navigation">
-                                        <span class="navbar-burger">
-                                            <span class="navbar-burger-line"></span>
-                                        </span>
+                                        <span class="navbar-toggler-icon"></span>
                                     </button>
                                 </div>
                                 <div class="collapse navbar-collapse" id="navbar-collapse-52">
@@ -1039,10 +1113,18 @@
     <!-- Adicionando Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Script para controle de carregamento da página -->
-    <script>
-        /* script para garantir que a página apareça apenas após todas as APIs terminarem */
+    <script type="text/javascript">
         (function () {
+            // Função utilitária para encontrar o alvo do botão (data-target ou aria-controls)
+            function resolveTarget(button) {
+                const targetSelector = button.getAttribute('data-target') || button.getAttribute('data-bs-target') || ('#' + (button.getAttribute('aria-controls') || ''));
+                if (!targetSelector) return null;
+                try {
+                    return document.querySelector(targetSelector);
+                } catch (e) {
+                    return null;
+                }
+            }
             // Inicializar o sistema de notificações primeiro
             initNotificationSystem();
 
