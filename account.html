@@ -422,7 +422,7 @@
 
                                     <div class="component_card">
                                         <div class="card account-card">
-                                            <form class="component_form_group" method="post" action="">
+                                            <form class="component_form_group" action="">
                                                 <div class="">
                                                     <div class="form-group">
                                                         <label>Senha atual</label>
@@ -838,24 +838,6 @@
                         // ignore e faça fallback
                     }
                 }
-
-                // fallback/implementação direta (garante que a promise será resolvida mesmo em erro)
-                return fetch('https://smmsociais.com/api/servico')
-                    .then(response => {
-                        if (!response.ok) throw new Error('Erro ao carregar serviços da API');
-                        return response.json();
-                    })
-                    .then(data => {
-                        // reutiliza as funções de render (se existirem) para integrar com seu layout atual
-                        if (typeof window.renderServices === 'function') window.renderServices(data);
-                        if (typeof window.renderCategories === 'function') window.renderCategories(data);
-                        return data;
-                    })
-                    .catch(err => {
-                        console.error('Erro ao carregar serviços:', err);
-                        // resolvemos com array vazio para não bloquear a exibição da página
-                        return [];
-                    });
             }
 
             // --- helper para carregar dados da conta ---
