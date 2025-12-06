@@ -202,39 +202,38 @@ if (url.startsWith("/api/account")) {
         email: email || usuario.email
       };
 
-      // ============================
-      //     ALTERAÇÃO DE SENHA
-      // ============================
-      if (nova_senha) {
+// ============================
+//     ALTERAÇÃO DE SENHA
+// ============================
+if (nova_senha) {
 
-        // Verifica tamanho mínimo
-        if (nova_senha.length < 6) {
-          return res.status(400).json({
-            error: "A nova senha deve ter no mínimo 6 caracteres."
-          });
-        }
+  if (nova_senha.length < 6) {
+    return res.status(400).json({
+      error: "A nova senha deve ter no mínimo 6 caracteres."
+    });
+  }
 
-        // Exige senha_atual
-        if (!senha_atual) {
-          return res.status(400).json({
-            error: "Você deve informar a senha atual para alterar a senha."
-          });
-        }
+  if (!senha_atual) {
+    return res.status(400).json({
+      error: "Você deve informar a senha atual para alterar a senha."
+    });
+  }
 
-        // Verifica se a senha atual está correta
-        const bcrypt = require("bcryptjs");
-        const senhaCorreta = await bcrypt.compare(senha_atual, usuario.senha);
+  // Importação dinâmica do bcryptjs (compatível com Vercel/ESM)
+  const bcrypt = await import("bcryptjs");
+  const bcryptjs = bcrypt.default;
 
-        if (!senhaCorreta) {
-          return res.status(403).json({
-            error: "Senha atual incorreta."
-          });
-        }
+  const senhaCorreta = await bcryptjs.compare(senha_atual, usuario.senha);
 
-        // Se passou, gera hash da nova senha
-        const salt = await bcrypt.genSalt(10);
-        updateFields.senha = await bcrypt.hash(nova_senha, salt);
-      }
+  if (!senhaCorreta) {
+    return res.status(403).json({
+      error: "Senha atual incorreta."
+    });
+  }
+
+  const salt = await bcryptjs.genSalt(10);
+  updateFields.senha = await bcryptjs.hash(nova_senha, salt);
+}
 
       const usuarioAtualizado = await User.findOneAndUpdate(
         { token },
@@ -708,64 +707,6 @@ if (url.startsWith("/api/change-password")) {
         }
     };
     
-  // Rota: api/supportMessages
- if (url.startsWith("/api/supportMessages")) { 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token ausente' });
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  try {
-    await connectDB();
-
-    const user = await User.findOne({ token });
-
-    if (!user) {
-      return res.status(404).json({ error: 'Usuário não encontrado' });
-    }
-
-    if (req.method === 'GET') {
-      // Retornar lista de sessões (última mensagem de cada uma)
-      const sessions = await Message.aggregate([
-        { $sort: { timestamp: -1 } },
-        {
-          $group: {
-            _id: '$session_id',
-            lastMessage: { $first: '$message' },
-            lastFrom: { $first: '$from' },
-            lastTime: { $first: '$timestamp' },
-          }
-        },
-        { $sort: { lastTime: -1 } }
-      ]);
-
-      return res.status(200).json({ sessions });
-    }
-
-    if (req.method === 'POST') {
-      const { session_id, message } = req.body;
-
-      if (!session_id || !message) {
-        return res.status(400).json({ error: 'session_id e message são obrigatórios' });
-      }
-
-      await Message.create({
-        session_id,
-        from: 'support',
-        message,
-        timestamp: new Date()
-      });
-
-      return res.status(200).json({ success: true });
-    }
-
-    return res.status(405).json({ error: 'Método não permitido' });
-  } catch (error) {
-    console.error('Erro em /api/supportMessages:', error);
-    return res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-}
 
 // Rota: /api/get_saldo
 if (url.startsWith("/api/get_saldo")) {
