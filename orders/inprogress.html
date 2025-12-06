@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Orders - Em Progresso</title>
+    <title>Ordens - Em Progresso</title>
     <style>
         /* Initial Load */
         body {
@@ -293,7 +293,7 @@
 
                 return `
                     <tr>
-                        <td data-label="ID">${order._id ? order._id.toString().substring(0, 8) : order.id || 'N/A'}</td>
+                        <td data-label="ID">${order.id || (order._id ? order._id.toString().substring(0, 8) : 'N/A')}</td>
                         <td data-label="Data">
                             <span class="nowrap">${formattedDate}</span>
                             <span class="nowrap">${formattedTime}</span>
