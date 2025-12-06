@@ -420,34 +420,38 @@
                                         </div>
                                     </div>
 
-<div class="component_card">
-    <div class="card account-card">
-        <form class="component_form_group" id="changePasswordForm">
-            <div class="">
-                <div class="form-group">
-                    <label>Senha atual</label>
-                    <input type="password" class="form-control" id="current_password" name="SettingsFrom[current_password]">
-                </div>
-                <div class="form-group">
-                    <label>Nova senha</label>
-                    <input type="password" class="form-control" id="new_password" name="SettingsFrom[password]">
-                </div>
-                <div class="form-group">
-                    <label>Confirme a nova senha</label>
-                    <input type="password" class="form-control" id="confirm_password" name="SettingsFrom[confirm_password]">
-                </div>
-            </div>
-            <div class="component_button_save">
-                <div class="">
-                    <input type="hidden" name="_csrf" value="HU2qAvzz-7jES0jgZCgrXNOxjtc_-hWcZMhDG1tbFc17Feh7l7ie0YEzergiY2kQ6ofmmlOlYcQCm3VxHRFUqQ==">
-                    <button class="btn btn-block btn-big-primary" type="submit">
-                        Salvar Alterações
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
+                                    <div class="component_card">
+                                        <div class="card account-card">
+                                            <form class="component_form_group" id="changePasswordForm">
+                                                <div class="">
+                                                    <div class="form-group">
+                                                        <label>Senha atual</label>
+                                                        <input type="password" class="form-control"
+                                                            id="current_password" name="SettingsFrom[current_password]">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Nova senha</label>
+                                                        <input type="password" class="form-control" id="new_password"
+                                                            name="SettingsFrom[password]">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Confirme a nova senha</label>
+                                                        <input type="password" class="form-control"
+                                                            id="confirm_password" name="SettingsFrom[confirm_password]">
+                                                    </div>
+                                                </div>
+                                                <div class="component_button_save">
+                                                    <div class="">
+                                                        <input type="hidden" name="_csrf"
+                                                            value="HU2qAvzz-7jES0jgZCgrXNOxjtc_-hWcZMhDG1tbFc17Feh7l7ie0YEzergiY2kQ6ofmmlOlYcQCm3VxHRFUqQ==">
+                                                        <button class="btn btn-block btn-big-primary" type="submit">
+                                                            Salvar Alterações
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
                                     <div class="component_card">
                                         <div class="card account-card">
                                             <div id="2fa-approve-error-block" style="display: none;"
@@ -871,23 +875,23 @@
                 });
             }
 
-            // --- Configurar event listeners dos formulários ---
-            function setupFormEventListeners() {
-                // Configurar formulário de alteração de senha
-                const passwordForm = document.querySelector('form[action*="password"]');
-                if (passwordForm) {
-                    passwordForm.addEventListener('submit', async function (e) {
-                        e.preventDefault();
-
-                        const currentPassword = document.getElementById('current').value;
-                        const newPassword = document.getElementById('new').value;
-                        const confirmPassword = document.getElementById('confirm').value;
-
-                        if (await changePassword(currentPassword, newPassword, confirmPassword)) {
-                            this.reset();
-                        }
-                    });
-                }
+// --- Configurar event listeners dos formulários ---
+function setupFormEventListeners() {
+    // Configurar formulário de alteração de senha
+    const passwordForm = document.querySelector('form.component_form_group');
+    if (passwordForm && passwordForm.querySelector('input[name="SettingsFrom[current_password]"]')) {
+        passwordForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            
+            const currentPassword = this.querySelector('input[name="SettingsFrom[current_password]"]').value;
+            const newPassword = this.querySelector('input[name="SettingsFrom[password]"]').value;
+            const confirmPassword = this.querySelector('input[name="SettingsFrom[confirm_password]"]').value;
+            
+            if (await changePassword(currentPassword, newPassword, confirmPassword)) {
+                this.reset();
+            }
+        });
+    }
 
                 // Configurar formulário de idioma
                 const languageForm = document.querySelector('form[action*="lang"]');
