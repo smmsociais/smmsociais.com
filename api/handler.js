@@ -11,6 +11,40 @@ export default async function handler(req, res) {
 
     const { method, url } = req;
 
+// Rota: /api/get_saldo
+if (url.startsWith("/api/get_saldo") && method === "GET") {
+      console.log("➡️ Rota GET SALDO capturada");
+
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Token ausente" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // decoded.id é o _id do user
+        const userId = decoded.id;
+
+        await connectDB();
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ error: "Usuário não encontrado" });
+        }
+
+        return res.status(200).json({ saldo: user.saldo || 0 });
+
+    } catch (error) {
+        console.error("Erro ao buscar saldo:", error);
+        return res.status(500).json({ error: "Token inválido ou erro interno" });
+    }
+}
+
 // ===============================
 // ROTA: GET /api/servico
 // ===============================
@@ -713,40 +747,6 @@ if (url.startsWith("/api/change-password")) {
         }
     };
     
-
-// Rota: /api/get_saldo
-if (url.startsWith("/api/get_saldo") && method === "GET") {
-
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "Token ausente" });
-    }
-
-    const token = authHeader.split(" ")[1];
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        // decoded.id é o _id do user
-        const userId = decoded.id;
-
-        await connectDB();
-
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ error: "Usuário não encontrado" });
-        }
-
-        return res.status(200).json({ saldo: user.saldo || 0 });
-
-    } catch (error) {
-        console.error("Erro ao buscar saldo:", error);
-        return res.status(500).json({ error: "Token inválido ou erro interno" });
-    }
-}
-
 // Rota: /api/gerar-pagamento
 if (url.startsWith("/api/gerar-pagamento")) {
   if (req.method !== "POST") {
