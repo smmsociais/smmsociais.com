@@ -715,32 +715,35 @@ if (url.startsWith("/api/change-password")) {
     
 
 // Rota: /api/get_saldo
-if (url.startsWith("/api/get_saldo")) {
-    if (req.method !== 'GET') {
-        return res.status(405).json({ error: 'Método não permitido' });
-    }
+if (url.startsWith("/api/get_saldo") && method === "GET") {
 
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Token ausente' });
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Token ausente" });
     }
 
-    const token = authHeader.split(' ')[1];
+    const token = authHeader.split(" ")[1];
 
     try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // decoded.id é o _id do user
+        const userId = decoded.id;
+
         await connectDB();
 
-        const user = await User.findOne({ token });
+        const user = await User.findById(userId);
 
         if (!user) {
-            return res.status(404).json({ error: 'Usuário não encontrado' });
+            return res.status(404).json({ error: "Usuário não encontrado" });
         }
 
         return res.status(200).json({ saldo: user.saldo || 0 });
+
     } catch (error) {
-        console.error('Erro ao buscar saldo:', error);
-        return res.status(500).json({ error: 'Erro interno do servidor' });
+        console.error("Erro ao buscar saldo:", error);
+        return res.status(500).json({ error: "Token inválido ou erro interno" });
     }
 }
 
