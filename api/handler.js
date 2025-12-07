@@ -4,8 +4,9 @@ import mongoose from "mongoose";
 import { sendRecoveryEmail } from "./mailer.js";
 import { randomUUID } from "crypto";
 import jwt from "jsonwebtoken";
-import Servico from "./Servico.js";
-import { User, Deposito, Action, ActionHistory, Servico, Message } from "./schema.js";
+import Servico from "./Servico.js"; // ✔ único e correto
+import { User, Deposito, Action, ActionHistory, Message } from "./schema.js";
+
 
 export default async function handler(req, res) {
     await connectDB(); // 🟢 Conectar ao banco antes de qualquer operação
