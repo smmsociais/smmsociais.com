@@ -14,13 +14,10 @@ export default async function handler(req, res) {
 // ===============================
 // ROTA: GET /api/servico
 // ===============================
-if (url === "/api/servico" && method === "GET") {
+if (url.startsWith("/api/servico") && method === "GET") {
     try {
-        await connectDB(); // garante conexão com MongoDB
-
         const servicos = await Servico.find({});
         return res.status(200).json(servicos);
-
     } catch (error) {
         console.error("Erro ao buscar serviços:", error);
         return res.status(500).json({ error: "Erro ao carregar serviços" });
