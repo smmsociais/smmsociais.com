@@ -4,18 +4,14 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema({
   nome: { type: String },
   email: { type: String, required: true, unique: true },
-  // Senha opcional (para login normal)
-  senha: { type: String, default: null },
-  // Login com Google
-  provider: { type: String, default: "local" }, // local, google
+  senha: { type: String, default: null }, 
+  provider: { type: String, default: "local" }, 
   googleId: { type: String, default: null },
   avatar: { type: String, default: null },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
   saldo: { type: Number, default: 0 }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
 /* 🔹 Histórico de Ações Realizadas */
 const actionHistorySchema = new mongoose.Schema({
@@ -33,7 +29,7 @@ const actionHistorySchema = new mongoose.Schema({
   acao_validada: { 
     type: String, 
     enum: ["pendente", "valida", "invalida", "pulada"], 
-    default: "pendente" 
+    default: "pendente"
   },
   data: { type: Date, default: Date.now },
   processing: { type: Boolean, default: false },
@@ -55,87 +51,49 @@ const actionSchema = new mongoose.Schema({
   status: { type: String, default: "pendente" },
   dataCriacao: { type: Date, default: Date.now },
   id_acao_smm: { type: Number },
-  contagemInicial: { type: Number, default: null } // <-- novo campo
+  contagemInicial: { type: Number, default: null }
 }, { timestamps: true });
-
-const ServicoSchema = new mongoose.Schema({
-  id_servico: {
-    type: String,
-    required: true
-  },
-  nome: {
-    type: String,
-    required: true
-  },
-  tipo: {
-    type: String,
-    required: true
-  },
-  preco_1000: {
-    type: Number,
-    required: true
-  },
-  minimo: {
-    type: Number,
-    required: true
-  },
-  maximo: {
-    type: Number,
-    required: true
-  },
-  tempo_medio: {
-    type: String,
-    required: true
-  },
-
-  categoria: {
-    nome: { type: String, required: true },
-    imagem: { type: String, required: true }
-  },
-
-  descricao: {
-    type: String,
-    required: true
-  }
-
-}, { _id: false });
 
 /* 🔹 Depósitos via PIX (Mercado Pago) */
 const depositoSchema = new mongoose.Schema({
   userEmail: { type: String, required: true, index: true },
-
-  payment_id: { 
-    type: String, 
-    required: true, 
-    unique: true // evita duplicações vindas do Mercado Pago
-  },
-
-  amount: { 
-    type: Number, 
-    required: true, 
-    min: 0.10 // previne valores inválidos ou zerados
-  },
-
+  payment_id: { type: String, required: true, unique: true },
+  amount: { type: Number, required: true, min: 0.10 },
   status: { 
     type: String, 
     required: true,
     enum: ["pending", "completed", "expired"],
     default: "pending"
   }
-}, { 
-  timestamps: true // necessário para limpar pendentes com mais de 30 min
+}, { timestamps: true });
+
+/* 🔹 Serviços */
+const ServicoSchema = new mongoose.Schema({
+  id_servico: { type: String, required: true },
+  nome: { type: String, required: true },
+  tipo: { type: String, required: true },
+  preco_1000: { type: Number, required: true },
+  minimo: { type: Number, required: true },
+  maximo: { type: Number, required: true },
+  tempo_medio: { type: String, required: true },
+  categoria: {
+    nome: { type: String, required: true },
+    imagem: { type: String, required: true }
+  },
+  descricao: { type: String, required: true }
 });
 
-const messageSchema = new mongoose.Schema({
-  session_id: String,
-  from: String, // 'user' ou 'support'
-  message: String,
-  timestamp: { type: Date, default: Date.now }
-});
+export const User =
+  mongoose.models.User || mongoose.model("User", userSchema);
 
-// 🔹 Exportação dos modelos
-export const User = mongoose.model("User", userSchema);
-export const Action = mongoose.model("Action", actionSchema);
-export const ActionHistory = mongoose.model("ActionHistory", actionHistorySchema);
-export const Servico = mongoose.model("Servico", ServicoSchema);
-export const Deposito = mongoose.model("Deposito", depositoSchema);
+export const Action =
+  mongoose.models.Action || mongoose.model("Action", actionSchema);
+
+export const ActionHistory =
+  mongoose.models.ActionHistory || mongoose.model("ActionHistory", actionHistorySchema);
+
+export const Servico =
+  mongoose.models.Servico || mongoose.model("Servico", ServicoSchema);
+
+export const Deposito =
+  mongoose.models.Deposito || mongoose.model("Deposito", depositoSchema);
