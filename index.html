@@ -1103,44 +1103,44 @@
         });
     </script>
 
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
 
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: username,
-                        senha: password
-                    })
-                });
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: username,
+                    senha: password
+                })
+            });
 
-                const data = await response.json();
+            const data = await response.json();
 
-                if (response.ok) {
-                    localStorage.setItem('token', data.token);
-                    window.location.href = '/painel';
-                } else {
-                    alert('Erro: ' + data.error);
-                }
-            } catch (error) {
-                alert('Erro ao conectar.');
+            if (response.ok) {
+                localStorage.setItem('token', data.token);
+                window.location.href = '/painel';
+            } else {
+                alert('Erro: ' + data.error);
             }
-        });
-
-        // Função para login com Google (exemplo)
-        function loginWithGoogle() {
-            // Redireciona para o endpoint de autenticação do Google
-            window.location.href = '/auth/google';
+        } catch (error) {
+            alert('Erro ao conectar.');
         }
-    </script>
+    });
+
+    // Login com Google CORRETO
+    function loginWithGoogle() {
+        window.location.href = '/api/auth/google';
+    }
+</script>
+
     <!-- Botão do WhatsApp para suporte -->
     <a href="https://wa.me/5582999801112?text=Olá,%20preciso%20de%20ajuda" target="_blank" id="whatsapp-button">
         <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg" alt="WhatsApp">
