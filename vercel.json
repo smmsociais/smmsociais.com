@@ -1,46 +1,32 @@
 {
-    "rewrites": [
-      { "source": "/", "destination": "/index.html" },
-      { "source": "/", "destination": "/admin/index.html" },
-      { "source": "/admin/chat", "destination": "/admin/chat.html" },
-      { "source": "/painel", "destination": "/painel.html" },
-      { "source": "/login", "destination": "/index.html" },
-      { "source": "/signup", "destination": "/signup.html" }, 
-      { "source": "/orders", "destination": "/orders.html" },
-      { "source": "/orders/pending", "destination": "/orders/pending.html" },
-      { "source": "/orders/inprogress", "destination": "/orders/inprogress.html" },
-      { "source": "/orders/completed", "destination": "/orders/completed.html" },
-      { "source": "/orders/partial", "destination": "/orders/partial.html" },
-      { "source": "/orders/processing", "destination": "/orders/processing.html" },
-      { "source": "/orders/canceled", "destination": "/orders/canceled.html" },
-      { "source": "/services", "destination": "/services.html" },
-      { "source": "/servicos", "destination": "/servicos.html" },
-      { "source": "/affiliates", "destination": "/affiliates.html" },
-      { "source": "/massorder", "destination": "/massorder.html" },
-      { "source": "/addfunds", "destination": "/addfunds.html" },
-      { "source": "/como-usar", "destination": "/como-usar.html" },
-      { "source": "/account", "destination": "/account.html" },
-      { "source": "/recover-password", "destination": "/recover-password.html" },
-      { "source": "/reset-password", "destination": "/reset-password.html" },
-      { "source": "/termos", "destination": "/termos.html" },
-      { "source": "/suporte", "destination": "/suporte.html" },
-      { "source": "/api", "destination": "/api.html" },
-      { "source": "/example.txt", "destination": "/example.txt" },
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/admin/chat", "destination": "/admin/chat.html" },
+    { "source": "/painel", "destination": "/painel.html" },
 
-      { "source": "/api/login", "destination": "/api/handler.js" },
-      { "source": "/api/signup", "destination": "/api/handler.js" },
-      { "source": "/api/change-password", "destination": "/api/handler.js" },
-      { "source": "/api/recover-password", "destination": "/api/handler.js" },
-      { "source": "/api/validate-reset-token", "destination": "/api/handler.js" },
-      { "source": "/api/account", "destination": "/api/handler.js" },
-      { "source": "/api/confirmar-pagamento", "destination": "/api/handler.js" },
-      { "source": "/api/incrementar-validadas", "destination": "/api/handler.js" },
-      { "source": "/api/orders", "destination": "/api/handler.js" },
-      { "source": "/api/get_saldo", "destination": "/api/handler.js" },
-      { "source": "/api/listar-depositos", "destination": "/api/handler.js" },
-      { "source": "/api/gerar-pagamento", "destination": "/api/handler.js" },
-      { "source": "/api/check_payment", "destination": "/api/handler.js" },
-      { "source": "/api/servico", "destination": "/api/handler.js" }
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/signup", "destination": "/signup.html" },
 
-    ]
-  }
+    { "source": "/orders", "destination": "/orders.html" },
+    { "source": "/orders/pending", "destination": "/orders/pending.html" },
+    { "source": "/orders/inprogress", "destination": "/orders/inprogress.html" },
+    { "source": "/orders/completed", "destination": "/orders/completed.html" },
+    { "source": "/orders/partial", "destination": "/orders/partial.html" },
+    { "source": "/orders/processing", "destination": "/orders/processing.html" },
+    { "source": "/orders/canceled", "destination": "/orders/canceled.html" },
+
+    { "source": "/services", "destination": "/services.html" },
+    { "source": "/servicos", "destination": "/servicos.html" },
+    { "source": "/affiliates", "destination": "/affiliates.html" },
+    { "source": "/massorder", "destination": "/massorder.html" },
+    { "source": "/addfunds", "destination": "/addfunds.html" },
+
+    { "source": "/como-usar", "destination": "/como-usar.html" },
+    { "source": "/account", "destination": "/account.html" },
+
+    { "source": "/recover-password", "destination": "/recover-password.html" },
+    { "source": "/reset-password", "destination": "/reset-password.html" },
+    { "source": "/termos", "destination": "/termos.html" },
+    { "source": "/suporte", "destination": "/suporte.html" }
+  ]
+}
