@@ -1,10 +1,9 @@
 import axios from "axios";
-import connectDB from "./db.js";
-import mongoose from "mongoose";
-import { sendRecoveryEmail } from "./mailer.js";
+import connectDB from "../../db.js";          // <-- CORRETO
+import { User } from "../../schema.js";       // <-- CORRETO
+import { sendRecoveryEmail } from "../../mailer.js"; // <-- CORRETO
 import { randomUUID } from "crypto";
 import jwt from "jsonwebtoken";
-import { User } from "./schema.js";
 
 export default async function handler(req, res) {
   const code = req.query.code;
