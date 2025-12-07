@@ -1,5 +1,12 @@
 {
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+
     { "source": "/", "destination": "/index.html" },
     { "source": "/admin/chat", "destination": "/admin/chat.html" },
     { "source": "/painel", "destination": "/painel.html" },
