@@ -58,6 +58,48 @@ const actionSchema = new mongoose.Schema({
   contagemInicial: { type: Number, default: null } // <-- novo campo
 }, { timestamps: true });
 
+const ServicoSchema = new mongoose.Schema({
+  id_servico: {
+    type: String,
+    required: true
+  },
+  nome: {
+    type: String,
+    required: true
+  },
+  tipo: {
+    type: String,
+    required: true
+  },
+  preco_1000: {
+    type: Number,
+    required: true
+  },
+  minimo: {
+    type: Number,
+    required: true
+  },
+  maximo: {
+    type: Number,
+    required: true
+  },
+  tempo_medio: {
+    type: String,
+    required: true
+  },
+
+  categoria: {
+    nome: { type: String, required: true },
+    imagem: { type: String, required: true }
+  },
+
+  descricao: {
+    type: String,
+    required: true
+  }
+
+}, { _id: false });
+
 /* 🔹 Depósitos via PIX (Mercado Pago) */
 const depositoSchema = new mongoose.Schema({
   userEmail: { type: String, required: true, index: true },
@@ -84,9 +126,16 @@ const depositoSchema = new mongoose.Schema({
   timestamps: true // necessário para limpar pendentes com mais de 30 min
 });
 
+const messageSchema = new mongoose.Schema({
+  session_id: String,
+  from: String, // 'user' ou 'support'
+  message: String,
+  timestamp: { type: Date, default: Date.now }
+});
 
 // 🔹 Exportação dos modelos
 export const User = mongoose.model("User", userSchema);
 export const Action = mongoose.model("Action", actionSchema);
 export const ActionHistory = mongoose.model("ActionHistory", actionHistorySchema);
+export const Servico = mongoose.model("Servico", ServicoSchema);
 export const Deposito = mongoose.model("Deposito", depositoSchema);
