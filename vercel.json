@@ -40,6 +40,7 @@
       { "source": "/api/listar-depositos", "destination": "/api/handler.js" },
       { "source": "/api/gerar-pagamento", "destination": "/api/handler.js" },
       { "source": "/api/check_payment", "destination": "/api/handler.js" },
-      { "source": "/api/supportMessages", "destination": "/api/handler.js" }
+      { "source": "/api/servico", "destination": "/api/handler.js" }
+
     ]
   }
