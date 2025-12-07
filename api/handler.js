@@ -142,13 +142,10 @@ if (url.startsWith("/api/signup")) {
             return res.status(400).json({ error: "E-mail já está cadastrado." });
         }
 
-        // Gerar token único
-        const token = crypto.randomBytes(32).toString("hex");
-
-        const novoUsuario = new User({ email, senha, token });
+        const novoUsuario = new User({ email, senha });
         await novoUsuario.save();
 
-        return res.status(201).json({ message: "Usuário registrado com sucesso!", token });
+        return res.status(201).json({ message: "Usuário registrado com sucesso!" });
     } catch (error) {
         console.error("Erro ao cadastrar usuário:", error);
         return res.status(500).json({ error: "Erro interno ao registrar usuário. Tente novamente mais tarde." });
