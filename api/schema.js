@@ -4,13 +4,17 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema({
   nome: { type: String },
   email: { type: String, required: true, unique: true },
-  senha: { type: String, required: true },
-  token: { type: String, required: true, unique: true }, // Garante token único
+  // Senha opcional (para login normal)
+  senha: { type: String, default: null },
+  // Login com Google
+  provider: { type: String, default: "local" }, // local, google
+  googleId: { type: String, default: null },
+  avatar: { type: String, default: null },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
   saldo: { type: Number, default: 0 }
 }, {
-  timestamps: true // Adiciona createdAt e updatedAt
+  timestamps: true
 });
 
 /* 🔹 Histórico de Ações Realizadas */
