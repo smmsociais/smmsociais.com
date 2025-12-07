@@ -514,7 +514,7 @@
                                                 <div class="form-row">
                                                     <div class="custom-col">
                                                         <div class="form-group d-flex justify-content-center">
-                                                            <a href="/auth/google" class="google-login-btn">
+                                                            <a href="/api/auth/google" class="google-login-btn">
                                                                 <img src="https://www.google.com/favicon.ico"
                                                                     alt="Google">
                                                                 <span class="btn-text">Fazer Login com o Google</span>
@@ -1103,43 +1103,43 @@
         });
     </script>
 
-<script>
-    document.getElementById('loginForm').addEventListener('submit', async function (e) {
-        e.preventDefault();
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
 
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
 
-        try {
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: username,
-                    senha: password
-                })
-            });
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: username,
+                        senha: password
+                    })
+                });
 
-            const data = await response.json();
+                const data = await response.json();
 
-            if (response.ok) {
-                localStorage.setItem('token', data.token);
-                window.location.href = '/painel';
-            } else {
-                alert('Erro: ' + data.error);
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    window.location.href = '/painel';
+                } else {
+                    alert('Erro: ' + data.error);
+                }
+            } catch (error) {
+                alert('Erro ao conectar.');
             }
-        } catch (error) {
-            alert('Erro ao conectar.');
-        }
-    });
+        });
 
-    // Login com Google CORRETO
-    function loginWithGoogle() {
-        window.location.href = '/api/auth/google';
-    }
-</script>
+        // Login com Google CORRETO
+        function loginWithGoogle() {
+            window.location.href = '/api/auth/google';
+        }
+    </script>
 
     <!-- Botão do WhatsApp para suporte -->
     <a href="https://wa.me/5582999801112?text=Olá,%20preciso%20de%20ajuda" target="_blank" id="whatsapp-button">
