@@ -4,12 +4,29 @@ import mongoose from "mongoose";
 import { sendRecoveryEmail } from "./mailer.js";
 import { randomUUID } from "crypto";
 import jwt from "jsonwebtoken";
+import Servico from "./Servico.js";
 import { User, Deposito, Action, ActionHistory, Servico, Message } from "./schema.js";
 
 export default async function handler(req, res) {
     await connectDB(); // 🟢 Conectar ao banco antes de qualquer operação
 
     const { method, url } = req;
+
+// ===============================
+// ROTA: GET /api/servico
+// ===============================
+if (url === "/api/servico" && method === "GET") {
+    try {
+        await connectDB(); // garante conexão com MongoDB
+
+        const servicos = await Servico.find({});
+        return res.status(200).json(servicos);
+
+    } catch (error) {
+        console.error("Erro ao buscar serviços:", error);
+        return res.status(500).json({ error: "Erro ao carregar serviços" });
+    }
+}
 
     // ✅ Rota: /api/buscar_acao_disponivel (POST)
     if (url.startsWith("/api/buscar_acao_disponivel") && method === "POST") {
