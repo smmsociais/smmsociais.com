@@ -454,16 +454,15 @@
             });
 
             // Função para cadastro com Google
-            function signupWithGoogle() {
-                // Redireciona para o endpoint de autenticação do Google para cadastro
-                window.location.href = 'api/auth/google/signup';
-            }
+function signupWithGoogle() {
+    window.location.href = 'https://smmsociais.com/api/auth/google/signup';
+}
         });
 
         // Função para lidar com a resposta de credenciais
         function handleCredentialResponse(response) {
             // Enviar o token para o seu servidor
-            fetch('api/auth/google/callback', {
+            fetch('https://smmsociais.com/api/auth/google/signup/callback', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
