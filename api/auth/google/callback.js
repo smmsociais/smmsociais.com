@@ -61,7 +61,7 @@ export default async function handler(req, res) {
 
     // 6 - Redirecionar de volta ao frontend
     // ❗ corrigido: redirecionar para uma rota *client-side*, não /api/*
-    const FRONTEND_URL = process.env.FRONTEND_URL || "https://seusite.com";
+    const FRONTEND_URL = process.env.FRONTEND_URL || "https://smmsociais.com/painel";
 
     return res.redirect(`${FRONTEND_URL}/login-success?token=${token}`);
 
