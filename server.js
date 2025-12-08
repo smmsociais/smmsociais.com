@@ -1,4 +1,4 @@
-// server.js
+//server.js
 
 import express from "express";
 import path from "path";
@@ -11,9 +11,18 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-// -------------------------------
-// 1) Declarar rotas API
-// -------------------------------
+// 1) Rotas API primeiro
+apiMappedRoutes.forEach(route => {
+  app.use(route, apiRoutes);
+});
+
+// Mantém fallback /api
+app.use("/api", apiRoutes);
+
+// 2) Só DEPOIS os arquivos estáticos
+app.use(express.static(__dirname));
+
+//
 const apiMappedRoutes = [
   "/api/login",
   "/api/signup",
@@ -30,29 +39,22 @@ const apiMappedRoutes = [
   "/api/check_payment"
 ];
 
-// -------------------------------
-// 2) Registrar rotas da API PRIMEIRO
-// -------------------------------
+// Todas essas rotas usam handler.js
 apiMappedRoutes.forEach(route => {
   app.use(route, apiRoutes);
 });
 
-// Mantém fallback geral
+// Também mantém /api padrão
 app.use("/api", apiRoutes);
 
-// -------------------------------
-// 3) Só depois servir arquivos estáticos
-// -------------------------------
-app.use(express.static(__dirname));
-
-
-// -------------------------------
-// 4) Rotas HTML
-// -------------------------------
+//
+// --- Rotas HTML (igual ao vercel.json) ---
+//
 const htmlPages = {
   "/": "index.html",
   "/painel": "painel.html",
   "/login": "index.html",
+  "/login-success": "login-success.html",
   "/signup": "signup.html",
   "/orders": "orders.html",
   "/orders/pending": "orders/pending.html",
@@ -80,15 +82,12 @@ Object.entries(htmlPages).forEach(([route, file]) => {
   });
 });
 
-// -------------------------------
-// 5) Fallback final
-// -------------------------------
+//
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// -------------------------------
-// 6) Iniciar servidor
-// -------------------------------
+
+// Iniciar servidor
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log("Servidor rodando na porta " + PORT));
