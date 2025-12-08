@@ -9,37 +9,35 @@ import { User, Deposito, Action, ActionHistory, Servico } from "./schema.js";
 
 const router = express.Router();
 
-// GET /api/get_saldo
-router.get("/get_saldo", async (req, res) => {
-
-  await connectDB();
-
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Token ausente" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    const userId = decoded.id;
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
+// Rota: /api/get_saldo
+if (url.startsWith("/api/get_saldo")) {
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Método não permitido' });
     }
 
-    return res.status(200).json({ saldo: user.saldo || 0 });
+    const authHeader = req.headers.authorization;
 
-  } catch (error) {
-    console.error("Erro ao buscar saldo:", error);
-    return res.status(500).json({ error: "Token inválido ou erro interno" });
-  }
-});
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token ausente' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+        await connectDB();
+
+        const user = await User.findOne({ token });
+
+        if (!user) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+
+        return res.status(200).json({ saldo: user.saldo || 0 });
+    } catch (error) {
+        console.error('Erro ao buscar saldo:', error);
+        return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+}
 
 // ROTA: GET /api/servico
 router.get("/servico", async (req, res) => {
