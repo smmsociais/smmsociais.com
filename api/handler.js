@@ -8,7 +8,6 @@ import { sendRecoveryEmail } from "./mailer.js";
 import { randomBytes } from "crypto";
 import jwt from "jsonwebtoken";
 import { User, Deposito, Action, ActionHistory, Servico } from "./schema.js";
-import bcrypt from "bcryptjs"; // npm i bcryptjs
 
 // IMPORTAÇÃO DAS ROTAS INDEPENDENTES
 import googleSignup from "./auth/google/signup.js";
@@ -121,7 +120,45 @@ router.get('/account', async (req, res) => {
   }
 });
 
-// PUT /api/account (atualiza perfil e/ou senha)
+// GET /api/account
+router.get('/account', async (req, res) => {
+  try {
+    await connectDB();
+
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Não autorizado." });
+    }
+
+    const token = authHeader.split(" ")[1].trim();
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
+
+    const userId = decoded.id || decoded.userId || decoded.sub;
+    if (!userId) return res.status(401).json({ error: "Token inválido (id ausente)." });
+
+    const usuario = await User.findById(userId);
+    if (!usuario) return res.status(404).json({ error: "Usuário não encontrado." });
+
+    return res.status(200).json({
+      nome_usuario: usuario.nome,
+      email: usuario.email,
+      userId: String(usuario._id),
+      id: String(usuario._id)
+    });
+
+  } catch (error) {
+    console.error("Erro GET /account:", error);
+    return res.status(500).json({ error: "Erro ao obter dados do perfil." });
+  }
+});
+
+// PUT /api/account
 router.put('/account', async (req, res) => {
   try {
     await connectDB();
@@ -132,6 +169,7 @@ router.put('/account', async (req, res) => {
     }
 
     const token = authHeader.split(" ")[1].trim();
+
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -152,31 +190,22 @@ router.put('/account', async (req, res) => {
       email: email || usuario.email
     };
 
-    // Alteração de senha (opcional)
+    // Alteração de senha sem hash (texto puro)
     if (nova_senha) {
       if (!senha_atual) {
         return res.status(400).json({ error: "Você deve informar a senha atual para alterar a senha." });
       }
 
-      // Suporta tanto senhas em texto puro quanto bcrypt
-      const stored = usuario.senha || "";
-
-      let senhaConfere = false;
-      if (stored.startsWith("$2")) {
-        // hash bcrypt
-        senhaConfere = await bcrypt.compare(senha_atual, stored);
-      } else {
-        // comparação direta (legacy)
-        senhaConfere = senha_atual === stored;
-      }
-
-      if (!senhaConfere) {
+      if (senha_atual !== usuario.senha) {
         return res.status(403).json({ error: "Senha atual incorreta." });
       }
 
-      // Se quiser, sempre salve com hash (recomendado)
-      const hashed = stored.startsWith("$2") ? await bcrypt.hash(nova_senha, 10) : await bcrypt.hash(nova_senha, 10);
-      updateFields.senha = hashed;
+      if (nova_senha.length < 6) {
+        return res.status(400).json({ error: "A nova senha deve ter no mínimo 6 caracteres." });
+      }
+
+      // Salva a nova senha em texto puro
+      updateFields.senha = nova_senha;
     }
 
     const usuarioAtualizado = await User.findByIdAndUpdate(userId, updateFields, { new: true });
@@ -194,7 +223,7 @@ router.put('/account', async (req, res) => {
     });
 
   } catch (error) {
-    console.error("💥 Erro ao processar PUT /account:", error);
+    console.error("Erro PUT /account:", error);
     return res.status(500).json({ error: "Erro ao atualizar perfil." });
   }
 });
