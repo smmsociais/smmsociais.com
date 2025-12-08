@@ -39,6 +39,7 @@ router.post("/criar_acao_tiktok", criarAcaoTikTok);
 // 🔹 User info
 router.get("/user-info", userInfo);
 
+// ROTA: GET /api/get_saldo
 router.get("/get_saldo", async (req, res) => {
   console.log("➡️ Rota GET SALDO capturada");
 
@@ -125,34 +126,29 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Rota: /api/signup
+// rota: POST /api/signup
 router.post("/signup", async (req, res) => {
-    if (req.method !== "POST") {
-        return res.status(405).json({ error: "Método não permitido." });
+  await connectDB();
+
+  const { email, senha } = req.body;
+  if (!email || !senha) return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+
+  try {
+    const emailExiste = await User.findOne({ email });
+    if (emailExiste) {
+      return res.status(400).json({ error: "E-mail já está cadastrado." });
     }
 
-    await connectDB();
+    const novoUsuario = new User({ email, senha });
+    await novoUsuario.save();
 
-    const { email, senha } = req.body;
+    // Gera token e retorna para frontend salvar
+    const token = jwt.sign({ id: novoUsuario._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-    if (!email || !senha) {
-        return res.status(400).json({ error: "Todos os campos são obrigatórios." });
-    }
-
-    try {
-
-        const emailExiste = await User.findOne({ email });
-        if (emailExiste) {
-            return res.status(400).json({ error: "E-mail já está cadastrado." });
-        }
-
-        const novoUsuario = new User({ email, senha });
-        await novoUsuario.save();
-
-        return res.status(201).json({ message: "Usuário registrado com sucesso!" });
-    } catch (error) {
-        console.error("Erro ao cadastrar usuário:", error);
-        return res.status(500).json({ error: "Erro interno ao registrar usuário. Tente novamente mais tarde." });
+    return res.status(201).json({ message: "Usuário registrado com sucesso!", token });
+  } catch (error) {
+    console.error("Erro ao cadastrar usuário:", error);
+    return res.status(500).json({ error: "Erro interno ao registrar usuário. Tente novamente mais tarde." });
   }
 });
 
