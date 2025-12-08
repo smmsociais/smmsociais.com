@@ -5,7 +5,7 @@ import axios from "axios";
 import connectDB from "./db.js";
 import mongoose from "mongoose";
 import { sendRecoveryEmail } from "./mailer.js";
-import { randomUUID } from "crypto";
+import { randomBytes } from "crypto";
 import jwt from "jsonwebtoken";
 import { User, Deposito, Action, ActionHistory, Servico } from "./schema.js";
 
@@ -14,7 +14,6 @@ import googleSignup from "./auth/google/signup.js";
 import googleSignupCallback from "./auth/google/signup/callback.js";
 import googleLogin from "./auth/google.js";
 import googleCallback from "./auth/google/callback.js";
-
 import criarAcaoInstagram from "./criar_acao_instagram.js";
 import criarAcaoTikTok from "./criar_acao_tiktok.js";
 import userInfo from "./user-info.js";
