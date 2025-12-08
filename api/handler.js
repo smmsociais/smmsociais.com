@@ -1,5 +1,3 @@
-// handler.js
-
 import express from "express";
 import axios from "axios";
 import connectDB from "./db.js";
@@ -9,29 +7,11 @@ import { randomUUID } from "crypto";
 import jwt from "jsonwebtoken";
 import { User, Deposito, Action, ActionHistory, Servico } from "./schema.js";
 
-// 🔹 IMPORTAÇÃO DAS ROTAS INDEPENDENTES
-import googleSignup from "./auth/google/signup.js";
-import googleSignupCallback from "./auth/google/signup/callback.js";
-import googleLogin from "./auth/google.js";
-import googleCallback from "./auth/google/callback.js";
-
-import criarAcaoInstagram from "./criar_acao_instagram.js";
-import criarAcaoTikTok from "./criar_acao_tiktok.js";
-import userInfo from "./user-info.js";
-
-// 🔹 INSTANCIA O ROUTER
 const router = express.Router();
-// 🔹 Rotas de autenticação Google
-router.get("/auth/google", googleLogin);
-router.get("/auth/google/callback", googleCallback);
-router.get("/auth/google/signup", googleSignup);
-router.get("/auth/google/signup/callback", googleSignupCallback);
-// 🔹 Rotas de criação de ações
-router.post("/criar_acao_instagram", criarAcaoInstagram);
-router.post("/criar_acao_tiktok", criarAcaoTikTok);
-// 🔹 User info
-router.get("/user-info", userInfo);
 
+// ----------------------------------------------
+// GET /api/get_saldo
+// ----------------------------------------------
 router.get("/get_saldo", async (req, res) => {
   console.log("➡️ Rota GET SALDO capturada");
 
@@ -48,6 +28,7 @@ router.get("/get_saldo", async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // id do usuário vem do JWT
     const userId = decoded.id;
 
     const user = await User.findById(userId);
