@@ -11,9 +11,9 @@ const app = express();
 app.use(express.json());
 
 // Aplica as rotas antes dos arquivos estáticos
-apiMappedRoutes.forEach(route => {
+{
   app.use("/api", apiRoutes);
-});
+};
 
 // Mantém fallback /api
 app.use("/api", apiRoutes);
