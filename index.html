@@ -313,37 +313,6 @@
             filter: invert(1);
         }
     </style>
-
-    <script>
-        function generateRandomNumber() {
-            return Math.floor(Math.random() * 90000) + 10000;
-        }
-
-        function hideInputAndDiv() {
-            var input = document.getElementById('field-cpf_cnpj');
-            var div = document.getElementById('order_cpf_cnpj');
-
-            if (input) {
-                input.style.display = 'none';
-            }
-
-            if (div) {
-                div.style.display = 'none';
-            }
-        }
-
-        function fillAndHideInput() {
-            var input = document.getElementById('field-cpf_cnpj');
-            if (input) {
-                var randomNumber = generateRandomNumber();
-                input.value = randomNumber;
-                hideInputAndDiv();
-            } else {
-                setTimeout(fillAndHideInput, 100);
-            }
-        }
-
-        fillAndHideInput();
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -1103,43 +1072,103 @@
         });
     </script>
 
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
+<script>
+  // wrapper para todas as chamadas à API que inclui Authorization automaticamente
+  async function apiFetch(path, options = {}) {
+    const token = localStorage.getItem('token');
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+    // headers padrão
+    options.headers = Object.assign({
+      "Accept": "application/json"
+    }, options.headers || {});
 
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: username,
-                        senha: password
-                    })
-                });
+    // adiciona Authorization se tiver token
+    if (token) {
+      options.headers["Authorization"] = "Bearer " + token;
+    }
 
-                const data = await response.json();
+    const res = await fetch(path, options);
 
-                if (response.ok) {
-                    localStorage.setItem('token', data.token);
-                    window.location.href = '/painel';
-                } else {
-                    alert('Erro: ' + data.error);
-                }
-            } catch (error) {
-                alert('Erro ao conectar.');
-            }
-        });
+    // tratamento centralizado de 401 (token ausente / expirado)
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      // opcional: exibir alerta antes de redirecionar
+      // alert('Sessão expirada. Faça o login novamente.');
+      window.location.href = '/login';
+      throw new Error('Não autorizado');
+    }
 
-        // Login com Google CORRETO
-        function loginWithGoogle() {
-            window.location.href = '/api/auth/google';
-        }
-    </script>
+    return res;
+  }
+
+  // ---------- Login form ----------
+  document.getElementById('loginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: username, senha: password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.token) {
+        // SALVA o token puro (sem aspas, sem JSON.stringify)
+        localStorage.setItem('token', data.token);
+
+        // redireciona para painel
+        window.location.href = '/painel';
+      } else {
+        // mostra erro retornado pelo backend
+        const msg = data.error || data.message || 'Erro ao logar';
+        alert('Erro: ' + msg);
+      }
+    } catch (error) {
+      console.error('Erro no login:', error);
+      alert('Erro ao conectar.');
+    }
+  });
+
+  function loginWithGoogle() {
+    window.location.href = '/api/auth/google';
+  }
+
+  // ---------- Exemplo: carregar saldo no painel ----------
+  async function loadUserBalance() {
+    try {
+      const res = await apiFetch('/api/get_saldo', { method: 'GET' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      // coloque aqui o elemento onde mostra o saldo
+      // ex.: <span id="userBalance">...</span>
+      const el = document.getElementById('userBalance');
+      if (el) el.textContent = data.saldo ?? 0;
+
+      return data;
+    } catch (err) {
+      console.error('Erro ao carregar saldo:', err);
+      // já tratamos 401 no apiFetch (redireciona)
+      // aqui você pode mostrar mensagem no UI, spinner, etc.
+    }
+  }
+
+  // chama o carregamento quando entrar no painel
+  if (window.location.pathname === '/painel') {
+    window.addEventListener('DOMContentLoaded', () => {
+      loadUserBalance();
+    });
+  }
+
+  // ---------- Como usar apiFetch em outras chamadas ----------
+  // const res = await apiFetch('/api/orders', { method: 'GET' });
+  // const orders = await res.json();
+</script>
 
     <!-- Botão do WhatsApp para suporte -->
     <a href="https://wa.me/5582999801112?text=Olá,%20preciso%20de%20ajuda" target="_blank" id="whatsapp-button">
