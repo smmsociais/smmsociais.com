@@ -75,7 +75,7 @@ router.get("/servico", async (req, res) => {
 });
 
 // Rota: /api/account (GET ou PUT)
-router.get('/api/account', async (req, res) => {
+router.get('/account', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Não autorizado." });
@@ -107,7 +107,7 @@ router.get('/api/account', async (req, res) => {
 // ============================
 //            PUT
 // ============================
-router.put('/api/account', async (req, res) => {
+router.put('/account', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Não autorizado." });
