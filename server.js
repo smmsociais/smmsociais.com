@@ -10,12 +10,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-// Aplica as rotas antes dos arquivos estáticos
-{
-  app.use("/api", apiRoutes);
-};
-
-// Mantém fallback /api
+// 1) API
 app.use("/api", apiRoutes);
 
 // -----------------------------------------------
