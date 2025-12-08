@@ -1,5 +1,4 @@
-//server.js
-
+// server.js
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -11,18 +10,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-// 1) Rotas API primeiro
-apiMappedRoutes.forEach(route => {
-  app.use(route, apiRoutes);
-});
-
-// Mantém fallback /api
-app.use("/api", apiRoutes);
-
-// 2) Só DEPOIS os arquivos estáticos
-app.use(express.static(__dirname));
-
-//
+// -----------------------------------------------
+// 1) MAPA DE ROTAS QUE USAM handler.js
+// -----------------------------------------------
 const apiMappedRoutes = [
   "/api/login",
   "/api/signup",
@@ -39,17 +29,22 @@ const apiMappedRoutes = [
   "/api/check_payment"
 ];
 
-// Todas essas rotas usam handler.js
+// Aplica as rotas antes dos arquivos estáticos
 apiMappedRoutes.forEach(route => {
   app.use(route, apiRoutes);
 });
 
-// Também mantém /api padrão
+// Mantém fallback /api
 app.use("/api", apiRoutes);
 
-//
-// --- Rotas HTML (igual ao vercel.json) ---
-//
+// -----------------------------------------------
+// 2) ARQUIVOS ESTÁTICOS
+// -----------------------------------------------
+app.use(express.static(__dirname));
+
+// -----------------------------------------------
+// 3) ROTAS HTML DEFINIDAS (igual ao vercel.json)
+// -----------------------------------------------
 const htmlPages = {
   "/": "index.html",
   "/painel": "painel.html",
@@ -82,12 +77,15 @@ Object.entries(htmlPages).forEach(([route, file]) => {
   });
 });
 
-//
+// -----------------------------------------------
+// 4) CATCH-ALL (SPA) → devolve index.html
+// -----------------------------------------------
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-
-// Iniciar servidor
+// -----------------------------------------------
+// 5) INICIA SERVIDOR
+// -----------------------------------------------
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log("Servidor rodando na porta " + PORT));
