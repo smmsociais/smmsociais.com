@@ -9,7 +9,7 @@ import { randomBytes } from "crypto";
 import jwt from "jsonwebtoken";
 import { User, Deposito, Action, ActionHistory, Servico } from "./schema.js";
 
-// 🔹 IMPORTAÇÃO DAS ROTAS INDEPENDENTES
+// IMPORTAÇÃO DAS ROTAS INDEPENDENTES
 import googleSignup from "./auth/google/signup.js";
 import googleSignupCallback from "./auth/google/signup/callback.js";
 import googleLogin from "./auth/google.js";
@@ -18,24 +18,14 @@ import criarAcaoInstagram from "./criar_acao_instagram.js";
 import criarAcaoTikTok from "./criar_acao_tiktok.js";
 import userInfo from "./user-info.js";
 
-// 🔹 INSTANCIA O ROUTER
 const router = express.Router();
 
-/* ======================================================
-   ROTAS INDEPENDENTES (SEMPRE NO TOPO)
-   ====================================================== */
-
-// 🔹 Rotas de autenticação Google
 router.get("/auth/google", googleLogin);
 router.get("/auth/google/callback", googleCallback);
 router.get("/auth/google/signup", googleSignup);
 router.get("/auth/google/signup/callback", googleSignupCallback);
-
-// 🔹 Rotas de criação de ações
 router.post("/criar_acao_instagram", criarAcaoInstagram);
 router.post("/criar_acao_tiktok", criarAcaoTikTok);
-
-// 🔹 User info
 router.get("/user-info", userInfo);
 
 // ROTA: GET /api/get_saldo
@@ -186,5 +176,32 @@ router.post("/recover-password", async (req, res) => {
   }
 });
 
+// Rota: /api/validate-reset-token
+router.get("/validate-reset-token", async (req, res) => {
+  try {
+    await connectDB();
+
+    const token = req.query.token;
+    if (!token) {
+      return res.status(400).json({ error: "Token ausente" });
+    }
+
+    // Busca usuário com token válido e ainda não expirado
+    const usuario = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!usuario) {
+      return res.status(401).json({ error: "Link inválido ou expirado" });
+    }
+
+    return res.json({ valid: true });
+
+  } catch (error) {
+    console.error("Erro ao validar token:", error);
+    return res.status(500).json({ error: "Erro ao validar token" });
+  }
+});
 
 export default router;
