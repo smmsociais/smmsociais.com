@@ -10,7 +10,7 @@ import { User, Deposito, Action, ActionHistory, Servico } from "./schema.js";
 const router = express.Router();
 
 // Rota: /api/get_saldo
-if (url.startsWith("/api/get_saldo")) {
+router.get("/get_saldo", async (req, res) => {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Método não permitido' });
     }
@@ -36,8 +36,8 @@ if (url.startsWith("/api/get_saldo")) {
     } catch (error) {
         console.error('Erro ao buscar saldo:', error);
         return res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-}
+  }
+});
 
 // ROTA: GET /api/servico
 router.get("/servico", async (req, res) => {
