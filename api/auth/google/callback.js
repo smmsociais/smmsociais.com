@@ -63,8 +63,6 @@ export default async function handler(req, res) {
     // ❗ corrigido: redirecionar para uma rota *client-side*, não /api/*
     const FRONTEND_URL = process.env.FRONTEND_URL || "https://smmsociais.com/painel";
 
-    return res.redirect(`${FRONTEND_URL}/login-success?token=${token}`);
-
   } catch (error) {
     console.error("Erro no callback do Google:", error);
     return res.status(500).json({ error: "Erro interno ao processar login." });
