@@ -1,3 +1,5 @@
+//server.js
+
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -9,11 +11,17 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-// Servir arquivos estáticos
+// 1) Rotas API primeiro
+apiMappedRoutes.forEach(route => {
+  app.use(route, apiRoutes);
+});
+
+// Mantém fallback /api
+app.use("/api", apiRoutes);
+
+// 2) Só DEPOIS os arquivos estáticos
 app.use(express.static(__dirname));
 
-//
-// --- Rotas API (mesmo padrão do vercel.json) ---
 //
 const apiMappedRoutes = [
   "/api/login",
