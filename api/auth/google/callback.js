@@ -61,9 +61,9 @@ export default async function handler(req, res) {
 
     // 6 - Redirecionar de volta ao frontend
     // ❗ corrigido: redirecionar para uma rota *client-side*, não /api/*
-    const FRONTEND_URL = process.env.FRONTEND_URL || "https://smmsociais.com/painel";
-
-    return res.redirect(`${FRONTEND_URL}`);
+const FRONTEND_BASE = process.env.FRONTEND_URL || "https://smmsociais.com";
+// redireciona para uma rota cliente que captura token e salva no localStorage
+return res.redirect(`${FRONTEND_BASE}/login-success?token=${token}`);
 
   } catch (error) {
     console.error("Erro no callback do Google:", error);
