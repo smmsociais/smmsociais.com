@@ -74,6 +74,115 @@ router.get("/servico", async (req, res) => {
   }
 });
 
+// Rota: /api/account (GET ou PUT)
+router.get('/api/account', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Não autorizado." });
+  }
+
+  const token = authHeader.split(" ")[1].trim();
+  console.log("🔐 Token recebido:", token);
+
+  try {
+    const usuario = await User.findOne({ token });
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    return res.status(200).json({
+      nome_usuario: usuario.nome,
+      email: usuario.email,
+      token: usuario.token,
+      userId: String(usuario._id),
+      id: String(usuario._id)
+    });
+
+  } catch (error) {
+    console.error("💥 Erro ao processar GET /account:", error);
+    return res.status(500).json({ error: "Erro ao obter dados do perfil." });
+  }
+});
+
+// ============================
+//            PUT
+// ============================
+router.put('/api/account', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Não autorizado." });
+  }
+
+  const token = authHeader.split(" ")[1].trim();
+  console.log("🔐 Token recebido:", token);
+
+  try {
+    const usuario = await User.findOne({ token });
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    const { nome_usuario, email, senha_atual, nova_senha } = req.body;
+
+    const updateFields = {
+      nome: nome_usuario || usuario.nome,
+      email: email || usuario.email
+    };
+
+    // ============================
+    //     ALTERAÇÃO DE SENHA
+    // ============================
+    if (nova_senha) {
+      if (nova_senha.length < 6) {
+        return res.status(400).json({
+          error: "A nova senha deve ter no mínimo 6 caracteres."
+        });
+      }
+
+      if (!senha_atual) {
+        return res.status(400).json({
+          error: "Você deve informar a senha atual para alterar a senha."
+        });
+      }
+
+      console.log("Senha enviada:", senha_atual);
+      console.log("Senha no banco:", usuario.senha);
+
+      // 👉 COMPARAÇÃO DIRETA, SEM BCRYPT
+      if (senha_atual !== usuario.senha) {
+        return res.status(403).json({
+          error: "Senha atual incorreta."
+        });
+      }
+
+      // 👉 SALVA A NOVA SENHA DIRETO (TEXTO PURO)
+      updateFields.senha = nova_senha;
+    }
+
+    const usuarioAtualizado = await User.findOneAndUpdate(
+      { token },
+      updateFields,
+      { new: true }
+    );
+
+    if (!usuarioAtualizado) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    return res.status(200).json({
+      message: "Perfil atualizado com sucesso!",
+      user: {
+        nome_usuario: usuarioAtualizado.nome,
+        email: usuarioAtualizado.email
+      }
+    });
+
+  } catch (error) {
+    console.error("💥 Erro ao processar PUT /account:", error);
+    return res.status(500).json({ error: "Erro ao atualizar perfil." });
+  }
+});
+
     // Rota: /api/login (POST)
 router.post("/login", async (req, res) => {
         try {
