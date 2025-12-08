@@ -8,6 +8,7 @@ import { sendRecoveryEmail } from "./mailer.js";
 import { randomBytes } from "crypto";
 import jwt from "jsonwebtoken";
 import { User, Deposito, Action, ActionHistory, Servico } from "./schema.js";
+import bcrypt from "bcryptjs"; // npm i bcryptjs
 
 // IMPORTAÇÃO DAS ROTAS INDEPENDENTES
 import googleSignup from "./auth/google/signup.js";
@@ -74,18 +75,34 @@ router.get("/servico", async (req, res) => {
   }
 });
 
-// Rota: /api/account (GET ou PUT)
+
+// GET /api/account
 router.get('/account', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Não autorizado." });
-  }
-
-  const token = authHeader.split(" ")[1].trim();
-  console.log("🔐 Token recebido:", token);
-
   try {
-    const usuario = await User.findOne({ token });
+    await connectDB();
+
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Não autorizado." });
+    }
+
+    const token = authHeader.split(" ")[1].trim();
+    console.log("🔐 Token recebido:", token);
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      console.warn("Token inválido/expirado:", err.message);
+      return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
+
+    const userId = decoded.id || decoded.userId || decoded.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Token inválido (id ausente)." });
+    }
+
+    const usuario = await User.findById(userId);
     if (!usuario) {
       return res.status(404).json({ error: "Usuário não encontrado." });
     }
@@ -93,7 +110,7 @@ router.get('/account', async (req, res) => {
     return res.status(200).json({
       nome_usuario: usuario.nome,
       email: usuario.email,
-      token: usuario.token,
+      // não retorne senha
       userId: String(usuario._id),
       id: String(usuario._id)
     });
@@ -104,23 +121,29 @@ router.get('/account', async (req, res) => {
   }
 });
 
-// ============================
-//            PUT
-// ============================
+// PUT /api/account (atualiza perfil e/ou senha)
 router.put('/account', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Não autorizado." });
-  }
-
-  const token = authHeader.split(" ")[1].trim();
-  console.log("🔐 Token recebido:", token);
-
   try {
-    const usuario = await User.findOne({ token });
-    if (!usuario) {
-      return res.status(404).json({ error: "Usuário não encontrado." });
+    await connectDB();
+
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Não autorizado." });
     }
+
+    const token = authHeader.split(" ")[1].trim();
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
+
+    const userId = decoded.id || decoded.userId || decoded.sub;
+    if (!userId) return res.status(401).json({ error: "Token inválido (id ausente)." });
+
+    const usuario = await User.findById(userId);
+    if (!usuario) return res.status(404).json({ error: "Usuário não encontrado." });
 
     const { nome_usuario, email, senha_atual, nova_senha } = req.body;
 
@@ -129,41 +152,34 @@ router.put('/account', async (req, res) => {
       email: email || usuario.email
     };
 
-    // ============================
-    //     ALTERAÇÃO DE SENHA
-    // ============================
+    // Alteração de senha (opcional)
     if (nova_senha) {
-      if (nova_senha.length < 6) {
-        return res.status(400).json({
-          error: "A nova senha deve ter no mínimo 6 caracteres."
-        });
-      }
-
       if (!senha_atual) {
-        return res.status(400).json({
-          error: "Você deve informar a senha atual para alterar a senha."
-        });
+        return res.status(400).json({ error: "Você deve informar a senha atual para alterar a senha." });
       }
 
-      console.log("Senha enviada:", senha_atual);
-      console.log("Senha no banco:", usuario.senha);
+      // Suporta tanto senhas em texto puro quanto bcrypt
+      const stored = usuario.senha || "";
 
-      // 👉 COMPARAÇÃO DIRETA, SEM BCRYPT
-      if (senha_atual !== usuario.senha) {
-        return res.status(403).json({
-          error: "Senha atual incorreta."
-        });
+      let senhaConfere = false;
+      if (stored.startsWith("$2")) {
+        // hash bcrypt
+        senhaConfere = await bcrypt.compare(senha_atual, stored);
+      } else {
+        // comparação direta (legacy)
+        senhaConfere = senha_atual === stored;
       }
 
-      // 👉 SALVA A NOVA SENHA DIRETO (TEXTO PURO)
-      updateFields.senha = nova_senha;
+      if (!senhaConfere) {
+        return res.status(403).json({ error: "Senha atual incorreta." });
+      }
+
+      // Se quiser, sempre salve com hash (recomendado)
+      const hashed = stored.startsWith("$2") ? await bcrypt.hash(nova_senha, 10) : await bcrypt.hash(nova_senha, 10);
+      updateFields.senha = hashed;
     }
 
-    const usuarioAtualizado = await User.findOneAndUpdate(
-      { token },
-      updateFields,
-      { new: true }
-    );
+    const usuarioAtualizado = await User.findByIdAndUpdate(userId, updateFields, { new: true });
 
     if (!usuarioAtualizado) {
       return res.status(404).json({ error: "Usuário não encontrado." });
