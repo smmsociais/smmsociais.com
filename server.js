@@ -1,4 +1,4 @@
-//server.js
+// server.js
 
 import express from "express";
 import path from "path";
@@ -11,18 +11,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-// 1) Rotas API primeiro
-apiMappedRoutes.forEach(route => {
-  app.use(route, apiRoutes);
-});
-
-// Mantém fallback /api
-app.use("/api", apiRoutes);
-
-// 2) Só DEPOIS os arquivos estáticos
-app.use(express.static(__dirname));
-
-//
+// -------------------------------
+// 1) Declarar rotas API
+// -------------------------------
 const apiMappedRoutes = [
   "/api/login",
   "/api/signup",
@@ -39,17 +30,25 @@ const apiMappedRoutes = [
   "/api/check_payment"
 ];
 
-// Todas essas rotas usam handler.js
+// -------------------------------
+// 2) Registrar rotas da API PRIMEIRO
+// -------------------------------
 apiMappedRoutes.forEach(route => {
   app.use(route, apiRoutes);
 });
 
-// Também mantém /api padrão
+// Mantém fallback geral
 app.use("/api", apiRoutes);
 
-//
-// --- Rotas HTML (igual ao vercel.json) ---
-//
+// -------------------------------
+// 3) Só depois servir arquivos estáticos
+// -------------------------------
+app.use(express.static(__dirname));
+
+
+// -------------------------------
+// 4) Rotas HTML
+// -------------------------------
 const htmlPages = {
   "/": "index.html",
   "/painel": "painel.html",
@@ -81,14 +80,15 @@ Object.entries(htmlPages).forEach(([route, file]) => {
   });
 });
 
-//
-// ---- Fallback (igual Vercel rewrites) ----
-//
+// -------------------------------
+// 5) Fallback final
+// -------------------------------
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-
-// Iniciar servidor
+// -------------------------------
+// 6) Iniciar servidor
+// -------------------------------
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log("Servidor rodando na porta " + PORT));
