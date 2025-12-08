@@ -10,28 +10,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-// -----------------------------------------------
-// 1) MAPA DE ROTAS QUE USAM handler.js
-// -----------------------------------------------
-const apiMappedRoutes = [
-  "/api/login",
-  "/api/signup",
-  "/api/change-password",
-  "/api/recover-password",
-  "/api/validate-reset-token",
-  "/api/account",
-  "/api/confirmar-pagamento",
-  "/api/incrementar-validadas",
-  "/api/orders",
-  "/api/get_saldo",
-  "/api/listar-depositos",
-  "/api/gerar-pagamento",
-  "/api/check_payment"
-];
-
 // Aplica as rotas antes dos arquivos estáticos
 apiMappedRoutes.forEach(route => {
-  app.use(route, apiRoutes);
+  app.use("/api", apiRoutes);
 });
 
 // Mantém fallback /api
