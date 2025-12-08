@@ -429,15 +429,16 @@
 
                     const data = await response.json();
 
-                    if (response.ok) {
-                        // Sucesso
-                        showNotification(data.message || 'Cadastro realizado com sucesso!', 'success');
-                        signupForm.reset();
+if (response.ok) {
+  // Se o backend retornou token, salve
+  if (data.token) {
+    localStorage.setItem('token', data.token);
+  }
+  showNotification(data.message || 'Cadastro realizado com sucesso!', 'success');
+  signupForm.reset();
 
-                        // Redirecionar após 2 segundos
-                        setTimeout(() => {
-                            window.location.href = '/painel';
-                        }, 2000);
+  setTimeout(() => window.location.href = '/painel', 1000);
+
                     } else {
                         // Erro
                         showNotification(data.error || 'Erro ao realizar cadastro. Tente novamente.', 'danger');
@@ -472,14 +473,14 @@ function signupWithGoogle() {
                 })
             })
                 .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Redirecionar para o painel
-                        window.location.href = '/painel';
-                    } else {
-                        alert('Erro ao cadastrar com Google: ' + data.error);
-                    }
-                })
+.then(data => {
+    if (data.success && data.token) {
+        localStorage.setItem('token', data.token);
+        window.location.href = '/painel';
+    } else {
+        alert('Erro ao cadastrar com Google: ' + (data.error || 'Sem token'));
+    }
+})
                 .catch(error => {
                     console.error('Erro:', error);
                     alert('Erro ao conectar com o Google');
