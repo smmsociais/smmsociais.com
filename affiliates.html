@@ -29,10 +29,42 @@
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
         }
+
+        .afiliados-table {
+            margin-top: 20px;
+        }
+
+        .afiliados-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #dee2e6;
+        }
+
+        .codigo-afiliado {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
     </style>
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <script>
         // Função para obter o token do localStorage
         function loadToken() {
@@ -41,7 +73,7 @@
                 localStorage.getItem('token') ||
                 localStorage.getItem('user_token') ||
                 localStorage.getItem('auth') ||
-                getToken()
+                null
             );
         }
 
@@ -94,6 +126,194 @@
             }
         }
 
+        // Função para carregar dados dos afiliados
+        async function loadAfiliados() {
+            const token = loadToken();
+
+            if (!token) {
+                console.error("Token não encontrado.");
+                showError("Token de autenticação não encontrado. Faça login novamente.");
+                return null;
+            }
+
+            try {
+                const response = await fetch('https://smmsociais.com/api/afiliados', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showError("Sessão expirada. Faça login novamente.");
+                        return null;
+                    }
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data;
+
+            } catch (error) {
+                console.error('Erro ao carregar afiliados:', error);
+                showError("Erro ao carregar lista de afiliados. Tente novamente mais tarde.");
+                return null;
+            }
+        }
+
+        // Função para exibir mensagens de erro
+        function showError(message) {
+            const notifyWrapper = document.getElementById('notify-wrapper');
+            if (notifyWrapper) {
+                notifyWrapper.textContent = message;
+                notifyWrapper.className = 'alert alert-danger mb-3';
+                notifyWrapper.style.display = 'block';
+                
+                setTimeout(() => {
+                    notifyWrapper.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Função para exibir mensagens de sucesso
+        function showSuccess(message) {
+            const notifyWrapper = document.getElementById('notify-wrapper');
+            if (notifyWrapper) {
+                notifyWrapper.textContent = message;
+                notifyWrapper.className = 'alert alert-success mb-3';
+                notifyWrapper.style.display = 'block';
+                
+                setTimeout(() => {
+                    notifyWrapper.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Função para formatar data
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Função para atualizar link de referência com código do usuário
+        function updateReferralLink(codigoAfiliado) {
+            const linkElement = document.getElementById('link');
+            if (linkElement && codigoAfiliado) {
+                linkElement.textContent = `https://smmsociais.com/ref/${codigoAfiliado}`;
+                
+                // Atualizar clipboard
+                const clipboardButton = linkElement.nextElementSibling.querySelector('[data-clipboard-target="#link"]');
+                if (clipboardButton) {
+                    clipboardButton.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const textToCopy = `https://smmsociais.com/ref/${codigoAfiliado}`;
+                        navigator.clipboard.writeText(textToCopy).then(() => {
+                            showSuccess('Link copiado para a área de transferência!');
+                        }).catch(err => {
+                            console.error('Erro ao copiar:', err);
+                        });
+                    });
+                }
+            }
+        }
+
+        // Função para renderizar tabela de afiliados
+        function renderAfiliadosTable(afiliados) {
+            const tableBody = document.getElementById('afiliados-table-body');
+            if (!tableBody) return;
+
+            if (!afiliados || afiliados.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `
+                    <td colspan="4" class="text-center py-4">
+                        <div class="empty-state">
+                            <i class="fas fa-users-slash"></i>
+                            <h5>Nenhum afiliado encontrado</h5>
+                            <p>Você ainda não indicou nenhum usuário.</p>
+                            <p>Compartilhe seu link de referência para começar a ganhar!</p>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(emptyRow);
+                return;
+            }
+
+            afiliados.forEach(afiliado => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${afiliado.email || 'N/A'}</td>
+                    <td><span class="codigo-afiliado">${afiliado.codigoAfiliado || 'N/A'}</span></td>
+                    <td>${formatDate(afiliado.createdAt)}</td>
+                    <td class="text-center">
+                        <span class="badge badge-success">Ativo</span>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Função para atualizar estatísticas
+        function updateStatistics(afiliador, afiliados) {
+            // Atualizar referências
+            const referenciasElement = document.querySelector('[data-label="Referências"]');
+            if (referenciasElement) {
+                referenciasElement.textContent = afiliados.length;
+            }
+
+            // Atualizar inscrições (assumindo que cada afiliado é uma inscrição)
+            const inscricoesElement = document.querySelector('[data-label="Inscrições"]');
+            if (inscricoesElement) {
+                inscricoesElement.textContent = afiliados.length;
+            }
+
+            // Atualizar taxa de conversão (simplificado - precisa de dados de visitas)
+            const taxaConversaoElement = document.querySelector('[data-label="Taxa de conversão"]');
+            if (taxaConversaoElement) {
+                // Se tivermos dados de visitas, calcular a taxa real
+                // Por enquanto, mostrar 0% ou 100% se tiver afiliados
+                taxaConversaoElement.textContent = afiliados.length > 0 ? '100.00%' : '0.00%';
+            }
+        }
+
+        // Função principal para carregar todos os dados da página
+        async function loadPageData() {
+            try {
+                // Carregar saldo
+                await loadUserBalance();
+                
+                // Carregar afiliados
+                const afiliadosData = await loadAfiliados();
+                
+                if (afiliadosData) {
+                    // Atualizar link de referência
+                    updateReferralLink(afiliadosData.afiliador.codigoAfiliado);
+                    
+                    // Renderizar tabela de afiliados
+                    renderAfiliadosTable(afiliadosData.afiliados);
+                    
+                    // Atualizar estatísticas
+                    updateStatistics(afiliadosData.afiliador, afiliadosData.afiliados);
+                    
+                    // Mostrar mensagem de sucesso se houver afiliados
+                    if (afiliadosData.afiliados.length > 0) {
+                        showSuccess(`Carregados ${afiliadosData.afiliados.length} afiliados`);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados da página:', error);
+                showError("Erro ao carregar dados. Tente recarregar a página.");
+            }
+        }
+
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -105,6 +325,7 @@
 <body class="body  body-internal">
     <div class="wrapper  wrapper-sidebar-navbar ">
         <div id="block_52" class="component_private_navbar">
+            <!-- ... (navbar mantido igual) ... -->
             <span class="component_private_navbar ">
                 <div class="component-navbar-private__wrapper component_private_sidebar ">
                     <div
@@ -253,6 +474,9 @@
             <div class="wrapper-content__header">
             </div>
             <div class="wrapper-content__body">
+                <!-- Notifications -->
+                <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
+
                 <!-- Main variables *content* -->
                 <div id="block_48">
                     <div class="block-bg"></div>
@@ -324,6 +548,51 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Nova seção: Lista de Afiliados -->
+                <div id="block_afiliados" class="mt-5">
+                    <div class="block-bg"></div>
+                    <div class="container">
+                        <div class="affiliates-list">
+                            <div class="row mb-4">
+                                <div class="col-lg-12">
+                                    <h4>Meus Afiliados</h4>
+                                    <p class="text-muted">Lista de usuários que você indicou para a plataforma</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="table-bg affiliate-block__table-payments component_table afiliados-table">
+                                        <div class="table-wr table-responsive">
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Email</th>
+                                                        <th>Código de Afiliado</th>
+                                                        <th>Data de Cadastro</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="afiliados-table-body">
+                                                    <!-- Dados serão carregados via JavaScript -->
+                                                    <tr>
+                                                        <td colspan="4" class="text-center py-4">
+                                                            <div class="spinner-border text-primary" role="status">
+                                                                <span class="sr-only">Carregando...</span>
+                                                            </div>
+                                                            <p class="mt-2">Carregando afiliados...</p>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="block_62">
                     <div class="block-bg"></div>
                     <div class="container">
@@ -368,8 +637,6 @@
             </div>
         </div>
     </div>
-    <!-- Notifications wrapper -->
-    <div id="notify-wrapper" class="alert alert-success mb-3 hidden" style="display: none;"></div>
 
     <!-- Bootstrap and jQuery JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
@@ -425,11 +692,12 @@
                 window.addEventListener('load', resolve);
             });
 
-            // --- Promise principal: saldo + serviços + afiliados + inicialização + window.load ---
+            // --- Promise principal: saldo + afiliados + inicialização + window.load ---
             const saldoPromise = callOrWrapLoadUserBalance();
+            const afiliadosPromise = loadPageData();
 
             // se quiser aguardar também window.load, inclua windowLoadPromise no Promise.all (recomendo)
-            Promise.all([saldoPromise, windowLoadPromise])
+            Promise.all([saldoPromise, afiliadosPromise, windowLoadPromise])
                 .then(() => {
                     // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
