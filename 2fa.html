@@ -154,6 +154,219 @@
         window.modules.layouts = { "theme_id": 23, "auth": 0, "live": true, "csrftoken": "jnS3mZD5pXDxOL3jmg7d8bz6HHQJovR6jkNXBfd4nhu2LM72yIr_Pdx9_6DiYe3I-qp-MDzGwDvlNCRarkj8aQ==" };   </script>
     <script type="text/javascript">
     </script>
+<script>
+document.addEventListener('DOMContentLoaded', init2FAPage);
+
+function showNotification(message, type = 'success', timeout = 4000) {
+  const notify = document.getElementById('notify-wrapper');
+  if (!notify) {
+    alert(message);
+    return;
+  }
+  notify.className = 'alert alert-' + (type === 'error' ? 'danger' : type);
+  notify.textContent = message;
+  notify.style.display = 'block';
+  if (timeout > 0) setTimeout(() => { notify.style.display = 'none'; }, timeout);
+}
+
+async function apiFetch(path, options = {}) {
+  const token = localStorage.getItem('token');
+  options.headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+  if (token) options.headers['Authorization'] = 'Bearer ' + token;
+  return fetch(path, options);
+}
+
+function maskEmail(email) {
+  // mostra email mascarado (ex: r****n@gmail.com)
+  const parts = String(email).split('@');
+  if (parts.length !== 2) return email;
+  const name = parts[0];
+  const domain = parts[1];
+  if (name.length <= 2) return `*@${domain}`;
+  return name[0] + '*'.repeat(Math.max(1, name.length - 2)) + name[name.length - 1] + '@' + domain;
+}
+
+let resendCooldown = false;
+let countdownInterval = null;
+
+async function send2FACode(email, showMsg = true) {
+  try {
+    const res = await apiFetch('/api/2fa/send', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('Erro /api/2fa/send:', data);
+      if (showMsg) showNotification(data.error || 'Erro ao enviar código 2FA', 'error');
+      return false;
+    }
+
+    if (showMsg) showNotification('Código 2FA enviado para ' + maskEmail(email), 'success');
+    startCountdown(300); // 5 minutos para expiração do código
+    startResendCooldown(60); // 60s até permitir reenvio
+    return true;
+  } catch (err) {
+    console.error('Erro ao enviar 2FA:', err);
+    showNotification('Erro ao enviar código 2FA', 'error');
+    return false;
+  }
+}
+
+function startCountdown(seconds) {
+  const timerEl = document.getElementById('2fa-timer');
+  if (!timerEl) return;
+  clearInterval(countdownInterval);
+  let t = seconds;
+  timerEl.textContent = formatTime(t);
+  countdownInterval = setInterval(() => {
+    t--;
+    if (t < 0) {
+      clearInterval(countdownInterval);
+      timerEl.textContent = 'Código expirado';
+      return;
+    }
+    timerEl.textContent = formatTime(t);
+  }, 1000);
+}
+
+function formatTime(t) {
+  const m = Math.floor(t / 60);
+  const s = t % 60;
+  return `Código expira em: ${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+function startResendCooldown(seconds) {
+  const resendBtn = document.getElementById('2fa-resend');
+  if (!resendBtn) return;
+  resendCooldown = true;
+  let t = seconds;
+  resendBtn.textContent = `Reenviar (${t}s)`;
+  resendBtn.classList.add('disabled');
+  const iv = setInterval(() => {
+    t--;
+    if (t <= 0) {
+      clearInterval(iv);
+      resendCooldown = false;
+      resendBtn.textContent = 'Reenviar código';
+      resendBtn.classList.remove('disabled');
+      return;
+    }
+    resendBtn.textContent = `Reenviar (${t}s)`;
+  }, 1000);
+}
+
+async function verify2FACode(email, code) {
+  try {
+    const res = await apiFetch('/api/2fa/verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, code })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showNotification(data.error || 'Código inválido', 'error');
+      return false;
+    }
+    showNotification('2FA verificado com sucesso!', 'success');
+    return true;
+  } catch (err) {
+    console.error('Erro /api/2fa/verify:', err);
+    showNotification('Erro ao verificar 2FA', 'error');
+    return false;
+  }
+}
+
+async function getEmailFor2FA() {
+  // tenta pegar email via /api/account (token necessário)
+  try {
+    const resp = await apiFetch('/api/account', { method: 'GET' });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.email) return data.email;
+    }
+  } catch (err) {
+    console.warn('Falha ao buscar /api/account:', err);
+  }
+  // fallback: usar loginEmail salvo no localStorage (colocar no login: localStorage.setItem('loginEmail', username))
+  const fallback = localStorage.getItem('loginEmail');
+  if (fallback) return fallback;
+  return null;
+}
+
+async function init2FAPage() {
+  // insere UI extras (timer + resend) dinamicamente logo abaixo do campo de código
+  const codeInput = document.getElementById('code');
+  if (!codeInput) return;
+  const parent = codeInput.closest('.form-group') || codeInput.parentElement;
+
+  // criar área de controles (timer + resend)
+  const controls = document.createElement('div');
+  controls.style.marginTop = '12px';
+  controls.innerHTML = `
+    <div id="2fa-controls" style="display:flex;align-items:center;gap:12px;">
+      <div id="2fa-timer" style="font-size:14px;color:#666"></div>
+      <button type="button" id="2fa-resend" class="btn btn-sm btn-link disabled" style="padding:0 8px;">Reenviar código</button>
+    </div>
+  `;
+  parent.appendChild(controls);
+
+  const resendBtn = document.getElementById('2fa-resend');
+
+  // pega o email
+  const email = await getEmailFor2FA();
+  if (!email) {
+    showNotification('Não foi possível recuperar seu email. Faça login novamente.', 'error', 6000);
+    setTimeout(() => { window.location.href = '/login'; }, 1500);
+    return;
+  }
+
+  // mostra onde o código foi enviado (placeholder)
+  codeInput.placeholder = 'Código enviado para ' + maskEmail(email);
+
+  // envia código inicialmente
+  await send2FACode(email);
+
+  // ligar evento de reenvio
+  resendBtn.addEventListener('click', async () => {
+    if (resendCooldown) return;
+    await send2FACode(email);
+  });
+
+  // interceptar submit do formulário
+  const form = codeInput.closest('form');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = (document.getElementById('code').value || '').trim();
+      if (!code) {
+        showNotification('Digite o código recebido por e-mail', 'error');
+        return;
+      }
+
+      // desabilitar botão submit enquanto verifica
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        const origText = submitBtn.textContent;
+        submitBtn.textContent = 'Verificando...';
+        const ok = await verify2FACode(email, code);
+        submitBtn.textContent = origText;
+        submitBtn.disabled = false;
+        if (ok) {
+          // verificação ok -> redireciona para painel
+          window.location.href = '/painel';
+        }
+      } else {
+        // sem botão detectado (improvável)
+        const ok = await verify2FACode(email, code);
+        if (ok) window.location.href = '/painel';
+      }
+    });
+  }
+}
+</script>
+
 </body>
 
 </html>
