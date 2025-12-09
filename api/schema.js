@@ -14,6 +14,9 @@ const userSchema = new mongoose.Schema({
   twoFACode: { type: String, default: null },
   twoFAExpires: { type: Date, default: null },
   twoFAEnabled: { type: Boolean, default: false },
+  twoFADisableCode: { type: String, default: null },
+  twoFADisableExpires: { type: Date, default: null },
+
 }, { timestamps: true });
 
 /* 🔹 Histórico de Ações Realizadas */
