@@ -1123,57 +1123,64 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         }
 
         if (!data.token) {
-            // Se o backend optar por retornar require2FA em vez do token, trate aqui.
             alert('Resposta inesperada do servidor. Tente novamente.');
             return;
         }
 
-        // 1) salva token (usado por apiFetch)
+        // 1) salva token
         localStorage.setItem('token', data.token);
 
-        // 2) tenta obter info da conta (rota /api/account) para checar twoFAEnabled
+        // 2) tenta obter info da conta (rota /api/account)
         try {
             const accountResp = await apiFetch('/api/account', { method: 'GET' });
+
             if (accountResp.ok) {
                 const accountData = await accountResp.json();
-                // Se backend retornar explicitamente twoFAEnabled
-                if (accountData.twoFAEnabled) {
-                    // redireciona para a página de 2FA para completar a verificação
+                console.log('[login] accountData:', accountData);
+
+                // Caso explícito: true -> 2FA, false -> painel
+                if (accountData.twoFAEnabled === true) {
                     window.location.href = '/2fa.html';
                     return;
-                } else {
-                    // sem 2FA -> painel
+                }
+                if (accountData.twoFAEnabled === false) {
                     window.location.href = '/painel';
+                    return;
+                }
+
+                // Se chegou aqui, twoFAEnabled está undefined (campo ausente) -> faz fallback
+                console.warn('[login] twoFAEnabled ausente, usando fallback /api/2fa/status');
+            } else {
+                console.warn('[login] /api/account retornou status não-ok, usando fallback');
+            }
+        } catch (err) {
+            console.warn('[login] erro ao chamar /api/account, usando fallback:', err);
+        }
+
+        // 3) Fallback: checar /api/2fa/status com email (rota existente)
+        try {
+            const statusResp = await fetch('/api/2fa/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: username })
+            });
+
+            if (statusResp.ok) {
+                const statusData = await statusResp.json();
+                console.log('[login] statusData fallback:', statusData);
+                if (statusData.twoFAEnabled) {
+                    window.location.href = '/2fa.html';
                     return;
                 }
             } else {
-                // fallback: se /api/account deu erro (mas token salvo), tentar /api/2fa/status
-                throw new Error('Não foi possível recuperar account via token');
+                console.warn('[login] /api/2fa/status retornou não-ok');
             }
-        } catch (err) {
-            // 3) Fallback: chamar /api/2fa/status com o email (rota que você já tem)
-            try {
-                const statusResp = await fetch('/api/2fa/status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: username })
-                });
-                const statusData = await statusResp.json();
-                if (statusResp.ok && statusData.twoFAEnabled) {
-                    window.location.href = '/2fa.html';
-                    return;
-                } else {
-                    window.location.href = '/painel';
-                    return;
-                }
-            } catch (err2) {
-                console.error('Erro ao verificar status 2FA (fallback):', err2);
-                // Se tudo falhar, assume sem 2FA (mais permissivo) ou force logout
-                window.location.href = '/painel';
-                return;
-            }
+        } catch (err2) {
+            console.error('[login] erro no fallback /api/2fa/status:', err2);
         }
 
+        // 4) se tudo falhar, ir para painel
+        window.location.href = '/painel';
     } catch (error) {
         console.error('Erro no login:', error);
         alert('Erro ao conectar.');
