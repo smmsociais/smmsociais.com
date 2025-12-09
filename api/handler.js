@@ -274,25 +274,54 @@ router.post("/login", async (req, res) => {
 router.post("/signup", async (req, res) => {
   await connectDB();
 
-  const { email, senha } = req.body;
-  if (!email || !senha) return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+  const { email, senha, codigoIndicacao } = req.body;
+  if (!email || !senha)
+    return res.status(400).json({ error: "Todos os campos são obrigatórios." });
 
   try {
+    // Verifica se o e-mail já está cadastrado
     const emailExiste = await User.findOne({ email });
     if (emailExiste) {
       return res.status(400).json({ error: "E-mail já está cadastrado." });
     }
 
-    const novoUsuario = new User({ email, senha });
+    // Cria código de indicação único para o novo usuário
+    const codigoAfiliado = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    // Cria o novo usuário
+    const novoUsuario = new User({
+      email,
+      senha,
+      codigoAfiliado,
+    });
+
+    // Se foi enviado um código de indicação válido, associa o afiliador
+    if (codigoIndicacao) {
+      const usuarioIndicador = await User.findOne({ codigoAfiliado: codigoIndicacao });
+      if (usuarioIndicador) {
+        novoUsuario.indicadoPor = usuarioIndicador._id;
+
+        // (opcional) incrementa contador de indicações
+        usuarioIndicador.indicacoes = (usuarioIndicador.indicacoes || 0) + 1;
+        await usuarioIndicador.save();
+      }
+    }
+
     await novoUsuario.save();
 
-    // Gera token e retorna para frontend salvar
+    // Gera token de autenticação
     const token = jwt.sign({ id: novoUsuario._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-    return res.status(201).json({ message: "Usuário registrado com sucesso!", token });
+    return res.status(201).json({
+      message: "Usuário registrado com sucesso!",
+      token,
+      codigoAfiliado, // retorna o código do novo usuário
+    });
   } catch (error) {
     console.error("Erro ao cadastrar usuário:", error);
-    return res.status(500).json({ error: "Erro interno ao registrar usuário. Tente novamente mais tarde." });
+    return res
+      .status(500)
+      .json({ error: "Erro interno ao registrar usuário. Tente novamente mais tarde." });
   }
 });
 
