@@ -439,7 +439,7 @@
                                         Novo Pedido
                                     </a>
                                 </li>
-                                <li class="component-sidebar__menu-item component-sidebar__menu-item-active">
+                                <li class="component-sidebar__menu-item ">
                                     <a class="component-sidebar__menu-item-link" href="/services">
                                         Serviços
                                     </a>
@@ -677,10 +677,8 @@
                         return json;
                     })
                     .catch(err => {
-                        console.error('Erro ao carregar saldo (fallback):', err);
+                        console.error('Erro ao carregar saldo', err);
                         const el = document.querySelector('.component-navbar-balance-item__navbar-private');
-                        if (el) el.textContent = 'R$ 0,00';
-                        return { saldo: 0 };
                     });
             }
 
