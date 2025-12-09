@@ -1195,6 +1195,7 @@
             const url = endpoint || 'https://smmsociais.com/api/criar_acao_tiktok';
 
             console.log('→ criarAcao endpoint:', url, ' token:', Boolean(token));
+            console.log("Enviando token:", token);
 
             try {
                 const response = await fetch(url, {
