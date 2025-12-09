@@ -154,4 +154,23 @@ router.post("/status", async (req, res) => {
   }
 });
 
+// Exemplo de rota para desativar 2FA
+router.post('/disable', authenticateToken, async (req, res) => {
+    try {
+        const { email } = req.body;
+        const userId = req.user.id; // Do token JWT
+
+        // Atualizar no banco de dados
+        await User.updateOne(
+            { _id: userId, email },
+            { $set: { twoFAEnabled: false, twoFASecret: null } }
+        );
+
+        res.json({ success: true, message: '2FA desativado com sucesso' });
+    } catch (error) {
+        console.error('Erro ao desativar 2FA:', error);
+        res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
+});
+
 export default router;
