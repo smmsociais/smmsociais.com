@@ -342,151 +342,141 @@
     </script>
     <script type="text/javascript">
         window.modules.signup = [];   </script>
-    <script type="text/javascript">
-        // Script para processar o formulário de cadastro
-        document.addEventListener('DOMContentLoaded', function () {
-            const signupForm = document.getElementById('signup-form');
-            const submitButton = document.getElementById('submit-button');
-            const notificationArea = document.getElementById('notification-area');
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function () {
+    const signupForm = document.getElementById('signup-form');
+    const submitButton = document.getElementById('submit-button');
+    const notificationArea = document.getElementById('notification-area');
 
-            // Função para exibir notificação
-            function showNotification(message, type) {
-                notificationArea.innerHTML = `
-                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                        ${message}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                `;
-            }
+    // 🔹 Captura o código de indicação na URL (ex: ?codigo=AB12CD)
+    const urlParams = new URLSearchParams(window.location.search);
+    const codigoIndicacao = urlParams.get('codigo');
+    if (codigoIndicacao) {
+        console.log("Código de indicação detectado:", codigoIndicacao);
+    }
 
-            // Função para limpar erros
-            function clearErrors() {
-                document.querySelectorAll('.error-message').forEach(el => {
-                    el.textContent = '';
-                });
-            }
+    // Função para exibir notificação
+    function showNotification(message, type) {
+        notificationArea.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        `;
+    }
 
-            // Função para validar formulário
-            function validateForm(email, password, passwordAgain) {
-                let isValid = true;
-                clearErrors();
+    // Função para limpar erros
+    function clearErrors() {
+        document.querySelectorAll('.error-message').forEach(el => {
+            el.textContent = '';
+        });
+    }
 
-                // Validação de email
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(email)) {
-                    document.getElementById('email-error').textContent = 'Por favor, insira um e-mail válido.';
-                    isValid = false;
-                }
+    // Função de validação
+    function validateForm(email, password, passwordAgain) {
+        let isValid = true;
+        clearErrors();
 
-                // Validação de senha
-                if (password.length < 6) {
-                    document.getElementById('password-error').textContent = 'A senha deve ter pelo menos 6 caracteres.';
-                    isValid = false;
-                }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            document.getElementById('email-error').textContent = 'Por favor, insira um e-mail válido.';
+            isValid = false;
+        }
 
-                // Validação de confirmação de senha
-                if (password !== passwordAgain) {
-                    document.getElementById('password-again-error').textContent = 'As senhas não coincidem.';
-                    isValid = false;
-                }
+        if (password.length < 6) {
+            document.getElementById('password-error').textContent = 'A senha deve ter pelo menos 6 caracteres.';
+            isValid = false;
+        }
 
-                return isValid;
-            }
+        if (password !== passwordAgain) {
+            document.getElementById('password-again-error').textContent = 'As senhas não coincidem.';
+            isValid = false;
+        }
 
-            // Evento de envio do formulário
-            signupForm.addEventListener('submit', async function (e) {
-                e.preventDefault();
+        return isValid;
+    }
 
-                // Obter valores dos campos
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                const passwordAgain = document.getElementById('password_again').value;
+    // Envio do formulário
+    signupForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
 
-                // Validar formulário
-                if (!validateForm(email, password, passwordAgain)) {
-                    return;
-                }
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const passwordAgain = document.getElementById('password_again').value;
 
-                // Desabilitar botão e mostrar estado de carregamento
-                submitButton.disabled = true;
-                submitButton.textContent = 'Cadastrando...';
-                signupForm.classList.add('loading');
+        if (!validateForm(email, password, passwordAgain)) {
+            return;
+        }
 
-                try {
-                    // Enviar dados para a API
-                    const response = await fetch('https://smmsociais.com/api/signup', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            email: email,
-                            senha: password
-                        })
-                    });
+        submitButton.disabled = true;
+        submitButton.textContent = 'Cadastrando...';
+        signupForm.classList.add('loading');
 
-                    const data = await response.json();
-
-if (response.ok) {
-  // Se o backend retornou token, salve
-  if (data.token) {
-    localStorage.setItem('token', data.token);
-  }
-  showNotification(data.message || 'Cadastro realizado com sucesso!', 'success');
-  signupForm.reset();
-
-  setTimeout(() => window.location.href = '/painel', 1000);
-
-                    } else {
-                        // Erro
-                        showNotification(data.error || 'Erro ao realizar cadastro. Tente novamente.', 'danger');
-                    }
-                } catch (error) {
-                    console.error('Erro ao enviar formulário:', error);
-                    showNotification('Erro de conexão. Tente novamente.', 'danger');
-                } finally {
-                    // Reabilitar botão
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Criar conta';
-                    signupForm.classList.remove('loading');
-                }
+        try {
+            // 🔹 Envia também o código de indicação, se existir
+            const response = await fetch('https://smmsociais.com/api/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: email,
+                    senha: password,
+                    codigoIndicacao: codigoIndicacao || null
+                })
             });
 
-            // Função para cadastro com Google
-function signupWithGoogle() {
-    window.location.href = 'https://smmsociais.com/api/auth/google/signup';
-}
-        });
+            const data = await response.json();
 
-        // Função para lidar com a resposta de credenciais
-        function handleCredentialResponse(response) {
-            // Enviar o token para o seu servidor
-            fetch('https://smmsociais.com/api/auth/google/signup/callback', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    credential: response.credential
-                })
-            })
-                .then(response => response.json())
-.then(data => {
-    if (data.success && data.token) {
-        localStorage.setItem('token', data.token);
-        window.location.href = '/painel';
-    } else {
-        alert('Erro ao cadastrar com Google: ' + (data.error || 'Sem token'));
-    }
-})
-                .catch(error => {
-                    console.error('Erro:', error);
-                    alert('Erro ao conectar com o Google');
-                });
+            if (response.ok) {
+                if (data.token) localStorage.setItem('token', data.token);
+
+                showNotification(data.message || 'Cadastro realizado com sucesso!', 'success');
+                signupForm.reset();
+
+                setTimeout(() => window.location.href = '/painel', 1000);
+            } else {
+                showNotification(data.error || 'Erro ao realizar cadastro. Tente novamente.', 'danger');
+            }
+        } catch (error) {
+            console.error('Erro ao enviar formulário:', error);
+            showNotification('Erro de conexão. Tente novamente.', 'danger');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Criar conta';
+            signupForm.classList.remove('loading');
         }
-    </script>
+    });
+
+    // Função para cadastro com Google
+    window.signupWithGoogle = function () {
+        window.location.href = 'https://smmsociais.com/api/auth/google/signup';
+    };
+});
+
+// Função para resposta de credenciais do Google
+function handleCredentialResponse(response) {
+    fetch('https://smmsociais.com/api/auth/google/signup/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.token) {
+            localStorage.setItem('token', data.token);
+            window.location.href = '/painel';
+        } else {
+            alert('Erro ao cadastrar com Google: ' + (data.error || 'Sem token'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao conectar com o Google');
+    });
+}
+</script>
+
 </body>
 
 </html>
