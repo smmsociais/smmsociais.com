@@ -750,7 +750,7 @@
             // Configurar reenvio de código
             resendButton.onclick = resend2FACode;
         }
-        
+
 async function check2FAStatus() {
     const email = document.getElementById('email').value;
     const enable2FABtn = document.getElementById('enable-2fa');
@@ -784,6 +784,17 @@ async function check2FAStatus() {
 
 // Executa ao carregar a página
 window.addEventListener('DOMContentLoaded', check2FAStatus);
+
+// Função para preencher e ocultar campos de entrada
+function fillAndHideInput() {
+    try {
+        // Esta função pode estar vazia se não for mais necessária
+        // Ou pode conter lógica para manipular campos específicos
+        console.log('fillAndHideInput executada');
+    } catch (error) {
+        console.warn('Erro em fillAndHideInput:', error);
+    }
+}
 
     </script>
 
