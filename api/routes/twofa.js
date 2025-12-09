@@ -1,8 +1,8 @@
 // api/routes/twofa.js
-import express from "express";
-import { Resend } from "resend";
-import { User } from "../schema.js"; // verifique exportação no schema.js
+import jwt from "jsonwebtoken";
 import connectDB from "../db.js";
+import { User } from "../schema.js";
+import { Resend } from "resend";
 
 const router = express.Router();
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -151,6 +151,138 @@ router.post("/status", async (req, res) => {
   } catch (err) {
     console.error("[2FA][STATUS] erro geral:", err);
     return res.status(500).json({ error: "Erro ao verificar status do 2FA." });
+  }
+});
+
+/**
+ * POST /api/2fa/disable/send
+ * Envia código por e-mail para desativação do 2FA.
+ * Requer Authorization: Bearer <token>
+ */
+router.post("/disable/send", async (req, res) => {
+  console.log("[2FA][DISABLE][SEND] request received");
+  try {
+    await connectDB();
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Token ausente." });
+    }
+    const token = authHeader.split(" ")[1];
+
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      console.error("[2FA][DISABLE][SEND] token inválido:", err);
+      return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
+
+    const user = await User.findById(payload.id);
+    if (!user) return res.status(404).json({ error: "Usuário não encontrado." });
+
+    if (!user.twoFAEnabled) {
+      return res.status(400).json({ error: "2FA não está ativo para este usuário." });
+    }
+
+    // Gera código e validade (5 minutos)
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiration = Date.now() + 5 * 60 * 1000;
+
+    user.twoFADisableCode = code;
+    user.twoFADisableExpires = new Date(expiration);
+    await user.save();
+
+    // Envia e-mail via Resend (mantendo consistência com /send)
+    try {
+      await resend.emails.send({
+        from: process.env.RESEND_FROM || "SMMSociais <no-reply@smmsociais.com>",
+        to: user.email,
+        subject: "Código para desativar 2FA",
+        html: `
+          <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:20px;border:1px solid #eee;border-radius:10px;">
+            <h2 style="text-align:center;color:#e53935;">🔒 Desativar 2FA</h2>
+            <p>Você solicitou desativar a verificação em duas etapas. Use o código abaixo para confirmar:</p>
+            <h1 style="text-align:center;font-size:36px;letter-spacing:4px;">${code}</h1>
+            <p style="text-align:center;color:#777;">Válido por 5 minutos.</p>
+          </div>
+        `,
+      });
+      console.log("[2FA][DISABLE][SEND] email enviado para:", user.email);
+    } catch (emailErr) {
+      console.error("[2FA][DISABLE][SEND] erro ao enviar e-mail (mas código salvo):", emailErr);
+      return res.status(200).json({
+        success: true,
+        message: "Código gerado e salvo, porém houve problema ao enviar o e-mail (ver logs).",
+      });
+    }
+
+    return res.status(200).json({ success: true, message: "Código enviado por e-mail." });
+  } catch (err) {
+    console.error("[2FA][DISABLE][SEND] erro geral:", err);
+    return res.status(500).json({ error: "Erro ao processar solicitação." });
+  }
+});
+
+/**
+ * POST /api/2fa/disable/confirm
+ * Body: { code: "123456" }
+ * Requer Authorization: Bearer <token>
+ * Valida código e desativa twoFAEnabled
+ */
+router.post("/disable/confirm", async (req, res) => {
+  console.log("[2FA][DISABLE][CONFIRM] request received");
+  try {
+    await connectDB();
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Token ausente." });
+    }
+    const token = authHeader.split(" ")[1];
+
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      console.error("[2FA][DISABLE][CONFIRM] token inválido:", err);
+      return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
+
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: "Código é obrigatório." });
+
+    const user = await User.findById(payload.id);
+    if (!user) return res.status(404).json({ error: "Usuário não encontrado." });
+
+    if (!user.twoFADisableCode) return res.status(400).json({ error: "Nenhum código gerado. Solicite reinício do processo." });
+
+    const now = Date.now();
+    const expires = user.twoFADisableExpires ? new Date(user.twoFADisableExpires).getTime() : 0;
+    if (now > expires) {
+      user.twoFADisableCode = null;
+      user.twoFADisableExpires = null;
+      await user.save();
+      return res.status(400).json({ error: "Código expirado. Solicite um novo." });
+    }
+
+    if (String(user.twoFADisableCode) !== String(code)) {
+      return res.status(401).json({ error: "Código incorreto." });
+    }
+
+    // Código válido: desativa 2FA
+    user.twoFADisableCode = null;
+    user.twoFADisableExpires = null;
+    user.twoFAEnabled = false;
+    user.twoFACode = null;
+    user.twoFAExpires = null;
+    await user.save();
+
+    console.log("[2FA][DISABLE][CONFIRM] 2FA desativado para:", user.email);
+    return res.status(200).json({ success: true, message: "2FA desativado com sucesso." });
+  } catch (err) {
+    console.error("[2FA][DISABLE][CONFIRM] erro geral:", err);
+    return res.status(500).json({ error: "Erro ao confirmar desativação do 2FA." });
   }
 });
 
