@@ -461,48 +461,48 @@
         }
 
         // Função para carregar dados da conta
-        async function loadAccountData() {
-            const token = loadToken();
+async function loadAccountData() {
+  const token = loadToken();
 
-            if (!token) {
-                console.error("Token não encontrado.");
-                setTimeout(() => {
-                    window.location.href = "/login";
-                }, 2000);
-                return;
-            }
+  if (!token) {
+    console.error("Token não encontrado.");
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 2000);
+    return;
+  }
 
-            try {
-                const response = await fetch('https://smmsociais.com/api/account', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+  try {
+    const response = await fetch('https://smmsociais.com/api/account', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erro ao carregar dados');
-                }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao carregar dados');
+    }
 
-                const accountData = await response.json();
+    const accountData = await response.json();
 
-                // Preencher campos do formulário
-                document.getElementById('email').value = accountData.email || '';
-                document.getElementById('current-email').value = accountData.email || '';
+    // Preencher campos do formulário
+    document.getElementById('email').value = accountData.email || '';
+    document.getElementById('current-email').value = accountData.email || '';
 
-                // --- << CHAMADA ADICIONAL PARA ATUALIZAR O BOTÃO >>
-                // chama check2FAStatus garantindo que o email já está preenchido
-                check2FAStatus();
+    // --- << CHAMADA ADICIONAL PARA ATUALIZAR O BOTÃO >>
+    // chama check2FAStatus garantindo que o email já está preenchido
+    check2FAStatus();
 
-                return accountData;
+    return accountData;
 
-            } catch (error) {
-                console.error('Erro:', error);
-                return {};
-            }
-        }
+  } catch (error) {
+    console.error('Erro:', error);
+    return {};
+  }
+}
         // Função para atualizar dados da conta (sem senha)
         async function updateAccountData(updateData) {
             const token = loadToken();
@@ -754,331 +754,93 @@
             resendButton.onclick = resend2FACode;
         }
 
-        async function check2FAStatus() {
-            const enable2FABtn = document.getElementById('enable-2fa');
+async function check2FAStatus() {
+    const enable2FABtn = document.getElementById('enable-2fa');
 
-            // Tenta pegar email do input (caso já esteja preenchido)
-            const emailInput = document.getElementById('email');
-            const email = emailInput ? emailInput.value : "";
+    // Tenta pegar email do input (caso já esteja preenchido)
+    const emailInput = document.getElementById('email');
+    const email = emailInput ? emailInput.value : "";
 
-            try {
-                // Se já tem email, usa a rota /api/2fa/status (mantive compatibilidade)
-                if (email) {
-                    const response = await fetch("/api/2fa/status", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ email }),
-                    });
+    try {
+        // Se já tem email, usa a rota /api/2fa/status (mantive compatibilidade)
+        if (email) {
+            const response = await fetch("/api/2fa/status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
 
-                    const data = await response.json();
-                    if (data.success && data.twoFAEnabled) {
-                        enable2FABtn.textContent = '2FA Ativo';
-                        enable2FABtn.disabled = true;
-                        enable2FABtn.classList.remove('btn-primary');
-                        enable2FABtn.classList.add('btn-success');
-                        return;
-                    }
-                }
-
-                // Se não teve email ou a rota /status não informou 'enabled',
-                // tenta recuperar os dados da conta com o token (mais confiável).
-                const token = loadToken();
-                if (!token) {
-                    // sem token não conseguimos mais; mantém como Ativar 2FA
-                    enable2FABtn.textContent = 'Ativar 2FA';
-                    enable2FABtn.disabled = false;
-                    enable2FABtn.classList.remove('btn-success');
-                    enable2FABtn.classList.add('btn-primary');
-                    return;
-                }
-
-                const resp = await fetch('https://smmsociais.com/api/account', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!resp.ok) {
-                    enable2FABtn.textContent = 'Ativar 2FA';
-                    enable2FABtn.disabled = false;
-                    enable2FABtn.classList.remove('btn-success');
-                    enable2FABtn.classList.add('btn-primary');
-                    return;
-                }
-
-                const account = await resp.json();
-
-                // Se a API /api/account retornar twoFAEnabled, usamos isso:
-                if (account.twoFAEnabled) {
-                    enable2FABtn.textContent = '2FA Ativo';
-                    enable2FABtn.disabled = true;
-                    enable2FABtn.classList.remove('btn-primary');
-                    enable2FABtn.classList.add('btn-success');
-                } else {
-                    enable2FABtn.textContent = 'Ativar 2FA';
-                    enable2FABtn.disabled = false;
-                    enable2FABtn.classList.remove('btn-success');
-                    enable2FABtn.classList.add('btn-primary');
-                }
-
-            } catch (err) {
-                console.error('Erro ao verificar status do 2FA:', err);
-                // fallback neutro
-                enable2FABtn.textContent = 'Ativar 2FA';
-                enable2FABtn.disabled = false;
-                enable2FABtn.classList.remove('btn-success');
-                enable2FABtn.classList.add('btn-primary');
-            }
-        }
-
-        // Função para iniciar o processo de desativação do 2FA
-        async function disable2FA() {
-            const email = document.getElementById('email').value;
-            const disableSection = document.getElementById('disable-verify-2fa-section');
-            const disableBtn = document.getElementById('disable-2fa');
-            const enableBtn = document.getElementById('enable-2fa');
-
-            if (!email) {
-                notifications.show('Email não encontrado', 'error');
+            const data = await response.json();
+            if (data.success && data.twoFAEnabled) {
+                enable2FABtn.textContent = '2FA Ativo';
+                enable2FABtn.disabled = true;
+                enable2FABtn.classList.remove('btn-primary');
+                enable2FABtn.classList.add('btn-success');
                 return;
             }
-
-            try {
-                // Esconder botões principais
-                disableBtn.style.display = 'none';
-                enableBtn.style.display = 'none';
-
-                // Mostrar seção de verificação para desativação
-                disableSection.classList.add('active');
-
-                // Enviar código de verificação
-                await send2FACode(email);
-
-                // Iniciar timer de 5 minutos
-                const timerDisplay = document.getElementById('disable-timer');
-                const resendButton = document.getElementById('disable-resend-code');
-                startTimer(300, timerDisplay, resendButton, 'disable');
-
-                notifications.show('Código de verificação enviado para seu email', 'success');
-
-            } catch (error) {
-                notifications.show(error.message, 'error');
-                // Mostrar botões novamente em caso de erro
-                disableBtn.style.display = 'inline-block';
-                enableBtn.style.display = 'none';
-            }
         }
 
-        // Função para cancelar a desativação
-        function cancelDisable2FA() {
-            const disableSection = document.getElementById('disable-verify-2fa-section');
-            const disableBtn = document.getElementById('disable-2fa');
-            const enableBtn = document.getElementById('enable-2fa');
-
-            // Esconder seção de verificação
-            disableSection.classList.remove('active');
-
-            // Mostrar botão desativar novamente (já que 2FA ainda está ativo)
-            disableBtn.style.display = 'inline-block';
-            enableBtn.style.display = 'none';
-
-            // Limpar campo
-            document.getElementById('disable-2fa-code').value = '';
+        // Se não teve email ou a rota /status não informou 'enabled',
+        // tenta recuperar os dados da conta com o token (mais confiável).
+        const token = loadToken();
+        if (!token) {
+            // sem token não conseguimos mais; mantém como Ativar 2FA
+            enable2FABtn.textContent = 'Ativar 2FA';
+            enable2FABtn.disabled = false;
+            enable2FABtn.classList.remove('btn-success');
+            enable2FABtn.classList.add('btn-primary');
+            return;
         }
 
-        // Função para verificar código e desativar 2FA
-        async function verifyDisable2FACode() {
-            const email = document.getElementById('email').value;
-            const code = document.getElementById('disable-2fa-code').value.trim();
-            const disableVerifyBtn = document.getElementById('disable-verify-2fa-btn');
-            const disableSection = document.getElementById('disable-verify-2fa-section');
-            const disableBtn = document.getElementById('disable-2fa');
-            const enableBtn = document.getElementById('enable-2fa');
-
-            if (!code) {
-                notifications.show('Digite o código de verificação', 'error');
-                return false;
+        const resp = await fetch('https://smmsociais.com/api/account', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
+        });
 
-            disableVerifyBtn.disabled = true;
-            disableVerifyBtn.textContent = 'Desativando...';
-
-            try {
-                // Primeiro verificar o código
-                const verifyResult = await verify2FACode(email, code);
-
-                if (!verifyResult.success) {
-                    notifications.show('❌ Código inválido', 'error');
-                    disableVerifyBtn.disabled = false;
-                    disableVerifyBtn.textContent = 'Desativar 2FA';
-                    return false;
-                }
-
-                // Se o código estiver correto, chamar API para desativar 2FA
-                const token = loadToken();
-                const response = await fetch('/api/2fa/disable', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    notifications.show('✅ 2FA desativado com sucesso!', 'success');
-
-                    // Esconder seção de verificação
-                    disableSection.classList.remove('active');
-
-                    // Atualizar interface
-                    enableBtn.textContent = 'Ativar 2FA';
-                    enableBtn.disabled = false;
-                    enableBtn.style.display = 'inline-block';
-                    enableBtn.classList.remove('btn-success');
-                    enableBtn.classList.add('btn-primary');
-
-                    disableBtn.style.display = 'none';
-
-                    // Limpar campos
-                    document.getElementById('disable-2fa-code').value = '';
-
-                    // Recarregar dados da conta para atualizar status
-                    await loadAccountData();
-                } else {
-                    notifications.show('❌ ' + (result.error || 'Erro ao desativar 2FA'), 'error');
-                    disableVerifyBtn.disabled = false;
-                    disableVerifyBtn.textContent = 'Desativar 2FA';
-                }
-
-            } catch (error) {
-                console.error('Erro ao desativar 2FA:', error);
-                notifications.show('Erro de conexão', 'error');
-                disableVerifyBtn.disabled = false;
-                disableVerifyBtn.textContent = 'Desativar 2FA';
-            }
+        if (!resp.ok) {
+            enable2FABtn.textContent = 'Ativar 2FA';
+            enable2FABtn.disabled = false;
+            enable2FABtn.classList.remove('btn-success');
+            enable2FABtn.classList.add('btn-primary');
+            return;
         }
 
-        // Função modificada startTimer para suportar modo desativação
-        function startTimer(duration, displayElement, resendButton, mode = 'enable') {
-            let timer = duration;
-            const interval = setInterval(function () {
-                const minutes = Math.floor(timer / 60);
-                const seconds = timer % 60;
+        const account = await resp.json();
 
-                displayElement.textContent = `Código expira em: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-
-                if (--timer < 0) {
-                    clearInterval(interval);
-                    displayElement.textContent = "Código expirado";
-                    displayElement.classList.add("expired");
-                    if (resendButton) {
-                        resendButton.classList.remove("disabled");
-                        resendButton.onclick = mode === 'disable' ? resendDisable2FACode : resend2FACode;
-                    }
-                }
-            }, 1000);
+        // Se a API /api/account retornar twoFAEnabled, usamos isso:
+        if (account.twoFAEnabled) {
+            enable2FABtn.textContent = '2FA Ativo';
+            enable2FABtn.disabled = true;
+            enable2FABtn.classList.remove('btn-primary');
+            enable2FABtn.classList.add('btn-success');
+        } else {
+            enable2FABtn.textContent = 'Ativar 2FA';
+            enable2FABtn.disabled = false;
+            enable2FABtn.classList.remove('btn-success');
+            enable2FABtn.classList.add('btn-primary');
         }
 
-        // Função para reenviar código na desativação
-        async function resendDisable2FACode() {
-            const email = document.getElementById('email').value;
-            const resendButton = document.getElementById('disable-resend-code');
-            const timerDisplay = document.getElementById('disable-timer');
-
-            if (!email) {
-                notifications.show('Email não encontrado', 'error');
-                return;
-            }
-
-            try {
-                resendButton.classList.add('disabled');
-                resendButton.textContent = 'Enviando...';
-
-                await send2FACode(email);
-
-                notifications.show('Novo código enviado para seu email', 'success');
-
-                // Reiniciar timer
-                timerDisplay.classList.remove('expired');
-                timerDisplay.textContent = 'Código expira em: 5:00';
-                startTimer(300, timerDisplay, resendButton, 'disable');
-
-                setTimeout(() => {
-                    resendButton.textContent = 'Reenviar código';
-                    resendButton.classList.add('disabled');
-                }, 1000);
-
-            } catch (error) {
-                notifications.show(error.message, 'error');
-                resendButton.classList.remove('disabled');
-                resendButton.textContent = 'Reenviar código';
-            }
-        }
-
-        // Modifique a função check2FAStatus para mostrar o botão correto
-        async function check2FAStatus() {
-            const enable2FABtn = document.getElementById('enable-2fa');
-            const disable2FABtn = document.getElementById('disable-2fa');
-            const emailInput = document.getElementById('email');
-            const email = emailInput ? emailInput.value : "";
-
-            try {
-                // Usar a rota /api/2fa/status
-                if (email) {
-                    const response = await fetch("/api/2fa/status", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ email }),
-                    });
-
-                    const data = await response.json();
-                    if (data.success && data.twoFAEnabled) {
-                        // 2FA está ativo
-                        enable2FABtn.style.display = 'none';
-                        enable2FABtn.textContent = '2FA Ativo';
-                        enable2FABtn.disabled = true;
-                        enable2FABtn.classList.remove('btn-primary');
-                        enable2FABtn.classList.add('btn-success');
-
-                        disable2FABtn.style.display = 'inline-block';
-                        return;
-                    }
-                }
-
-                // 2FA não está ativo
-                enable2FABtn.style.display = 'inline-block';
-                enable2FABtn.textContent = 'Ativar 2FA';
-                enable2FABtn.disabled = false;
-                enable2FABtn.classList.remove('btn-success');
-                enable2FABtn.classList.add('btn-primary');
-
-                disable2FABtn.style.display = 'none';
-
-            } catch (err) {
-                console.error('Erro ao verificar status do 2FA:', err);
-                // Fallback
-                enable2FABtn.style.display = 'inline-block';
-                enable2FABtn.textContent = 'Ativar 2FA';
-                enable2FABtn.disabled = false;
-                enable2FABtn.classList.remove('btn-success');
-                enable2FABtn.classList.add('btn-primary');
-                disable2FABtn.style.display = 'none';
-            }
-        }
+    } catch (err) {
+        console.error('Erro ao verificar status do 2FA:', err);
+        // fallback neutro
+        enable2FABtn.textContent = 'Ativar 2FA';
+        enable2FABtn.disabled = false;
+        enable2FABtn.classList.remove('btn-success');
+        enable2FABtn.classList.add('btn-primary');
+    }
+}
 
         // Executa ao carregar a página
-        window.addEventListener('DOMContentLoaded', () => {
-            initNotificationSystem(); // se usar notificações
-            loadUserBalance();
-            loadAccountData(); // loadAccountData já chama check2FAStatus() se você aplicou a solução rápida
-            // ou, se preferir confiar na versão robusta:
-            check2FAStatus();
-        });
+window.addEventListener('DOMContentLoaded', () => {
+    initNotificationSystem(); // se usar notificações
+    loadUserBalance();
+    loadAccountData(); // loadAccountData já chama check2FAStatus() se você aplicou a solução rápida
+    // ou, se preferir confiar na versão robusta:
+    check2FAStatus();
+});
         // Função para preencher e ocultar campos de entrada
         function fillAndHideInput() {
             try {
@@ -1307,6 +1069,38 @@
 
                                     <div class="component_card">
                                         <div class="card account-card">
+                                            <form class="component_form_group" id="changePasswordForm">
+                                                <div class="">
+                                                    <div class="form-group">
+                                                        <label>Senha atual</label>
+                                                        <input type="password" class="form-control"
+                                                            id="current_password" name="SettingsFrom[current_password]">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Nova senha</label>
+                                                        <input type="password" class="form-control" id="new_password"
+                                                            name="SettingsFrom[password]">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Confirme a nova senha</label>
+                                                        <input type="password" class="form-control"
+                                                            id="confirm_password" name="SettingsFrom[confirm_password]">
+                                                    </div>
+                                                </div>
+                                                <div class="component_button_save">
+                                                    <div class="">
+                                                        <input type="hidden" name="_csrf"
+                                                            value="HU2qAvzz-7jES0jgZCgrXNOxjtc_-hWcZMhDG1tbFc17Feh7l7ie0YEzergiY2kQ6ofmmlOlYcQCm3VxHRFUqQ==">
+                                                        <button class="btn btn-block btn-big-primary" type="submit">
+                                                            Salvar Alterações
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <div class="component_card">
+                                        <div class="card account-card">
                                             <div id="2fa-approve-error-block" style="display: none;"
                                                 class="alert alert-dismissible alert-danger mb-3 ">
                                                 <button type="button" class="close">&times;</button>
@@ -1330,13 +1124,9 @@
                                                             onclick="setup2FA()">
                                                             Ativar 2FA
                                                         </button>
-                                                        <button id="disable-2fa" class="btn btn-big-secondary"
-                                                            onclick="disable2FA()" style="display: none;">
-                                                            Desativar 2FA
-                                                        </button>
                                                     </div>
 
-                                                    <!-- Seção de verificação de código (ativação) -->
+                                                    <!-- Seção de verificação de código -->
                                                     <div id="verify-2fa-section" class="verification-section">
                                                         <div class="mb-3">
                                                             Um código de verificação foi enviado para seu email.
@@ -1354,44 +1144,12 @@
                                                                 </button>
                                                             </div>
 
-                                                            <div class="timer" id="timer">Código expira em: 5:00</div>
+                                                            <div class="timer" id="timer">
+                                                                Código expira em: 5:00
+                                                            </div>
 
                                                             <div class="mt-2">
                                                                 <a href="javascript:void(0)" id="resend-code"
-                                                                    class="resend-link disabled">
-                                                                    Reenviar código
-                                                                </a>
-                                                            </div>
-                                                        </form>
-                                                    </div>
-
-                                                    <!-- Seção de verificação para desativação -->
-                                                    <div id="disable-verify-2fa-section" class="verification-section">
-                                                        <div class="mb-3">
-                                                            Para desativar o 2FA, digite o código enviado para seu
-                                                            email.
-                                                        </div>
-
-                                                        <form id="disable-verify-2fa-form">
-                                                            <div class="code-input-group">
-                                                                <input type="text" id="disable-2fa-code"
-                                                                    class="form-control code-input"
-                                                                    placeholder="Digite o código" maxlength="6">
-                                                                <button id="disable-verify-2fa-btn" type="submit"
-                                                                    class="btn btn-danger">
-                                                                    Desativar 2FA
-                                                                </button>
-                                                                <button type="button" class="btn btn-secondary"
-                                                                    onclick="cancelDisable2FA()">
-                                                                    Cancelar
-                                                                </button>
-                                                            </div>
-
-                                                            <div class="timer" id="disable-timer">Código expira em: 5:00
-                                                            </div>
-
-                                                            <div class="mt-2">
-                                                                <a href="javascript:void(0)" id="disable-resend-code"
                                                                     class="resend-link disabled">
                                                                     Reenviar código
                                                                 </a>
@@ -1824,15 +1582,6 @@
                 if (oldTwoFactorApproveForm) {
                     oldTwoFactorApproveForm.style.display = 'none';
                 }
-            }
-
-            // Configurar formulário de desativação do 2FA
-            const disable2FAForm = document.getElementById('disable-verify-2fa-form');
-            if (disable2FAForm) {
-                disable2FAForm.addEventListener('submit', async function (e) {
-                    e.preventDefault();
-                    await verifyDisable2FACode();
-                });
             }
 
             // --- opcional: esperar window.load para garantir recursos externos carregados ---
