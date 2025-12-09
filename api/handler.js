@@ -433,4 +433,50 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+// Rota: GET /api/afiliados
+router.get("/afiliados", async (req, res) => {
+  await connectDB();
+
+  try {
+    // Verifica se há token
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Token de autenticação ausente ou inválido." });
+    }
+
+    // Extrai e verifica o token
+    const token = authHeader.split(" ")[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
+
+    // Busca o usuário autenticado
+    const usuario = await User.findById(decoded.id);
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    // Busca todos os usuários que foram indicados por ele
+    const afiliados = await User.find({ indicadoPor: usuario._id })
+      .select("email createdAt codigoAfiliado") // campos retornados
+      .sort({ createdAt: -1 });
+
+    // Retorna resultado
+    return res.status(200).json({
+      afiliador: {
+        email: usuario.email,
+        codigoAfiliado: usuario.codigoAfiliado,
+        totalIndicacoes: usuario.indicacoes || afiliados.length,
+      },
+      afiliados: afiliados,
+    });
+  } catch (error) {
+    console.error("Erro ao buscar afiliados:", error);
+    return res.status(500).json({ error: "Erro interno ao buscar afiliados." });
+  }
+});
+
 export default router;
