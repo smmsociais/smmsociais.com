@@ -94,69 +94,6 @@
             }
         }
 
-        // Função para carregar dados de afiliados
-        async function loadAffiliatesData() {
-            try {
-                const token = loadToken();
-
-                if (!token) {
-                    console.error("Token não encontrado para carregar dados de afiliados.");
-                    return {};
-                }
-
-                // Carregar estatísticas de afiliados
-                const statsResponse = await fetch('https://smmsociais.com/api/affiliates/stats', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!statsResponse.ok) {
-                    throw new Error('Erro ao carregar estatísticas de afiliados');
-                }
-
-                const statsData = await statsResponse.json();
-                console.log('Dados de afiliados carregados:', statsData);
-
-                // Atualizar a interface com os dados recebidos
-                updateAffiliatesUI(statsData);
-
-                return statsData;
-            } catch (error) {
-                console.error('Erro ao carregar dados de afiliados:', error);
-                return {};
-            }
-        }
-
-        // Função para atualizar a UI com dados de afiliados
-        function updateAffiliatesUI(data) {
-            // Atualizar link de referência se disponível
-            if (data.referral_link) {
-                const linkElement = document.getElementById('link');
-                if (linkElement) {
-                    linkElement.textContent = data.referral_link;
-                }
-            }
-
-            // Atualizar estatísticas se disponíveis
-            if (data.stats) {
-                const stats = data.stats;
-                const tableCells = document.querySelectorAll('.affiliates-table-border-none td');
-
-                if (tableCells.length >= 6) {
-                    tableCells[0].textContent = stats.visits || 0;
-                    tableCells[1].textContent = stats.registrations || 0;
-                    tableCells[2].textContent = stats.referrals || 0;
-                    tableCells[3].textContent = stats.conversion_rate ? stats.conversion_rate + '%' : '0.00%';
-                    tableCells[4].textContent = stats.total_earnings ?
-                        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.total_earnings) : 'R$ 0,00';
-                    tableCells[5].textContent = stats.available_earnings ?
-                        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.available_earnings) : 'R$ 0,00';
-                }
-            }
-        }
     </script>
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/global/tad3g2kcwfrtr6yi.css">
     <link rel="stylesheet" type="text/css" href="https://storage.perfectcdn.com/ahnerj/2pcamz1sqmak1hf9.css">
@@ -482,34 +419,6 @@
                     });
             }
 
-            // --- helper para carregar dados de afiliados ---
-            function loadAffiliatesDataWrapper() {
-                // se já existe a função loadAffiliatesData no outro script e ela retornar Promise, tente usá-la
-                if (typeof window.loadAffiliatesData === 'function') {
-                    try {
-                        const r = window.loadAffiliatesData();
-                        // se a função não retornar promise (undefined), faz fallback abaixo:
-                        if (r && typeof r.then === 'function') return Promise.resolve(r);
-                    } catch (e) {
-                        // ignore e faça fallback
-                    }
-                }
-
-                }
-            
-            // --- Executar funções de inicialização ---
-            function initializePageFunctions() {
-                return new Promise((resolve) => {
-                    try {
-                        // Executar fillAndHideInput (função que estava sendo chamada automaticamente)
-                        resolve();
-                    } catch (error) {
-                        console.error('Erro na inicialização das funções da página:', error);
-                        resolve(); // Resolve mesmo com erro para não travar a página
-                    }
-                });
-            }
-
             // --- opcional: esperar window.load para garantir recursos externos carregados ---
             const windowLoadPromise = new Promise(resolve => {
                 if (document.readyState === 'complete') return resolve();
@@ -518,11 +427,9 @@
 
             // --- Promise principal: saldo + serviços + afiliados + inicialização + window.load ---
             const saldoPromise = callOrWrapLoadUserBalance();
-            const affiliatesPromise = loadAffiliatesDataWrapper();
-            const initPromise = initializePageFunctions();
 
             // se quiser aguardar também window.load, inclua windowLoadPromise no Promise.all (recomendo)
-            Promise.all([saldoPromise, affiliatesPromise, initPromise, windowLoadPromise])
+            Promise.all([saldoPromise, windowLoadPromise])
                 .then(() => {
                     // tudo OK (ou tratamos falhas individualmente): mostrar a página
                     document.body.classList.add('loaded');
