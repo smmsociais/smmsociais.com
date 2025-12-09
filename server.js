@@ -1,9 +1,8 @@
-// server.js
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import apiRoutes from "./api/handler.js";
-import twoFARoutes from ".api/routes/twofa.js";
+import twoFARoutes from "./api/routes/twofa.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,10 +10,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
+// Rotas principais da API
 app.use("/api", apiRoutes);
 
+// Rotas 2FA
 app.use("/api/2fa", twoFARoutes);
 
+// Servir arquivos estáticos
 app.use(express.static(__dirname));
 
 const htmlPages = {
@@ -43,12 +45,14 @@ const htmlPages = {
   "/example.txt": "example.txt"
 };
 
+// Mapeia cada rota HTML
 Object.entries(htmlPages).forEach(([route, file]) => {
   app.get(route, (req, res) => {
     res.sendFile(path.join(__dirname, file));
   });
 });
 
+// Rota catch-all
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
