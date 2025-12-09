@@ -3,6 +3,7 @@ import express from "express";
 import { Resend } from "resend";
 import { User } from "../schema.js"; // verifique exportação no schema.js
 import connectDB from "../db.js";
+import { authenticateToken } from "../auth.js"; // Supondo que você tenha um middleware de autenticação
 
 const router = express.Router();
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -154,23 +155,161 @@ router.post("/status", async (req, res) => {
   }
 });
 
-// Exemplo de rota para desativar 2FA
-router.post('/disable', authenticateToken, async (req, res) => {
-    try {
-        const { email } = req.body;
-        const userId = req.user.id; // Do token JWT
+/**
+ * POST /api/2fa/disable
+ * Desativa o 2FA para o usuário após verificação do código
+ */
+router.post("/disable", authenticateToken, async (req, res) => {
+  console.log("[2FA][DISABLE] request received");
+  try {
+    await connectDB();
 
-        // Atualizar no banco de dados
-        await User.updateOne(
-            { _id: userId, email },
-            { $set: { twoFAEnabled: false, twoFASecret: null } }
-        );
+    const { email, code } = req.body;
+    const userId = req.user.id; // Do token JWT
 
-        res.json({ success: true, message: '2FA desativado com sucesso' });
-    } catch (error) {
-        console.error('Erro ao desativar 2FA:', error);
-        res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    console.log("[2FA][DISABLE] body:", req.body, "userId:", userId);
+
+    if (!email || !code) {
+      console.log("[2FA][DISABLE] missing fields");
+      return res.status(400).json({ success: false, error: "E-mail e código são obrigatórios." });
     }
+
+    // Verificar se o email corresponde ao usuário autenticado
+    const user = await User.findOne({ _id: userId, email });
+    if (!user) {
+      console.log("[2FA][DISABLE] user not found or email mismatch:", email, userId);
+      return res.status(404).json({ success: false, error: "Usuário não encontrado." });
+    }
+
+    // Verificar se o 2FA está ativo
+    if (!user.twoFAEnabled) {
+      console.log("[2FA][DISABLE] 2FA not enabled for user:", email);
+      return res.status(400).json({ success: false, error: "2FA não está ativo para este usuário." });
+    }
+
+    // Verificar se existe código salvo
+    if (!user.twoFACode) {
+      console.log("[2FA][DISABLE] no code saved for user");
+      return res.status(400).json({ success: false, error: "Código 2FA não encontrado." });
+    }
+
+    // Verificar expiração
+    const now = Date.now();
+    const expires = user.twoFAExpires ? new Date(user.twoFAExpires).getTime() : 0;
+    console.log("[2FA][DISABLE] code saved:", user.twoFACode, "expires:", expires, "now:", now);
+
+    if (now > expires) {
+      user.twoFACode = null;
+      user.twoFAExpires = null;
+      await user.save();
+      console.log("[2FA][DISABLE] code expired, cleared.");
+      return res.status(400).json({ success: false, error: "Código expirado. Solicite um novo." });
+    }
+
+    // Verificar código
+    if (String(user.twoFACode) !== String(code)) {
+      console.log("[2FA][DISABLE] code mismatch:", code, "!==", user.twoFACode);
+      return res.status(401).json({ success: false, error: "Código incorreto." });
+    }
+
+    // Código correto → desativa o 2FA
+    user.twoFACode = null;
+    user.twoFAExpires = null;
+    user.twoFAEnabled = false;
+    await user.save();
+    console.log("[2FA][DISABLE] 2FA disabled for:", email);
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "2FA desativado com sucesso." 
+    });
+  } catch (err) {
+    console.error("[2FA][DISABLE] erro geral:", err);
+    return res.status(500).json({ 
+      success: false, 
+      error: "Erro interno do servidor ao desativar 2FA." 
+    });
+  }
+});
+
+/**
+ * POST /api/2fa/send-disable-code
+ * Envia código específico para desativação do 2FA
+ */
+router.post("/send-disable-code", authenticateToken, async (req, res) => {
+  console.log("[2FA][SEND-DISABLE-CODE] request received");
+  try {
+    await connectDB();
+
+    const { email } = req.body;
+    const userId = req.user.id;
+
+    console.log("[2FA][SEND-DISABLE-CODE] body:", req.body, "userId:", userId);
+
+    if (!email) {
+      console.log("[2FA][SEND-DISABLE-CODE] missing email");
+      return res.status(400).json({ error: "E-mail é obrigatório." });
+    }
+
+    // Verificar se o email corresponde ao usuário autenticado
+    const user = await User.findOne({ _id: userId, email });
+    if (!user) {
+      console.log("[2FA][SEND-DISABLE-CODE] user not found or email mismatch:", email, userId);
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    // Verificar se o 2FA está ativo
+    if (!user.twoFAEnabled) {
+      console.log("[2FA][SEND-DISABLE-CODE] 2FA not enabled for user:", email);
+      return res.status(400).json({ error: "2FA não está ativo para este usuário." });
+    }
+
+    // Gera código aleatório de 6 dígitos
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiration = Date.now() + 5 * 60 * 1000;
+
+    // Salva no banco
+    user.twoFACode = code;
+    user.twoFAExpires = new Date(expiration);
+    await user.save();
+    console.log(`[2FA][SEND-DISABLE-CODE] saved disable code for ${email}:`, code);
+
+    // Envia email com Resend
+    try {
+      const sendResult = await resend.emails.send({
+        from: process.env.RESEND_FROM || "SMMSociais <no-reply@smmsociais.com>",
+        to: email,
+        subject: "Código para desativar 2FA",
+        html: `
+          <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:20px;border:1px solid #eee;border-radius:10px;">
+            <h2 style="text-align:center;color:#dc3545;">🔐 Desativar Verificação em Duas Etapas</h2>
+            <p>Use o código abaixo para confirmar a desativação do 2FA:</p>
+            <h1 style="text-align:center;font-size:36px;letter-spacing:4px;color:#dc3545;">${code}</h1>
+            <p style="text-align:center;color:#777;">Válido por 5 minutos.</p>
+            <p style="text-align:center;color:#999;font-size:12px;">Se você não solicitou esta desativação, ignore este email.</p>
+          </div>
+        `,
+      });
+      console.log("[2FA][SEND-DISABLE-CODE] email sent result:", sendResult);
+    } catch (emailErr) {
+      console.error("[2FA][SEND-DISABLE-CODE] error sending email:", emailErr);
+      return res.status(500).json({ 
+        success: false, 
+        error: "Erro ao enviar código por email." 
+      });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "Código de desativação enviado para o e-mail." 
+    });
+  } catch (err) {
+    console.error("[2FA][SEND-DISABLE-CODE] erro geral:", err);
+    return res.status(500).json({ 
+      success: false, 
+      error: "Erro ao enviar código de desativação." 
+    });
+  }
 });
 
 export default router;
