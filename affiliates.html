@@ -64,7 +64,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <!-- Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     <script>
         // Função para obter o token do localStorage
         function loadToken() {
@@ -170,7 +170,7 @@
                 notifyWrapper.textContent = message;
                 notifyWrapper.className = 'alert alert-danger mb-3';
                 notifyWrapper.style.display = 'block';
-                
+
                 setTimeout(() => {
                     notifyWrapper.style.display = 'none';
                 }, 5000);
@@ -184,7 +184,7 @@
                 notifyWrapper.textContent = message;
                 notifyWrapper.className = 'alert alert-success mb-3';
                 notifyWrapper.style.display = 'block';
-                
+
                 setTimeout(() => {
                     notifyWrapper.style.display = 'none';
                 }, 3000);
@@ -208,11 +208,11 @@
             const linkElement = document.getElementById('link');
             if (linkElement && codigoAfiliado) {
                 linkElement.textContent = `https://smmsociais.com/ref/${codigoAfiliado}`;
-                
+
                 // Atualizar clipboard
                 const clipboardButton = linkElement.nextElementSibling.querySelector('[data-clipboard-target="#link"]');
                 if (clipboardButton) {
-                    clipboardButton.addEventListener('click', function(e) {
+                    clipboardButton.addEventListener('click', function (e) {
                         e.preventDefault();
                         const textToCopy = `https://smmsociais.com/ref/${codigoAfiliado}`;
                         navigator.clipboard.writeText(textToCopy).then(() => {
@@ -288,26 +288,26 @@
             try {
                 // Carregar saldo
                 await loadUserBalance();
-                
+
                 // Carregar afiliados
                 const afiliadosData = await loadAfiliados();
-                
+
                 if (afiliadosData) {
                     // Atualizar link de referência
                     updateReferralLink(afiliadosData.afiliador.codigoAfiliado);
-                    
+
                     // Renderizar tabela de afiliados
                     renderAfiliadosTable(afiliadosData.afiliados);
-                    
+
                     // Atualizar estatísticas
                     updateStatistics(afiliadosData.afiliador, afiliadosData.afiliados);
-                    
+
                     // Mostrar mensagem de sucesso se houver afiliados
                     if (afiliadosData.afiliados.length > 0) {
                         showSuccess(`Carregados ${afiliadosData.afiliados.length} afiliados`);
                     }
                 }
-                
+
             } catch (error) {
                 console.error('Erro ao carregar dados da página:', error);
                 showError("Erro ao carregar dados. Tente recarregar a página.");
@@ -548,7 +548,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Nova seção: Lista de Afiliados -->
                 <div id="block_afiliados" class="mt-5">
                     <div class="block-bg"></div>
@@ -562,7 +562,8 @@
                             </div>
                             <div class="row">
                                 <div class="col-lg-12">
-                                    <div class="table-bg affiliate-block__table-payments component_table afiliados-table">
+                                    <div
+                                        class="table-bg affiliate-block__table-payments component_table afiliados-table">
                                         <div class="table-wr table-responsive">
                                             <table class="table">
                                                 <thead>
@@ -577,65 +578,62 @@
                                                     <!-- Dados serão carregados via JavaScript -->
                                                     <tr>
                                                         <td colspan="4" class="text-center py-4">
-                                                            <div class="spinner-border text-primary" role="status">
-                                                                <span class="sr-only">Carregando...</span>
-                                                            </div>
-                                                            <p class="mt-2">Carregando afiliados...</p>
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
                                         </div>
+                                        </td>
+                                        </tr>
+                                        </tbody>
+                                        </table>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="block_62">
-                    <div class="block-bg"></div>
-                    <div class="container">
-                        <div class="affiliates-list">
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <div class="table-bg affiliate-block__table-payments component_table ">
-                                        <div class="table-wr table-responsive">
-                                            <table class="table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Data de pagamento</th>
-                                                        <th>Valor de pagamento</th>
-                                                        <th>Status de pagamento</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td colspan="3">
-                                                            &nbsp;
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <nav class="component_pagination">
-                                        <div class="">
-                                        </div>
-                                    </nav>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="wrapper-content__footer">
+
+            <div id="block_62">
+                <div class="block-bg"></div>
+                <div class="container">
+                    <div class="affiliates-list">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="table-bg affiliate-block__table-payments component_table ">
+                                    <div class="table-wr table-responsive">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Data de pagamento</th>
+                                                    <th>Valor de pagamento</th>
+                                                    <th>Status de pagamento</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td colspan="3">
+                                                        &nbsp;
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <nav class="component_pagination">
+                                    <div class="">
+                                    </div>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+        <div class="wrapper-content__footer">
+        </div>
+    </div>
     </div>
 
     <!-- Bootstrap and jQuery JavaScript -->
