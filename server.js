@@ -3,7 +3,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import apiRoutes from "./api/handler.js";
-import twoFARoutes from "./routes/twofa.js";
+import twoFARoutes from ".api/routes/twofa.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
