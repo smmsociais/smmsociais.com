@@ -597,7 +597,7 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (!response.ok) {
                     throw new Error(data.error || "Erro ao enviar código 2FA");
                 }
@@ -616,7 +616,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email, code }),
                 });
-                
+
                 const data = await response.json();
                 return data;
             } catch (error) {
@@ -630,9 +630,9 @@
             const interval = setInterval(function () {
                 const minutes = Math.floor(timer / 60);
                 const seconds = timer % 60;
-                
+
                 displayElement.textContent = `Código expira em: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-                
+
                 if (--timer < 0) {
                     clearInterval(interval);
                     displayElement.textContent = "Código expirado";
@@ -649,7 +649,7 @@
             const email = document.getElementById('email').value;
             const resendButton = document.getElementById('resend-code');
             const timerDisplay = document.getElementById('timer');
-            
+
             if (!email) {
                 notifications.show('Email não encontrado', 'error');
                 return;
@@ -658,21 +658,21 @@
             try {
                 resendButton.classList.add('disabled');
                 resendButton.textContent = 'Enviando...';
-                
+
                 await send2FACode(email);
-                
+
                 notifications.show('Novo código enviado para seu email', 'success');
-                
+
                 // Reiniciar timer
                 timerDisplay.classList.remove('expired');
                 timerDisplay.textContent = 'Código expira em: 5:00';
                 startTimer(300, timerDisplay, resendButton);
-                
+
                 setTimeout(() => {
                     resendButton.textContent = 'Reenviar código';
                     resendButton.classList.add('disabled');
                 }, 1000);
-                
+
             } catch (error) {
                 notifications.show(error.message, 'error');
                 resendButton.classList.remove('disabled');
@@ -700,10 +700,10 @@
                 .then(() => {
                     // Mostrar seção de verificação
                     verifySection.classList.add('active');
-                    
+
                     // Iniciar timer de 5 minutos
                     startTimer(300, timerDisplay, resendButton);
-                    
+
                     notifications.show('Código 2FA enviado para seu email', 'success');
                 })
                 .catch(error => {
@@ -711,11 +711,11 @@
                 });
 
             // Configurar verificação
-            verifyForm.onsubmit = async function(e) {
+            verifyForm.onsubmit = async function (e) {
                 e.preventDefault();
-                
+
                 const code = codeInput.value.trim();
-                
+
                 if (!code) {
                     notifications.show('Digite o código de verificação', 'error');
                     return;
@@ -725,19 +725,19 @@
                 verifyBtn.textContent = 'Verificando...';
 
                 const result = await verify2FACode(email, code);
-                
+
                 if (result.success) {
                     notifications.show('✅ 2FA verificado com sucesso!', 'success');
-                    
+
                     // Esconder seção de verificação
                     verifySection.classList.remove('active');
-                    
+
                     // Atualizar interface para mostrar que 2FA está ativo
                     enable2FABtn.textContent = '2FA Ativo';
                     enable2FABtn.disabled = true;
                     enable2FABtn.classList.remove('btn-primary');
                     enable2FABtn.classList.add('btn-success');
-                    
+
                     // Limpar formulário
                     codeInput.value = '';
                 } else {
@@ -750,34 +750,41 @@
             // Configurar reenvio de código
             resendButton.onclick = resend2FACode;
         }
+        
+async function check2FAStatus() {
+    const email = document.getElementById('email').value;
+    const enable2FABtn = document.getElementById('enable-2fa');
 
-        function generateRandomNumber() {
-            return Math.floor(Math.random() * 90000) + 10000;
+    if (!email) return;
+
+    try {
+        const response = await fetch("/api/2fa/status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.twoFAEnabled) {
+            enable2FABtn.textContent = '2FA Ativo';
+            enable2FABtn.disabled = true;
+            enable2FABtn.classList.remove('btn-primary');
+            enable2FABtn.classList.add('btn-success');
+        } else {
+            enable2FABtn.textContent = 'Ativar 2FA';
+            enable2FABtn.disabled = false;
+            enable2FABtn.classList.remove('btn-success');
+            enable2FABtn.classList.add('btn-primary');
         }
+    } catch (err) {
+        console.error('Erro ao verificar status do 2FA:', err);
+    }
+}
 
-        function hideInputAndDiv() {
-            var input = document.getElementById('field-cpf_cnpj');
-            var div = document.getElementById('order_cpf_cnpj');
+// Executa ao carregar a página
+window.addEventListener('DOMContentLoaded', check2FAStatus);
 
-            if (input) {
-                input.style.display = 'none';
-            }
-
-            if (div) {
-                div.style.display = 'none';
-            }
-        }
-
-        function fillAndHideInput() {
-            var input = document.getElementById('field-cpf_cnpj');
-            if (input) {
-                var randomNumber = generateRandomNumber();
-                input.value = randomNumber;
-                hideInputAndDiv();
-            } else {
-                setTimeout(fillAndHideInput, 100);
-            }
-        }
     </script>
 
     <script>
@@ -1041,8 +1048,9 @@
                                                     </label>
 
                                                     <div class="mb-4">
-                                                        Adicione uma camada extra de proteção à sua conta. 
-                                                        Ao ativar o 2FA, você receberá um código por email sempre que fizer login.
+                                                        Adicione uma camada extra de proteção à sua conta.
+                                                        Ao ativar o 2FA, você receberá um código por email sempre que
+                                                        fizer login.
                                                     </div>
 
                                                     <div class="two-factor-actions">
@@ -1058,29 +1066,25 @@
                                                             Um código de verificação foi enviado para seu email.
                                                             Digite o código abaixo para ativar o 2FA.
                                                         </div>
-                                                        
+
                                                         <form id="verify-2fa-form">
                                                             <div class="code-input-group">
-                                                                <input type="text" 
-                                                                       id="2fa-code" 
-                                                                       class="form-control code-input" 
-                                                                       placeholder="Digite o código" 
-                                                                       maxlength="6">
-                                                                <button id="verify-2fa-btn" 
-                                                                        type="submit" 
-                                                                        class="btn btn-primary">
+                                                                <input type="text" id="2fa-code"
+                                                                    class="form-control code-input"
+                                                                    placeholder="Digite o código" maxlength="6">
+                                                                <button id="verify-2fa-btn" type="submit"
+                                                                    class="btn btn-primary">
                                                                     Verificar Código
                                                                 </button>
                                                             </div>
-                                                            
+
                                                             <div class="timer" id="timer">
                                                                 Código expira em: 5:00
                                                             </div>
-                                                            
+
                                                             <div class="mt-2">
-                                                                <a href="javascript:void(0)" 
-                                                                   id="resend-code" 
-                                                                   class="resend-link disabled">
+                                                                <a href="javascript:void(0)" id="resend-code"
+                                                                    class="resend-link disabled">
                                                                     Reenviar código
                                                                 </a>
                                                             </div>
