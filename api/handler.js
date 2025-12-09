@@ -479,4 +479,110 @@ router.get("/afiliados", async (req, res) => {
   }
 });
 
+// Rota: /api/orders
+router.get("/orders", async (req, res) => {
+    await connectDB();
+
+  try {
+    const { authorization } = req.headers;
+    if (!authorization || !authorization.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Token não fornecido" });
+    }
+
+    const token = authorization.split(" ")[1];
+    const usuario = await User.findOne({ token });
+
+    if (!usuario) {
+      return res.status(401).json({ error: "Token inválido ou usuário não encontrado!" });
+    }
+
+    // 🔄 Atualizar status automaticamente
+    await Action.updateMany(
+      { status: "pendente", validadas: { $gt: 0 } },
+      { $set: { status: "progress" } }
+    );
+
+    await Action.updateMany(
+      { status: { $in: ["pendente", "progress"] }, $expr: { $eq: ["$validadas", "$quantidade"] } },
+      { $set: { status: "completed" } }
+    );
+
+    // ---------- Helpers locais ----------
+    function extractUsernameFromUrl(urlDir) {
+      if (!urlDir || typeof urlDir !== "string") return null;
+      let s = urlDir.replace(/[\r\n]/g, "").trim();
+      s = s.split("?")[0].split("#")[0];
+      const m = s.match(/@([A-Za-z0-9_.-]+)/);
+      if (m && m[1]) return m[1].toLowerCase();
+      s = s.replace(/^\/+|\/+$/g, "");
+      if (s.includes("/")) {
+        const parts = s.split("/");
+        s = parts[parts.length - 1];
+      }
+      if (s.startsWith("@")) s = s.slice(1);
+      s = s.trim().toLowerCase();
+      return s === "" ? null : s;
+    }
+
+    // ---------- Buscar ações e serviços ----------
+    const statusQuery = req.query.status;
+    const filtro = { userId: usuario._id };
+
+    if (statusQuery && statusQuery !== "todos") {
+      if (statusQuery === "pending") {
+        filtro.validadas = 0;
+      } else if (statusQuery === "progress") {
+        filtro.validadas = { $gt: 0 };
+        filtro.status = "progress";
+      } else {
+        filtro.status = statusQuery;
+      }
+    }
+
+    const acoes = await Action.find(filtro).sort({ dataCriacao: -1 });
+
+    const idsServico = [...new Set(acoes.map(a => a.id_servico))].filter(Boolean);
+    const servicos = idsServico.length > 0
+      ? await Servico.find({ id_servico: { $in: idsServico } })
+      : [];
+
+    // ---------- Montar retorno ----------
+    const CONCURRENCY = 5;
+    const queue = [...acoes];
+    const acoesComDetalhes = [];
+
+    while (queue.length > 0) {
+      const batch = queue.splice(0, CONCURRENCY);
+
+      const promises = batch.map(async acao => {
+        const obj = acao.toObject();
+        obj.id = obj.id_acao_smm || obj._id.toString();
+        obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
+
+        // Agora NÃO existe mais follower_count.
+        // Apenas retornamos contagemInicial sem tocar em APIs externas.
+        if (obj.contagemInicial === undefined || obj.contagemInicial === null) {
+          obj.contagemInicial = 0;
+        } else {
+          obj.contagemInicial = Number(obj.contagemInicial) || 0;
+        }
+
+        return obj;
+      });
+
+      const results = await Promise.all(promises);
+      acoesComDetalhes.push(...results);
+
+      if (queue.length > 0) await new Promise(r => setTimeout(r, 150));
+    }
+
+    return res.json({ acoes: acoesComDetalhes });
+
+  } catch (error) {
+    console.error("Erro ao buscar histórico de ações:", error);
+    return res.status(500).json({ error: "Erro ao buscar histórico de ações" });
+  }
+});
+
+
 export default router;
