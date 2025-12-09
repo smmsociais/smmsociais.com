@@ -1,9 +1,11 @@
 // api/routes/twofa.js
+import express from "express";
 import jwt from "jsonwebtoken";
 import connectDB from "../db.js";
 import { User } from "../schema.js";
 import { Resend } from "resend";
 
+const router = express.Router();
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
