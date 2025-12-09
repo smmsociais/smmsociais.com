@@ -38,6 +38,7 @@ const htmlPages = {
   "/massorder": "massorder.html",
   "/addfunds": "addfunds.html",
   "/account": "account.html",
+  "/2fa": "2fa.html",
   "/recover-password": "recover-password.html",
   "/reset-password": "reset-password.html",
   "/termos": "termos.html",
