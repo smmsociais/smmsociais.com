@@ -16,7 +16,9 @@ const userSchema = new mongoose.Schema({
   twoFAEnabled: { type: Boolean, default: false },
   twoFADisableCode: { type: String, default: null },
   twoFADisableExpires: { type: Date, default: null },
-
+  codigoAfiliado: { type: String, unique: true }, // código do próprio usuário
+  indicadoPor: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // quem indicou
+  indicacoes: { type: Number, default: 0 }, // contador de indicações
 }, { timestamps: true });
 
 /* 🔹 Histórico de Ações Realizadas */
