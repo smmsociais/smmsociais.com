@@ -754,81 +754,62 @@
             resendButton.onclick = resend2FACode;
         }
 
-        async function check2FAStatus() {
-            const enable2FABtn = document.getElementById('enable-2fa');
+async function check2FAStatus() {
+    const enable2FABtn = document.getElementById('enable-2fa');
+    const disable2FABtn = document.getElementById('disable-2fa');
 
-            // Tenta pegar email do input (caso já esteja preenchido)
-            const emailInput = document.getElementById('email');
-            const email = emailInput ? emailInput.value : "";
+    try {
+        const token = loadToken();
+        if (!token) {
+            console.warn('Token não encontrado para verificar 2FA');
+            return;
+        }
 
-            try {
-                // Se já tem email, usa a rota /api/2fa/status (mantive compatibilidade)
-                if (email) {
-                    const response = await fetch("/api/2fa/status", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ email }),
-                    });
+        const response = await fetch('https://smmsociais.com/api/account', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
 
-                    const data = await response.json();
-                    if (data.success && data.twoFAEnabled) {
-                        enable2FABtn.textContent = '2FA Ativo';
-                        enable2FABtn.disabled = true;
-                        enable2FABtn.classList.remove('btn-primary');
-                        enable2FABtn.classList.add('btn-success');
-                        return;
-                    }
-                }
+        if (!response.ok) {
+            console.error('Erro ao verificar status da conta');
+            return;
+        }
 
-                // Se não teve email ou a rota /status não informou 'enabled',
-                // tenta recuperar os dados da conta com o token (mais confiável).
-                const token = loadToken();
-                if (!token) {
-                    // sem token não conseguimos mais; mantém como Ativar 2FA
-                    enable2FABtn.textContent = 'Ativar 2FA';
-                    enable2FABtn.disabled = false;
-                    enable2FABtn.classList.remove('btn-success');
-                    enable2FABtn.classList.add('btn-primary');
-                    return;
-                }
+        const account = await response.json();
 
-                const resp = await fetch('https://smmsociais.com/api/account', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+        // VERIFICA SE O 2FA ESTÁ ATIVO
+        if (account.twoFAEnabled) {
+            // 2FA ATIVO: mostrar botão de desativar, ocultar de ativar
+            if (enable2FABtn) {
+                enable2FABtn.textContent = '2FA Ativo';
+                enable2FABtn.disabled = true;
+                enable2FABtn.classList.remove('btn-primary');
+                enable2FABtn.classList.add('btn-success');
+            }
+            
+            if (disable2FABtn) {
+                disable2FABtn.style.display = 'inline-block';
+            }
+        } else {
+            // 2FA INATIVO: mostrar botão de ativar, ocultar de desativar
+            if (enable2FABtn) {
+                enable2FABtn.textContent = 'Ativar 2FA';
+                enable2FABtn.disabled = false;
+                enable2FABtn.classList.remove('btn-success');
+                enable2FABtn.classList.add('btn-primary');
+            }
+            
+            if (disable2FABtn) {
+                disable2FABtn.style.display = 'none';
+            }
+        }
 
-                if (!resp.ok) {
-                    enable2FABtn.textContent = 'Ativar 2FA';
-                    enable2FABtn.disabled = false;
-                    enable2FABtn.classList.remove('btn-success');
-                    enable2FABtn.classList.add('btn-primary');
-                    return;
-                }
+    } catch (err) {
+        console.error('Erro ao verificar status do 2FA:', err);
 
-                const account = await resp.json();
-
-if (account.twoFAEnabled) {
-  enable2FABtn.textContent = '2FA Ativo';
-  enable2FABtn.disabled = true;
-  enable2FABtn.classList.remove('btn-primary');
-  enable2FABtn.classList.add('btn-success');
-
-  const disableBtn = document.getElementById('disable-2fa');
-  if (disableBtn) {
-    disableBtn.style.display = 'inline-block';
-    disableBtn.onclick = () => disable2FASend();
-  }
-} else {
-  // esconder botão
-  const disableBtn = document.getElementById('disable-2fa');
-  if (disableBtn) disableBtn.style.display = 'none';
-}
-
-            } catch (err) {
-                console.error('Erro ao verificar status do 2FA:', err);
                 // fallback neutro
                 enable2FABtn.textContent = 'Ativar 2FA';
                 enable2FABtn.disabled = false;
@@ -845,6 +826,8 @@ if (account.twoFAEnabled) {
             // ou, se preferir confiar na versão robusta:
             check2FAStatus();
         });
+
+
         // Função para preencher e ocultar campos de entrada
         function fillAndHideInput() {
             try {
@@ -855,178 +838,189 @@ if (account.twoFAEnabled) {
             }
         }
 
-// Helper para pegar token
-function loadToken() {
-  return (
-    localStorage.getItem('authToken') ||
-    localStorage.getItem('token') ||
-    localStorage.getItem('user_token') ||
-    localStorage.getItem('auth') ||
-    (window.getToken ? getToken() : null)
-  );
-}
+        // Helper para pegar token
+        function loadToken() {
+            return (
+                localStorage.getItem('authToken') ||
+                localStorage.getItem('token') ||
+                localStorage.getItem('user_token') ||
+                localStorage.getItem('auth') ||
+                (window.getToken ? getToken() : null)
+            );
+        }
 
-// ---------- funções do fluxo de desativação via e-mail ----------
-let disableResendCooldown = false;
-let disableTimerIv = null;
+        // ---------- funções do fluxo de desativação via e-mail ----------
+        let disableResendCooldown = false;
+        let disableTimerIv = null;
 
-function formatTimerText(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `Código expira em: ${m}:${s < 10 ? '0' : ''}${s}`;
-}
+        function formatTimerText(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `Código expira em: ${m}:${s < 10 ? '0' : ''}${s}`;
+        }
 
-async function disable2FASend() {
-  const token = loadToken();
-  if (!token) {
-    notifications.show('Sessão inválida. Faça login novamente.', 'error');
-    setTimeout(() => window.location.href = '/login', 1200);
-    return;
-  }
+        async function disable2FASend() {
+            const token = loadToken();
+            if (!token) {
+                notifications.show('Sessão inválida. Faça login novamente.', 'error');
+                setTimeout(() => window.location.href = '/login', 1200);
+                return;
+            }
 
-  try {
-    const res = await fetch('/api/2fa/disable/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify({}) // servidor identifica via token
-    });
+            try {
+                const res = await fetch('/api/2fa/disable/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({}) // servidor identifica via token
+                });
 
-    const data = await res.json();
-    if (!res.ok) {
-      notifications.show(data.error || 'Erro ao solicitar código.', 'error');
-      return false;
-    }
+                const data = await res.json();
+                if (!res.ok) {
+                    notifications.show(data.error || 'Erro ao solicitar código.', 'error');
+                    return false;
+                }
 
-    notifications.show(data.message || 'Código enviado por e-mail.', 'success');
+                notifications.show(data.message || 'Código enviado por e-mail.', 'success');
 
-    // mostra painel de confirmação e inicia timers
-    document.getElementById('disable-2fa-panel').style.display = 'block';
-    startDisableCountdown(300);
-    startDisableResendCooldown(60);
-    return true;
-  } catch (err) {
-    console.error('Erro disable2FASend:', err);
-    notifications.show('Erro ao solicitar código.', 'error');
-    return false;
-  }
-}
+                // mostra painel de confirmação e inicia timers
+                document.getElementById('disable-2fa-panel').style.display = 'block';
+                startDisableCountdown(300);
+                startDisableResendCooldown(60);
+                return true;
+            } catch (err) {
+                console.error('Erro disable2FASend:', err);
+                notifications.show('Erro ao solicitar código.', 'error');
+                return false;
+            }
+        }
 
-function startDisableCountdown(seconds) {
-  const el = document.getElementById('disable-2fa-timer');
-  if (!el) return;
-  clearInterval(disableTimerIv);
-  let t = seconds;
-  el.textContent = formatTimerText(t);
-  disableTimerIv = setInterval(() => {
-    t--;
-    if (t < 0) {
-      clearInterval(disableTimerIv);
-      el.textContent = 'Código expirado';
-      return;
-    }
-    el.textContent = formatTimerText(t);
-  }, 1000);
-}
+        function startDisableCountdown(seconds) {
+            const el = document.getElementById('disable-2fa-timer');
+            if (!el) return;
+            clearInterval(disableTimerIv);
+            let t = seconds;
+            el.textContent = formatTimerText(t);
+            disableTimerIv = setInterval(() => {
+                t--;
+                if (t < 0) {
+                    clearInterval(disableTimerIv);
+                    el.textContent = 'Código expirado';
+                    return;
+                }
+                el.textContent = formatTimerText(t);
+            }, 1000);
+        }
 
-function startDisableResendCooldown(seconds) {
-  const btn = document.getElementById('disable-2fa-resend-btn');
-  if (!btn) return;
-  disableResendCooldown = true;
-  let t = seconds;
-  btn.textContent = `Reenviar (${t}s)`;
-  btn.disabled = true;
-  const iv = setInterval(() => {
-    t--;
-    if (t <= 0) {
-      clearInterval(iv);
-      disableResendCooldown = false;
-      btn.textContent = 'Reenviar código';
-      btn.disabled = false;
-      return;
-    }
-    btn.textContent = `Reenviar (${t}s)`;
-  }, 1000);
-}
+        function startDisableResendCooldown(seconds) {
+            const btn = document.getElementById('disable-2fa-resend-btn');
+            if (!btn) return;
+            disableResendCooldown = true;
+            let t = seconds;
+            btn.textContent = `Reenviar (${t}s)`;
+            btn.disabled = true;
+            const iv = setInterval(() => {
+                t--;
+                if (t <= 0) {
+                    clearInterval(iv);
+                    disableResendCooldown = false;
+                    btn.textContent = 'Reenviar código';
+                    btn.disabled = false;
+                    return;
+                }
+                btn.textContent = `Reenviar (${t}s)`;
+            }, 1000);
+        }
 
-async function disable2FAConfirm() {
-  const token = loadToken();
-  if (!token) {
-    notifications.show('Sessão inválida. Faça login novamente.', 'error');
-    setTimeout(() => window.location.href = '/login', 1200);
-    return;
-  }
+        async function disable2FAConfirm() {
+            const token = loadToken();
+            if (!token) {
+                notifications.show('Sessão inválida. Faça login novamente.', 'error');
+                setTimeout(() => window.location.href = '/login', 1200);
+                return;
+            }
 
-  const code = (document.getElementById('disable-2fa-code').value || '').trim();
-  if (!code) {
-    notifications.show('Digite o código recebido por e-mail.', 'error');
-    return;
-  }
+            const code = (document.getElementById('disable-2fa-code').value || '').trim();
+            if (!code) {
+                notifications.show('Digite o código recebido por e-mail.', 'error');
+                return;
+            }
 
-  try {
-    const res = await fetch('/api/2fa/disable/confirm', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify({ code })
-    });
+            try {
+                const res = await fetch('/api/2fa/disable/confirm', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ code })
+                });
 
-    const data = await res.json();
-    if (!res.ok) {
-      notifications.show(data.error || 'Código inválido.', 'error');
-      return;
-    }
+                const data = await res.json();
+                if (!res.ok) {
+                    notifications.show(data.error || 'Código inválido.', 'error');
+                    return;
+                }
 
-    notifications.show(data.message || '2FA desativado.', 'success');
+                notifications.show(data.message || '2FA desativado.', 'success');
 
-    // Atualiza UI: botão Ativar volta, botão Desativar some, painel some
-    const enableBtn = document.getElementById('enable-2fa');
+                // Atualiza UI: botão Ativar volta, botão Desativar some, painel some
+                const enableBtn = document.getElementById('enable-2fa');
+                const disableBtn = document.getElementById('disable-2fa');
+                if (enableBtn) {
+                    enableBtn.textContent = 'Ativar 2FA';
+                    enableBtn.disabled = false;
+                    enableBtn.classList.remove('btn-success');
+                    enableBtn.classList.add('btn-primary');
+                }
+                if (disableBtn) disableBtn.style.display = 'none';
+                document.getElementById('disable-2fa-panel').style.display = 'none';
+                document.getElementById('disable-2fa-code').value = '';
+
+                // opcional: atualizar status no backend / frontend (ex: reload account)
+                setTimeout(() => {
+                    check2FAStatus();
+                }, 500);
+
+            } catch (err) {
+                console.error('Erro disable2FAConfirm:', err);
+                notifications.show('Erro ao confirmar código.', 'error');
+            }
+        }
+
+        // liga eventos no carregamento da página
+        window.addEventListener('DOMContentLoaded', () => {
+            // ... seu init (já existente)
+            // Registrar handlers para o botão
+            const disableBtn = document.getElementById('disable-2fa');
+            if (disableBtn) {
+                disableBtn.addEventListener('click', async () => {
+                    // chama a rota que envia o código (se já estiver visível pode apenas mostrar painel)
+                    await disable2FASend();
+                });
+            }
+
+            const confirmBtn = document.getElementById('disable-2fa-confirm-btn');
+            if (confirmBtn) confirmBtn.addEventListener('click', disable2FAConfirm);
+
+            const resendBtn = document.getElementById('disable-2fa-resend-btn');
+            if (resendBtn) resendBtn.addEventListener('click', async () => {
+                if (disableResendCooldown) return;
+                await disable2FASend();
+            });
+        });
+
+// Adicionar ao DOMContentLoaded ou após criar o botão
+document.addEventListener('DOMContentLoaded', function() {
     const disableBtn = document.getElementById('disable-2fa');
-    if (enableBtn) {
-      enableBtn.textContent = 'Ativar 2FA';
-      enableBtn.disabled = false;
-      enableBtn.classList.remove('btn-success');
-      enableBtn.classList.add('btn-primary');
+    if (disableBtn) {
+        disableBtn.addEventListener('click', function() {
+            // Chamar a função de desativação
+            disable2FASend();
+        });
     }
-    if (disableBtn) disableBtn.style.display = 'none';
-    document.getElementById('disable-2fa-panel').style.display = 'none';
-    document.getElementById('disable-2fa-code').value = '';
-
-    // opcional: atualizar status no backend / frontend (ex: reload account)
-    setTimeout(() => {
-      check2FAStatus();
-    }, 500);
-
-  } catch (err) {
-    console.error('Erro disable2FAConfirm:', err);
-    notifications.show('Erro ao confirmar código.', 'error');
-  }
-}
-
-// liga eventos no carregamento da página
-window.addEventListener('DOMContentLoaded', () => {
-  // ... seu init (já existente)
-  // Registrar handlers para o botão
-  const disableBtn = document.getElementById('disable-2fa');
-  if (disableBtn) {
-    disableBtn.addEventListener('click', async () => {
-      // chama a rota que envia o código (se já estiver visível pode apenas mostrar painel)
-      await disable2FASend();
-    });
-  }
-
-  const confirmBtn = document.getElementById('disable-2fa-confirm-btn');
-  if (confirmBtn) confirmBtn.addEventListener('click', disable2FAConfirm);
-
-  const resendBtn = document.getElementById('disable-2fa-resend-btn');
-  if (resendBtn) resendBtn.addEventListener('click', async () => {
-    if (disableResendCooldown) return;
-    await disable2FASend();
-  });
 });
 
     </script>
@@ -1298,20 +1292,28 @@ window.addEventListener('DOMContentLoaded', () => {
                                                     </div>
 
 <div class="two-factor-actions">
-  <button id="enable-2fa" class="btn btn-big-primary" onclick="setup2FA()">Ativar 2FA</button>
-
-  <button id="disable-2fa" class="btn btn-big-danger" style="display:none; margin-left:8px;">Desativar 2FA</button>
+    <button id="enable-2fa" class="btn btn-big-primary" onclick="setup2FA()">Ativar 2FA</button>
+    
+    <!-- ADICIONAR ESTE BOTÃO -->
+    <button id="disable-2fa" class="btn btn-big-danger" style="display:none; margin-left:8px;">
+        Desativar 2FA
+    </button>
 </div>
-
-<!-- Bloco de confirmação por código (invisível até o envio) -->
-<div id="disable-2fa-panel" style="display:none; margin-top:12px;">
-  <div class="form-inline">
-    <input id="disable-2fa-code" type="text" class="form-control" placeholder="Código recebido por e-mail" maxlength="6" style="width:160px; margin-right:8px;">
-    <button id="disable-2fa-confirm-btn" class="btn btn-primary">Confirmar</button>
-    <button id="disable-2fa-resend-btn" class="btn btn-link" style="margin-left:8px;">Reenviar código</button>
-    <div id="disable-2fa-timer" style="margin-left:12px;color:#666"></div>
-  </div>
-</div>
+                                                    <!-- Bloco de confirmação por código (invisível até o envio) -->
+                                                    <div id="disable-2fa-panel" style="display:none; margin-top:12px;">
+                                                        <div class="form-inline">
+                                                            <input id="disable-2fa-code" type="text"
+                                                                class="form-control"
+                                                                placeholder="Código recebido por e-mail" maxlength="6"
+                                                                style="width:160px; margin-right:8px;">
+                                                            <button id="disable-2fa-confirm-btn"
+                                                                class="btn btn-primary">Confirmar</button>
+                                                            <button id="disable-2fa-resend-btn" class="btn btn-link"
+                                                                style="margin-left:8px;">Reenviar código</button>
+                                                            <div id="disable-2fa-timer"
+                                                                style="margin-left:12px;color:#666"></div>
+                                                        </div>
+                                                    </div>
 
                                                     <!-- Seção de verificação de código -->
                                                     <div id="verify-2fa-section" class="verification-section">
