@@ -4,14 +4,16 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   senha: { type: String, default: null }, 
-  twoFACode: { type: String, default: null },
-  twoFAExpires: { type: Date, default: null },
   provider: { type: String, default: "local" }, 
   googleId: { type: String, default: null },
   avatar: { type: String, default: null },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
-  saldo: { type: Number, default: 0 }
+  saldo: { type: Number, default: 0 },
+  // campos 2FA
+  twoFACode: { type: String, default: null },
+  twoFAExpires: { type: Date, default: null },
+  twoFAEnabled: { type: Boolean, default: false },
 }, { timestamps: true });
 
 /* 🔹 Histórico de Ações Realizadas */
