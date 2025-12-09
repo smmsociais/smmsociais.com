@@ -1,13 +1,15 @@
+// api/routes/twofa.js
 import express from "express";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { User } from "../schema.js";
 import connectDB from "../db.js";
 
 const router = express.Router();
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * @route POST /api/2fa/send
- * @desc Gera e envia código 2FA por e-mail
+ * @desc Gera e envia código 2FA por e-mail usando Resend
  */
 router.post("/send", async (req, res) => {
   try {
@@ -30,28 +32,19 @@ router.post("/send", async (req, res) => {
     user.twoFAExpires = expiration;
     await user.save();
 
-    // Configura o transporte de e-mail
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com", // ou outro provedor (ex: smtp.zoho.com)
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    // Envia o e-mail
-    await transporter.sendMail({
-      from: `"GanheSocial" <${process.env.EMAIL_USER}>`,
+    // Envia o e-mail com Resend
+    await resend.emails.send({
+      from: "SMMSociais <no-reply@smmsociais.com>", // o domínio deve estar verificado no Resend
       to: email,
       subject: "Seu código de verificação 2FA",
       html: `
-        <div style="font-family:sans-serif;max-width:400px">
-          <h2>🔐 Código de verificação</h2>
+        <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:20px;border:1px solid #eee;border-radius:10px;">
+          <h2 style="text-align:center;color:#4CAF50;">🔐 Verificação em Duas Etapas</h2>
           <p>Use o código abaixo para confirmar seu login:</p>
-          <h1 style="text-align:center;font-size:32px;">${code}</h1>
-          <p style="color:#777;">Válido por 5 minutos.</p>
+          <h1 style="text-align:center;font-size:36px;letter-spacing:4px;">${code}</h1>
+          <p style="text-align:center;color:#777;">Válido por 5 minutos.</p>
+          <hr>
+          <p style="font-size:12px;color:#999;text-align:center;">Este e-mail foi enviado automaticamente por smmsociais.com</p>
         </div>
       `,
     });
@@ -79,12 +72,15 @@ router.post("/verify", async (req, res) => {
     if (!user || !user.twoFACode)
       return res.status(400).json({ error: "Código 2FA não encontrado." });
 
+    // Verifica se o código expirou
     if (Date.now() > user.twoFAExpires) {
       user.twoFACode = null;
+      user.twoFAExpires = null;
       await user.save();
       return res.status(400).json({ error: "Código expirado. Solicite um novo." });
     }
 
+    // Verifica se o código é válido
     if (String(user.twoFACode) !== String(code)) {
       return res.status(401).json({ error: "Código incorreto." });
     }
