@@ -461,45 +461,48 @@
         }
 
         // Função para carregar dados da conta
-        async function loadAccountData() {
-            const token = loadToken();
+async function loadAccountData() {
+  const token = loadToken();
 
-            if (!token) {
-                console.error("Token não encontrado.");
-                setTimeout(() => {
-                    window.location.href = "/login";
-                }, 2000);
-                return;
-            }
+  if (!token) {
+    console.error("Token não encontrado.");
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 2000);
+    return;
+  }
 
-            try {
-                const response = await fetch('https://smmsociais.com/api/account', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+  try {
+    const response = await fetch('https://smmsociais.com/api/account', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erro ao carregar dados');
-                }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao carregar dados');
+    }
 
-                const accountData = await response.json();
+    const accountData = await response.json();
 
-                // Preencher campos do formulário
-                document.getElementById('email').value = accountData.email || '';
-                document.getElementById('current-email').value = accountData.email || '';
+    // Preencher campos do formulário
+    document.getElementById('email').value = accountData.email || '';
+    document.getElementById('current-email').value = accountData.email || '';
 
-                return accountData;
+    // --- << CHAMADA ADICIONAL PARA ATUALIZAR O BOTÃO >>
+    // chama check2FAStatus garantindo que o email já está preenchido
+    check2FAStatus();
 
-            } catch (error) {
-                console.error('Erro:', error);
-                return {};
-            }
-        }
+    return accountData;
 
+  } catch (error) {
+    console.error('Erro:', error);
+    return {};
+  }
+}
         // Função para atualizar dados da conta (sem senha)
         async function updateAccountData(updateData) {
             const token = loadToken();
@@ -752,21 +755,63 @@
         }
 
 async function check2FAStatus() {
-    const email = document.getElementById('email').value;
     const enable2FABtn = document.getElementById('enable-2fa');
 
-    if (!email) return;
+    // Tenta pegar email do input (caso já esteja preenchido)
+    const emailInput = document.getElementById('email');
+    const email = emailInput ? emailInput.value : "";
 
     try {
-        const response = await fetch("/api/2fa/status", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
+        // Se já tem email, usa a rota /api/2fa/status (mantive compatibilidade)
+        if (email) {
+            const response = await fetch("/api/2fa/status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+            if (data.success && data.twoFAEnabled) {
+                enable2FABtn.textContent = '2FA Ativo';
+                enable2FABtn.disabled = true;
+                enable2FABtn.classList.remove('btn-primary');
+                enable2FABtn.classList.add('btn-success');
+                return;
+            }
+        }
+
+        // Se não teve email ou a rota /status não informou 'enabled',
+        // tenta recuperar os dados da conta com o token (mais confiável).
+        const token = loadToken();
+        if (!token) {
+            // sem token não conseguimos mais; mantém como Ativar 2FA
+            enable2FABtn.textContent = 'Ativar 2FA';
+            enable2FABtn.disabled = false;
+            enable2FABtn.classList.remove('btn-success');
+            enable2FABtn.classList.add('btn-primary');
+            return;
+        }
+
+        const resp = await fetch('https://smmsociais.com/api/account', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
         });
 
-        const data = await response.json();
+        if (!resp.ok) {
+            enable2FABtn.textContent = 'Ativar 2FA';
+            enable2FABtn.disabled = false;
+            enable2FABtn.classList.remove('btn-success');
+            enable2FABtn.classList.add('btn-primary');
+            return;
+        }
 
-        if (data.success && data.twoFAEnabled) {
+        const account = await resp.json();
+
+        // Se a API /api/account retornar twoFAEnabled, usamos isso:
+        if (account.twoFAEnabled) {
             enable2FABtn.textContent = '2FA Ativo';
             enable2FABtn.disabled = true;
             enable2FABtn.classList.remove('btn-primary');
@@ -777,24 +822,34 @@ async function check2FAStatus() {
             enable2FABtn.classList.remove('btn-success');
             enable2FABtn.classList.add('btn-primary');
         }
+
     } catch (err) {
         console.error('Erro ao verificar status do 2FA:', err);
+        // fallback neutro
+        enable2FABtn.textContent = 'Ativar 2FA';
+        enable2FABtn.disabled = false;
+        enable2FABtn.classList.remove('btn-success');
+        enable2FABtn.classList.add('btn-primary');
     }
 }
 
-// Executa ao carregar a página
-window.addEventListener('DOMContentLoaded', check2FAStatus);
-
-// Função para preencher e ocultar campos de entrada
-function fillAndHideInput() {
-    try {
-        // Esta função pode estar vazia se não for mais necessária
-        // Ou pode conter lógica para manipular campos específicos
-        console.log('fillAndHideInput executada');
-    } catch (error) {
-        console.warn('Erro em fillAndHideInput:', error);
-    }
-}
+        // Executa ao carregar a página
+window.addEventListener('DOMContentLoaded', () => {
+    initNotificationSystem(); // se usar notificações
+    loadUserBalance();
+    loadAccountData(); // loadAccountData já chama check2FAStatus() se você aplicou a solução rápida
+    // ou, se preferir confiar na versão robusta:
+    check2FAStatus();
+});
+        // Função para preencher e ocultar campos de entrada
+        function fillAndHideInput() {
+            try {
+                // Esta função pode estar vazia se não for mais necessária
+                // Ou pode conter lógica para manipular campos específicos
+            } catch (error) {
+                console.warn('Erro em fillAndHideInput:', error);
+            }
+        }
 
     </script>
 
