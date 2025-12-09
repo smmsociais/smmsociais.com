@@ -484,17 +484,25 @@ router.get("/orders", async (req, res) => {
     await connectDB();
 
   try {
-    const { authorization } = req.headers;
-    if (!authorization || !authorization.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Token não fornecido" });
+   const authHeader = req.headers.authorization || "";
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Não autorizado." });
     }
 
-    const token = authorization.split(" ")[1];
-    const usuario = await User.findOne({ token });
+    const token = authHeader.split(" ")[1].trim();
 
-    if (!usuario) {
-      return res.status(401).json({ error: "Token inválido ou usuário não encontrado!" });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: "Token inválido ou expirado." });
     }
+
+    const userId = decoded.id || decoded.userId || decoded.sub;
+    if (!userId) return res.status(401).json({ error: "Token inválido (id ausente)." });
+
+    const usuario = await User.findById(userId);
+    if (!usuario) return res.status(404).json({ error: "Usuário não encontrado." });
 
     // 🔄 Atualizar status automaticamente
     await Action.updateMany(
