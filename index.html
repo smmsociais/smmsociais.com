@@ -1169,7 +1169,7 @@ document.getElementById('loginForm').addEventListener('submit', async function (
                 const statusData = await statusResp.json();
                 console.log('[login] statusData fallback:', statusData);
                 if (statusData.twoFAEnabled) {
-                    window.location.href = '/2fa.html';
+                    window.location.href = '/2fa';
                     return;
                 }
             } else {
