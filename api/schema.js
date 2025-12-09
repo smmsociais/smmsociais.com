@@ -2,9 +2,10 @@ import mongoose from "mongoose";
 
 /* 🔹 Schema do Usuário */
 const userSchema = new mongoose.Schema({
-  nome: { type: String },
   email: { type: String, required: true, unique: true },
   senha: { type: String, default: null }, 
+  twoFACode: { type: String, default: null },
+  twoFAExpires: { type: Date, default: null },
   provider: { type: String, default: "local" }, 
   googleId: { type: String, default: null },
   avatar: { type: String, default: null },
