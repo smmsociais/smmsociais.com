@@ -1101,38 +1101,84 @@
             return res;
         }
 
-        // ---------- Login form ----------
-        document.getElementById('loginForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
+document.getElementById('loginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: username, senha: password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            const msg = data.error || data.message || 'Erro ao logar';
+            alert('Erro: ' + msg);
+            return;
+        }
+
+        if (!data.token) {
+            // Se o backend optar por retornar require2FA em vez do token, trate aqui.
+            alert('Resposta inesperada do servidor. Tente novamente.');
+            return;
+        }
+
+        // 1) salva token (usado por apiFetch)
+        localStorage.setItem('token', data.token);
+
+        // 2) tenta obter info da conta (rota /api/account) para checar twoFAEnabled
+        try {
+            const accountResp = await apiFetch('/api/account', { method: 'GET' });
+            if (accountResp.ok) {
+                const accountData = await accountResp.json();
+                // Se backend retornar explicitamente twoFAEnabled
+                if (accountData.twoFAEnabled) {
+                    // redireciona para a página de 2FA para completar a verificação
+                    window.location.href = '/2fa.html';
+                    return;
+                } else {
+                    // sem 2FA -> painel
+                    window.location.href = '/painel';
+                    return;
+                }
+            } else {
+                // fallback: se /api/account deu erro (mas token salvo), tentar /api/2fa/status
+                throw new Error('Não foi possível recuperar account via token');
+            }
+        } catch (err) {
+            // 3) Fallback: chamar /api/2fa/status com o email (rota que você já tem)
             try {
-                const response = await fetch('/api/login', {
+                const statusResp = await fetch('/api/2fa/status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: username, senha: password })
+                    body: JSON.stringify({ email: username })
                 });
-
-                const data = await response.json();
-
-                if (response.ok && data.token) {
-                    // SALVA o token puro (sem aspas, sem JSON.stringify)
-                    localStorage.setItem('token', data.token);
-
-                    // redireciona para painel
-                    window.location.href = '/painel';
+                const statusData = await statusResp.json();
+                if (statusResp.ok && statusData.twoFAEnabled) {
+                    window.location.href = '/2fa.html';
+                    return;
                 } else {
-                    // mostra erro retornado pelo backend
-                    const msg = data.error || data.message || 'Erro ao logar';
-                    alert('Erro: ' + msg);
+                    window.location.href = '/painel';
+                    return;
                 }
-            } catch (error) {
-                console.error('Erro no login:', error);
-                alert('Erro ao conectar.');
+            } catch (err2) {
+                console.error('Erro ao verificar status 2FA (fallback):', err2);
+                // Se tudo falhar, assume sem 2FA (mais permissivo) ou force logout
+                window.location.href = '/painel';
+                return;
             }
-        });
+        }
+
+    } catch (error) {
+        console.error('Erro no login:', error);
+        alert('Erro ao conectar.');
+    }
+});
 
         function loginWithGoogle() {
             window.location.href = '/api/auth/google';
