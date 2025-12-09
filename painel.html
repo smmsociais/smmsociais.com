@@ -1201,7 +1201,7 @@
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${SMM_API_KEY}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(formData)
