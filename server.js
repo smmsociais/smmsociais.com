@@ -3,6 +3,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import apiRoutes from "./api/handler.js";
+import twoFARoutes from "./routes/twofa.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,17 +11,12 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-// 1) API
 app.use("/api", apiRoutes);
 
-// -----------------------------------------------
-// 2) ARQUIVOS ESTÁTICOS
-// -----------------------------------------------
+app.use("/api/2fa", twoFARoutes);
+
 app.use(express.static(__dirname));
 
-// -----------------------------------------------
-// 3) ROTAS HTML DEFINIDAS (igual ao vercel.json)
-// -----------------------------------------------
 const htmlPages = {
   "/": "index.html",
   "/painel": "painel.html",
@@ -53,15 +49,9 @@ Object.entries(htmlPages).forEach(([route, file]) => {
   });
 });
 
-// -----------------------------------------------
-// 4) CATCH-ALL (SPA) → devolve index.html
-// -----------------------------------------------
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// -----------------------------------------------
-// 5) INICIA SERVIDOR
-// -----------------------------------------------
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log("Servidor rodando na porta " + PORT));
