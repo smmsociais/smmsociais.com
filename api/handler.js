@@ -230,12 +230,13 @@ router.put('/account', async (req, res) => {
 
     // Rota: /api/login (POST)
 router.post("/login", async (req, res) => {
-        try {
-            const { email, senha } = req.body;
+  try {
+    await connectDB(); // <- garante conexão antes de qualquer query
 
-            if (!email || !senha) {
-                return res.status(400).json({ error: "E-mail e senha são obrigatórios!" });
-            }
+    const { email, senha } = req.body;
+    if (!email || !senha) {
+      return res.status(400).json({ error: "E-mail e senha são obrigatórios!" });
+    }
 
             const usuario = await User.findOne({ email });
 
