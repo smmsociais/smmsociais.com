@@ -485,48 +485,96 @@
                     autoSelectFirstService(services);
                 }
             }
-
-            // Atualizar categorias com base nos serviços
-            updateCategories(services);
-
-            // Configurar event listeners
-            setupServiceEventListeners(services);
+    // Configurar event listeners PRIMEIRO
+    setupServiceEventListeners(services);
+    
+    if (serviceIdFromUrl) {
+        // Usar setTimeout para garantir que tudo esteja configurado
+        setTimeout(() => {
+            selectServiceById(serviceIdFromUrl, services);
+        }, 100);
+    } else {
+        // Preencher automaticamente com o primeiro serviço se não houver parâmetro
+        if (services.length > 0) {
+            setTimeout(() => {
+                autoSelectFirstService(services);
+            }, 100);
         }
+    }
+    
+    // Atualizar categorias
+    updateCategories(services);
+}
 
         // Função para selecionar serviço por ID
-        function selectServiceById(serviceId, services) {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect) return;
+function selectServiceById(serviceId, services) {
+    const serviceSelect = document.getElementById('orderform-service');
+    if (!serviceSelect) return;
 
-            // Encontrar o serviço pelo ID
-            const service = services.find(s => s.id_servico == serviceId);
+    // Encontrar o serviço pelo ID
+    const service = services.find(s => s.id_servico == serviceId);
 
-            if (service) {
-                // Encontrar a opção correspondente no select
-                for (let i = 0; i < serviceSelect.options.length; i++) {
-                    if (serviceSelect.options[i].value == serviceId) {
-                        serviceSelect.selectedIndex = i;
-
-                        // Disparar o evento change para atualizar todos os campos
-                        const event = new Event('change');
-                        serviceSelect.dispatchEvent(event);
-
-                        // Garantir que os campos sejam exibidos
-                        showServiceFields();
-
-                        console.log(`Serviço selecionado automaticamente: ${service.nome} (ID: ${serviceId})`);
-                        return;
-                    }
+    if (service) {
+        // Aguardar um ciclo para garantir que o DOM esteja pronto
+        setTimeout(() => {
+            // Encontrar a opção correspondente no select
+            for (let i = 0; i < serviceSelect.options.length; i++) {
+                if (serviceSelect.options[i].value == serviceId) {
+                    serviceSelect.selectedIndex = i;
+                    
+                    // Disparar o evento change para atualizar todos os campos
+                    const event = new Event('change', { bubbles: true });
+                    serviceSelect.dispatchEvent(event);
+                    
+                    // Garantir que a categoria correspondente também seja selecionada
+                    selectCategoryForService(service.categoria);
+                    
+                    // Garantir que os campos sejam exibidos
+                    showServiceFields();
+                    
+                    // Forçar atualização do campo de valor
+                    updateChargeFieldFromSelectedService();
+                    
+                    console.log(`✅ Serviço selecionado automaticamente: ${service.nome} (ID: ${serviceId})`);
+                    return;
                 }
             }
-
-            // Se não encontrou o serviço, usar o primeiro disponível
-            console.warn(`Serviço com ID ${serviceId} não encontrado. Selecionando primeiro serviço disponível.`);
-            if (services.length > 0) {
-                autoSelectFirstService(services);
-            }
+        }, 50); // Pequeno delay para garantir renderização
+    } else {
+        console.warn(`⚠️ Serviço com ID ${serviceId} não encontrado.`);
+    }
+    
+    function selectCategoryForService(categoryName) {
+    const categorySelect = document.getElementById('orderform-category');
+    if (!categorySelect || !categoryName) return;
+    
+    for (let i = 0; i < categorySelect.options.length; i++) {
+        if (categorySelect.options[i].value === categoryName) {
+            categorySelect.selectedIndex = i;
+            
+            // Disparar evento change na categoria
+            const event = new Event('change', { bubbles: true });
+            categorySelect.dispatchEvent(event);
+            
+            console.log(`✅ Categoria selecionada: ${categoryName}`);
+            return;
         }
+    }
+}
+}
 
+function updateChargeFieldFromSelectedService() {
+    const serviceSelect = document.getElementById('orderform-service');
+    if (!serviceSelect || serviceSelect.selectedIndex <= 0) return;
+    
+    const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+    const price = selectedOption.getAttribute('data-price');
+    const minQuantity = selectedOption.getAttribute('data-min');
+    
+    if (price && minQuantity) {
+        updateChargeField(price, minQuantity);
+    }
+}
         // Função para preencher automaticamente o primeiro serviço
         function autoSelectFirstService(services) {
             const serviceSelect = document.getElementById('orderform-service');
@@ -544,15 +592,36 @@
         }
 
         // Função para mostrar campos do serviço
-        function showServiceFields() {
-            const linkField = document.getElementById('link_field');
-            const quantityField = document.getElementById('quantity_field');
-            const serviceDescription = document.getElementById('service_description');
-
-            if (linkField) linkField.classList.remove('hidden');
-            if (quantityField) quantityField.classList.remove('hidden');
-            if (serviceDescription) serviceDescription.classList.remove('hidden');
+function showServiceFields() {
+    const linkField = document.getElementById('link_field');
+    const quantityField = document.getElementById('quantity_field');
+    const serviceDescription = document.getElementById('service_description');
+    
+    if (linkField) {
+        linkField.classList.remove('hidden');
+        linkField.style.display = 'block';
+    }
+    
+    if (quantityField) {
+        quantityField.classList.remove('hidden');
+        quantityField.style.display = 'block';
+        
+        // Preencher com valor mínimo
+        const serviceSelect = document.getElementById('orderform-service');
+        if (serviceSelect && serviceSelect.selectedIndex > 0) {
+            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+            const minQuantity = selectedOption.getAttribute('data-min');
+            if (minQuantity && !quantityField.value) {
+                quantityField.value = minQuantity;
+            }
         }
+    }
+    
+    if (serviceDescription) {
+        serviceDescription.classList.remove('hidden');
+        serviceDescription.style.display = 'block';
+    }
+}
 
         // helper: procura ícone/emoji no map categoryImages (case-insensitive)
         function getCategoryImageForName(name) {
@@ -2132,16 +2201,27 @@
             const saldoPromise = loadUserBalance();
             const servicesPromise = loadServices();
 
-            Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
-                .then(() => {
-                    document.body.classList.add('loaded');
-
-                    // Inicializar campos com valores padrão após um pequeno delay
-                    // para garantir que o DOM esteja completamente renderizado
-                    setTimeout(() => {
-                        initializeDefaultFields();
-                    }, 100);
-                })
+Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
+    .then(() => {
+        document.body.classList.add('loaded');
+        
+        // Inicializar após um delay maior para garantir DOM
+        setTimeout(() => {
+            // Forçar verificação de parâmetros da URL
+            const urlParams = getUrlParams();
+            const serviceIdFromUrl = urlParams.service;
+            
+            if (serviceIdFromUrl) {
+                console.log(`🔗 Parâmetro de serviço detectado na URL: ${serviceIdFromUrl}`);
+                // Re-selecionar o serviço (já deve estar selecionado, mas garantir)
+                const services = window._services || [];
+                selectServiceById(serviceIdFromUrl, services);
+            }
+            
+            // Garantir que campos estejam visíveis
+            initializeDefaultFields();
+        }, 200);
+    })
                 .catch(err => {
                     // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
                     console.error('Erro ao carregar dados principais:', err);
