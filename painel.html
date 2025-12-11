@@ -1418,23 +1418,32 @@
                     await loadUserBalance();
                 }
 
-                // --- NOTIFICAÇÃO CORRIGIDA ---
-                let idFinal = null;
+let idFinal = null;
 
-                // 1) Caso API retorne direto id_acao_smm (1 pedido)
-                if (result.id_acao_smm) {
-                    idFinal = result.id_acao_smm;
-                }
-                // 2) Caso a API use um array "pedidos"
-                else if (result.pedidos && result.pedidos.length > 0) {
-                    const p = result.pedidos[0];
-                    idFinal = p.id_acao_smm || p.id_pedido || p._id;
-                }
-                // 3) Fallback final
-                else {
-                    idFinal = result.id_pedido || result._id || "N/D";
-                }
+// PRIORIDADE 1 — ID real da ação SMM
+if (
+    result.resultadosEnvio &&
+    result.resultadosEnvio[0] &&
+    result.resultadosEnvio[0].json &&
+    result.resultadosEnvio[0].json.id_acao_smm
+) {
+    idFinal = result.resultadosEnvio[0].json.id_acao_smm;
+}
 
+// PRIORIDADE 2 — Caso API um dia retorne id_acao_smm direto
+else if (result.id_acao_smm) {
+    idFinal = result.id_acao_smm;
+}
+
+// PRIORIDADE 3 — fallback (id interno do sistema)
+else if (result.pedidos && result.pedidos.length > 0) {
+    idFinal = result.pedidos[0].id_pedido;
+}
+
+// Último recurso
+else {
+    idFinal = "N/D";
+}
                 // Exibir
                 showNotification(`Pedido criado com sucesso! ID: ${idFinal}`, 'success');
                 showSuccessMessage(`Pedido enviado com sucesso! ID: ${idFinal}`);
