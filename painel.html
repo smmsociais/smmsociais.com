@@ -1421,18 +1421,28 @@ if (result && typeof result.newSaldo !== 'undefined') {
 if (result.pedidos && Array.isArray(result.pedidos)) {
   if (result.pedidos.length === 1) {
     const pedido = result.pedidos[0];
-    showNotification(`Pedido criado com sucesso! ID: ${pedido.id_pedido}`, 'success');
-    showSuccessMessage(`Pedido enviado com sucesso! ID: ${pedido.id_pedido}`);
+    const idExibido = pedido.id_acao_smm || pedido.id_pedido || pedido._id;
+    showNotification(`Pedido criado com sucesso! ID: ${idExibido}`, 'success');
+    showSuccessMessage(`Pedido enviado com sucesso! ID: ${idExibido}`);
   } else {
-    const ids = result.pedidos.map(p => p.id_pedido).join(', ');
+    const ids = result.pedidos.map(p =>
+      p.id_acao_smm || p.id_pedido || p._id
+    ).join(', ');
     showNotification(`${result.pedidos.length} pedidos criados com sucesso!`, 'success');
     showSuccessMessage(`${result.pedidos.length} pedidos enviados! IDs: ${ids}`);
   }
-} else if (result.id_pedido) {
-  // Fallback para compatibilidade
+} 
+else if (result.id_acao_smm) {
+  // Sucesso direto (1 ação)
+  showNotification(`Pedido criado com sucesso! ID: ${result.id_acao_smm}`, 'success');
+  showSuccessMessage(`Pedido enviado com sucesso! ID: ${result.id_acao_smm}`);
+}
+else if (result.id_pedido) {
+  // Fallback compatível
   showNotification(`Pedido criado com sucesso! ID: ${result.id_pedido}`, 'success');
   showSuccessMessage(`Pedido enviado com sucesso! ID: ${result.id_pedido}`);
-} else {
+}
+else {
   showNotification('Pedido criado com sucesso!', 'success');
   showSuccessMessage('Pedido enviado com sucesso!');
 }
