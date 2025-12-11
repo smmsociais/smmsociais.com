@@ -1095,16 +1095,6 @@ function appendServiceOption(serviceSelect, service) {
   option.setAttribute('data-tipo', service.tipo);
   serviceSelect.appendChild(option);
 
-            // tentar selecionar pending (se existir e estiver dentro da categoria filtrada)
-            if (!attemptSelectPendingService()) {
-                // se pending não correspondia a essa categoria, e ainda há services, seleciona primeiro
-                if (filteredServices.length > 0) {
-                    autoSelectFirstService(filteredServices);
-                } else {
-                    // se não há serviços nessa categoria, mantém apenas a opção padrão
-                    // opcional: mostrar mensagem "nenhum serviço nessa categoria"
-                }
-            }
         }
 
         // Função para lidar com mudança de serviço
