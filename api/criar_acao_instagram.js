@@ -3,7 +3,6 @@ import connectDB from "./db.js";
 import { User, Action, Servico } from './schema.js';
 import mongoose from "mongoose";
 import axios from "axios";
-import crypto from "crypto";
 
 const SMM_API_KEY = process.env.SMM_API_KEY;
 const GANHESOCIAL_URL = process.env.GANHESOCIAL_URL || "https://ganhesocialtest.com/api/smm_acao";
@@ -17,50 +16,22 @@ const rapidapiCache = global.__rapidapi_cache__;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-/* ---------------------------
-   Helpers para id_acao_smm
-   --------------------------- */
-
-// gera string numérica com exatamente `length` dígitos (pode começar com 0)
-function generateRandomNumericString(length = 10) {
-  // tenta usar crypto.randomInt para melhor entropia
-  try {
-    const max = 10 ** length;
-    const n = crypto.randomInt(0, max); // Node suporta até limites razoáveis
-    return String(n).padStart(length, "0");
-  } catch (e) {
-    // fallback para Math.random() se crypto falhar por algum motivo
-    const n = Math.floor(Math.random() * Math.pow(10, length));
-    return String(n).padStart(length, "0");
-  }
-}
-
-// tenta gerar um id único (verificando no collection Action). Usa session opcional
-async function generateUniqueIdAcaoSmm({ length = 10, tries = 8, session = null } = {}) {
-  for (let attempt = 0; attempt < tries; attempt++) {
-    const candidate = generateRandomNumericString(length);
-    // verificar existência no banco (com session quando fornecida)
-    const query = Action.findOne({ id_acao_smm: candidate });
-    if (session) query.session(session);
-    const exists = await query.exec();
-    if (!exists) return candidate;
-  }
-  throw new Error("Não foi possível gerar id_acao_smm único após várias tentativas");
-}
-
-/* ---------------------------
-   Funções Instagram / SMM
-   (mantive suas funções originais sem alteração)
-   --------------------------- */
-
+// FUNÇÃO ADICIONADA: Normaliza qualquer formato de username/link para URL completa do Instagram
 function normalizarLinkInstagram(link) {
   if (!link || typeof link !== "string") return null;
+  
   let input = link.trim();
+  
+  // Se já é uma URL completa do Instagram, retorna como está
   if (input.startsWith('https://www.instagram.com/') || input.startsWith('https://instagram.com/')) {
     return input;
   }
+  
+  // Extrai o username de qualquer formato
   const username = extractInstagramUsernameFromLink(input);
   if (!username) return null;
+  
+  // Retorna a URL completa formatada
   return `https://www.instagram.com/${username}`;
 }
 
@@ -243,7 +214,7 @@ async function enviarParaGanheSocial(payload) {
 // Função para buscar serviço no banco de dados
 async function buscarServico(id_servico) {
   if (!id_servico) return null;
-
+  
   try {
     const servico = await Servico.findOne({ id_servico: String(id_servico) });
     return servico;
@@ -256,38 +227,53 @@ async function buscarServico(id_servico) {
 // Função para calcular valor baseado no preco_1000 do serviço
 function calcularValor(quantidade, preco_1000) {
   if (!preco_1000 || preco_1000 <= 0) {
-    return (quantidade * 0.001).toFixed(2);
+    // Preço padrão caso não tenha preco_1000 definido
+    return (quantidade * 0.001).toFixed(2); // R$ 0,001 por unidade
   }
+  
+  // Calcula: (quantidade / 1000) * preco_1000
   const valor = (quantidade / 1000) * preco_1000;
-  return Math.max(valor, 0.01).toFixed(2);
+  return Math.max(valor, 0.01).toFixed(2); // Mínimo de R$ 0,01
 }
 
 // Helpers de parsing para pedidos em massa
 function parseBulkLines(bulkString) {
+  // aceita linhas no formato: ID_SERVICO LINK QUANTIDADE (separados por espaços)
   if (!bulkString || typeof bulkString !== 'string') return [];
   const lines = bulkString.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const items = [];
-
+  
   for (const line of lines) {
+    // Dividir por espaços, mas considerar que a URL pode conter espaços
     const parts = line.split(/\s+/).filter(part => part.trim());
+    
     if (parts.length < 3) {
       console.warn(`Linha ignorada (formato inválido): ${line}`);
       continue;
     }
+    
+    // O ID do serviço é a primeira parte
     const id_servico = parts[0];
+    
+    // A quantidade é a última parte
     const quantidade = parts[parts.length - 1];
+    
+    // O link é tudo que está no meio
     const link = parts.slice(1, parts.length - 1).join(' ');
+    
+    // Validar se quantidade é número
     if (isNaN(quantidade) || parseInt(quantidade) < 10) {
       console.warn(`Linha ignorada (quantidade inválida): ${line}`);
       continue;
     }
-    items.push({
-      id_servico: id_servico || undefined,
-      link: link || undefined,
-      quantidade: parseInt(quantidade)
+    
+    items.push({ 
+      id_servico: id_servico || undefined, 
+      link: link || undefined, 
+      quantidade: parseInt(quantidade) 
     });
   }
-
+  
   return items;
 }
 
@@ -330,6 +316,7 @@ const handler = async (req, res) => {
     const body = req.body || {};
     const { bulk, userId: bodyUserId } = body;
 
+    // se chamada interna, usa userId do body
     if (isInternalCall) {
       if (!bodyUserId) {
         return res.status(400).json({ error: "userId obrigatório para chamadas internas" });
@@ -347,15 +334,16 @@ const handler = async (req, res) => {
       items = parseBulkLines(bulk);
       if (items.length === 0) return res.status(400).json({ error: "Formato de bulk inválido. Use: ID_SERVICO link quantidade (uma linha por pedido, separado por espaços)" });
     } else {
+      // tentativa de ler um pedido singular (compatível com rota original)
       const { id_servico, link, quantidade } = body;
-      items = [{
-        id_servico: id_servico ? String(id_servico) : undefined,
-        link: link ? String(link) : undefined,
-        quantidade: quantidade
+      items = [{ 
+        id_servico: id_servico ? String(id_servico) : undefined, 
+        link: link ? String(link) : undefined, 
+        quantidade: quantidade 
       }];
     }
 
-    // Normalizar links
+    // AJUSTE PRINCIPAL: Normalizar todos os links para o formato padrão do Instagram
     console.log("🔗 Normalizando links do Instagram...");
     for (const it of items) {
       if (it.link) {
@@ -382,12 +370,14 @@ const handler = async (req, res) => {
     // Buscar informações dos serviços e calcular valores
     for (const it of items) {
       try {
+        // Buscar serviço no banco de dados
         const servico = await buscarServico(it.id_servico);
-
+        
         if (!servico) {
           throw new Error(`Serviço com ID ${it.id_servico} não encontrado`);
         }
 
+        // Validar quantidade mínima e máxima do serviço
         if (it.quantidade < (servico.minimo || 10)) {
           throw new Error(`Quantidade mínima para este serviço é ${servico.minimo || 10}`);
         }
@@ -396,22 +386,25 @@ const handler = async (req, res) => {
           throw new Error(`Quantidade máxima para este serviço é ${servico.maximo}`);
         }
 
+        // Definir tipo e calcular valor baseado no preco_1000
         it.tipo = servico.tipo || 'seguidores';
         it.valor = parseFloat(calcularValor(it.quantidade, servico.preco_1000));
         it.servico_nome = servico.nome;
-
+        
         console.log(`💰 Pedido calculado: ID=${it.id_servico}, Tipo=${it.tipo}, Quantidade=${it.quantidade}, Preço_1000=R$ ${servico.preco_1000}, Valor=R$ ${it.valor}`);
-
+        
+        // Obter contagem inicial
         it.contagemInicial = await getInitialCountInstagram(it.link || "", it.tipo);
         console.log("📥 contagemInicial obtida (instagram):", it.contagemInicial, "for", it.link);
-
+        
       } catch (e) {
         console.warn("⚠ Erro ao processar pedido:", e?.message || e);
+        // Rejeitar o pedido específico em caso de erro
         throw new Error(`Erro no pedido ID ${it.id_servico}: ${e.message}`);
       }
     }
 
-    // Validar quantidade mínima geral
+    // Validar quantidade mínima geral (após validações individuais)
     for (const it of items) {
       if (!Number.isInteger(it.quantidade) || it.quantidade < 10 || it.quantidade > 10000000000) {
         return res.status(400).json({ error: `Quantidade inválida para o pedido (id_servico=${it.id_servico || ''}, quantidade=${it.quantidade}). A quantidade mínima é 10.` });
@@ -425,15 +418,13 @@ const handler = async (req, res) => {
 
       console.log("💳 Saldo do usuário (antes do débito):", usuario.saldo);
 
+      // calcular custo total a debitar
       const custoTotal = items.reduce((acc, it) => acc + Number(it.valor || 0), 0);
       console.log("💰 Custo total a ser debitado:", custoTotal);
 
-      // criar documentos Action (um por linha) com status pendente e gerando id_acao_smm único
+      // criar documentos Action (um por linha) com status pendente
       const createdActions = [];
       for (const it of items) {
-        // gerar id_acao_smm único usando a sessão (para coerência com transação)
-        const id_acao_smm = await generateUniqueIdAcaoSmm({ length: 10, tries: 12, session });
-
         const novaAcao = new Action({
           userId: usuario._id,
           id_servico: it.id_servico ? String(it.id_servico) : undefined,
@@ -443,11 +434,10 @@ const handler = async (req, res) => {
           valor: Number(it.valor),
           quantidade: it.quantidade,
           validadas: 0,
-          link: it.link,
+          link: it.link, // ← Agora sempre no formato normalizado
           status: "pendente",
           dataCriacao: new Date(),
-          contagemInicial: it.contagemInicial,
-          id_acao_smm // <-- salvo já aqui
+          contagemInicial: it.contagemInicial
         });
         await novaAcao.save({ session });
         createdActions.push(novaAcao);
@@ -488,56 +478,48 @@ const handler = async (req, res) => {
         if (tipoLower === "seguidores" || tipoLower === "seguir") tipo_acao = "Seguir";
         else if (tipoLower === "curtidas" || tipoLower === "curtir") tipo_acao = "Curtir";
 
-        // Agora enviamos também o id_acao_smm no payload (gerado e salvo acima)
         const payloadGanheSocial = {
           tipo_acao,
           nome_usuario,
           quantidade_pontos,
           quantidade: ac.quantidade,
           valor: ac.valor,
-          url_dir: ac.link,
+          url_dir: ac.link, // ← Agora sempre no formato normalizado
           id_pedido,
-          id_acao_smm: ac.id_acao_smm, // <-- enviado para ganhesocial
           meta: {
             contagemInicial: ac.contagemInicial,
           }
         };
 
         try {
-          console.log("📤 Enviando ação para ganhesocial ->", GANHESOCIAL_URL, "id_pedido:", id_pedido, "id_acao_smm:", ac.id_acao_smm);
+          console.log("📤 Enviando ação para ganhesocial ->", GANHESOCIAL_URL, "id_pedido:", id_pedido);
           const sendResult = await enviarParaGanheSocial(payloadGanheSocial);
           console.log("📩 Resposta ganhesocial:", sendResult.status, sendResult.statusText);
-
-          // Se ganhesocial retornar outro id_acao_smm, logamos e, se desejar, atualizamos:
-          if (sendResult.json && sendResult.json.id_acao_smm && sendResult.json.id_acao_smm !== ac.id_acao_smm) {
-            console.warn(`⚠ GanheSocial retornou id_acao_smm diferente. local=${ac.id_acao_smm} remote=${sendResult.json.id_acao_smm}`);
+          if (sendResult.json && sendResult.json.id_acao_smm) {
             try {
-              // opcional: você pode optar por sobrescrever o local com o remote,
-              // aqui apenas registramos no banco o valor retornado (descomente se quiser sobrescrever)
-              // await Action.findByIdAndUpdate(id_pedido, { id_acao_smm: sendResult.json.id_acao_smm });
+              await Action.findByIdAndUpdate(id_pedido, { id_acao_smm: sendResult.json.id_acao_smm });
+              console.log("🔁 Action atualizado com id_acao_smm:", sendResult.json.id_acao_smm);
             } catch (errUpdate) {
-              console.error("❌ Falha ao atualizar Action com id_acao_smm retornado pelo ganhesocial:", errUpdate);
+              console.error("❌ Falha ao atualizar Action com id_acao_smm:", errUpdate);
             }
           }
-
-          resultadosEnvio.push({ id_pedido, id_acao_smm: ac.id_acao_smm, ok: sendResult.ok, status: sendResult.status, json: sendResult.json, raw: sendResult.raw });
+          resultadosEnvio.push({ id_pedido, ok: sendResult.ok, status: sendResult.status, json: sendResult.json, raw: sendResult.raw });
         } catch (errSend) {
           console.error("❌ ERRO ao enviar para ganhesocial:", errSend && errSend.message ? errSend.message : errSend);
-          resultadosEnvio.push({ id_pedido, id_acao_smm: ac.id_acao_smm, ok: false, error: errSend?.message || String(errSend) });
+          resultadosEnvio.push({ id_pedido, ok: false, error: errSend?.message || String(errSend) });
         }
       }
 
       // resposta final (201) com lista de ids criados
       return res.status(201).json({
         message: "Ações criadas com sucesso",
-        pedidos: createdActions.map(a => ({
-          id_pedido: a._id.toString(),
-          id_acao_smm: a.id_acao_smm, // <-- exposto na resposta
-          link: a.link,
-          quantidade: a.quantidade,
-          valor: a.valor,
+        pedidos: createdActions.map(a => ({ 
+          id_pedido: a._id.toString(), 
+          link: a.link, // ← Agora sempre no formato normalizado
+          quantidade: a.quantidade, 
+          valor: a.valor, 
           tipo: a.tipo,
-          contagemInicial: a.contagemInicial
+          contagemInicial: a.contagemInicial 
         })),
         resultadosEnvio,
         newSaldo: usuarioAtualizado ? usuarioAtualizado.saldo : null,
