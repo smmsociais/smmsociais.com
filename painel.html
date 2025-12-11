@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>New order</title>
+    <title>Painel - SMM SOCIAIS</title>
     <style>
         /* painel.html */
         body {
@@ -1402,56 +1402,52 @@
 
                 // Chamar API para criar ação no endpoint correto
                 const result = await criarAcao(actionData, null, apiEndpoint);
+                console.log("DEBUG RESULT CRIAR ACAO =>", JSON.stringify(result, null, 2));
 
-// Atualizar saldo
-if (result && typeof result.newSaldo !== 'undefined') {
-  const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
-  if (balanceElement) {
-    const formatted = new Intl.NumberFormat('pt-BR', { 
-      style: 'currency', 
-      currency: 'BRL' 
-    }).format(result.newSaldo || 0);
-    balanceElement.textContent = formatted;
-  }
-} else {
-  await loadUserBalance();
-}
+                // Atualizar saldo
+                if (result && typeof result.newSaldo !== 'undefined') {
+                    const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
+                    if (balanceElement) {
+                        const formatted = new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }).format(result.newSaldo || 0);
+                        balanceElement.textContent = formatted;
+                    }
+                } else {
+                    await loadUserBalance();
+                }
 
-// Mostrar notificação com tratamento correto dos IDs
-if (result.pedidos && Array.isArray(result.pedidos)) {
-  if (result.pedidos.length === 1) {
-    const pedido = result.pedidos[0];
-    const idExibido = pedido.id_acao_smm
-    showNotification(`Pedido criado com sucesso! ID: ${idExibido}`, 'success');
-    showSuccessMessage(`Pedido enviado com sucesso! ID: ${idExibido}`);
-  } else {
-    const ids = result.pedidos.map(p =>
-      p.id_acao_smm
-    ).join(', ');
-    showNotification(`${result.pedidos.length} pedidos criados com sucesso!`, 'success');
-    showSuccessMessage(`${result.pedidos.length} pedidos enviados! IDs: ${ids}`);
-  }
-} 
-else if (result.id_acao_smm) {
-  // Sucesso direto (1 ação)
-  showNotification(`Pedido criado com sucesso! ID: ${result.id_acao_smm}`, 'success');
-  showSuccessMessage(`Pedido enviado com sucesso! ID: ${result.id_acao_smm}`);
-}
+                // --- NOTIFICAÇÃO CORRIGIDA ---
+                let idFinal = null;
 
-else {
-  showNotification('Pedido criado com sucesso!', 'success');
-  showSuccessMessage('Pedido enviado com sucesso!');
-}
+                // 1) Caso API retorne direto id_acao_smm (1 pedido)
+                if (result.id_acao_smm) {
+                    idFinal = result.id_acao_smm;
+                }
+                // 2) Caso a API use um array "pedidos"
+                else if (result.pedidos && result.pedidos.length > 0) {
+                    const p = result.pedidos[0];
+                    idFinal = p.id_acao_smm || p.id_pedido || p._id;
+                }
+                // 3) Fallback final
+                else {
+                    idFinal = result.id_pedido || result._id || "N/D";
+                }
 
-// Limpar campos
-const chargeInput = document.getElementById('charge');
-if (chargeInput) chargeInput.value = '';
+                // Exibir
+                showNotification(`Pedido criado com sucesso! ID: ${idFinal}`, 'success');
+                showSuccessMessage(`Pedido enviado com sucesso! ID: ${idFinal}`);
 
-const linkInputField = document.getElementById('orderform-link');
-if (linkInputField) linkInputField.value = '';
+                // Limpar campos
+                const chargeInput = document.getElementById('charge');
+                if (chargeInput) chargeInput.value = '';
 
-// Chame a função:
-displaySuccessMessage(result);
+                const linkInputField = document.getElementById('orderform-link');
+                if (linkInputField) linkInputField.value = '';
+
+                // Chame a função:
+                displaySuccessMessage(result);
 
             } catch (error) {
                 console.error('Erro ao processar pedido:', error);
@@ -2007,39 +2003,16 @@ displaySuccessMessage(result);
                         </div>
                     </div>
                 </div>
-                <div id="block_74">
-                    <div class="block-bg"></div>
-                    <div class="container">
-                        <div class="text-block-with-image ">
-                            <div class="row">
-                                <div class="col">
-                                    <div class="d-md-flex align-items-start">
-                                        <div class="text-block__description">
-                                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                            </p>
-                                            <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
-                                            <p class="text-left"><span style="text-align: LEFT">Ao acessar ao site ,
-                                                    você concorda em cumprir os nossos termos de serviço assim como
-                                                    todas as leis e regulamentos aplicáveis ​​e concorda que é
-                                                    responsável pelo cumprimento de todas as leis locais aplicáveis. Se
-                                                    você não concordar com algum desses termos, está proibido de usar ou
-                                                    acessar este site. Os materiais contidos neste site são protegidos
-                                                    pelas leis de direitos autorais e mardas comerciais aplicáveis.
-                                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                            </p>
-                                        </div>
-                                        <div class="text-block__image">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                </a>
             </div>
         </div>
+    </div>
+    </div>
+    </div>
+    </div>
+
+    </a>
+    </div>
+    </div>
     </div>
     </div>
     </div>
