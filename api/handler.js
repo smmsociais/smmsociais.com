@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 import { sendRecoveryEmail } from "./mailer.js";
 import { randomBytes } from "crypto";
 import jwt from "jsonwebtoken";
-import { User, Deposito, Action, ActionHistory, Servico } from "./schema.js";
+import { User, Deposito, Action, Servico } from "./schema.js";
 
 // IMPORTAÇÃO DAS ROTAS INDEPENDENTES
 import googleSignup from "./auth/google/signup.js";
