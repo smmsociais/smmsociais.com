@@ -1418,32 +1418,32 @@
                     await loadUserBalance();
                 }
 
-let idFinal = null;
+                let idFinal = null;
 
-// PRIORIDADE 1 — ID real da ação SMM
-if (
-    result.resultadosEnvio &&
-    result.resultadosEnvio[0] &&
-    result.resultadosEnvio[0].json &&
-    result.resultadosEnvio[0].json.id_acao_smm
-) {
-    idFinal = result.resultadosEnvio[0].json.id_acao_smm;
-}
+                // PRIORIDADE 1 — ID real da ação SMM
+                if (
+                    result.resultadosEnvio &&
+                    result.resultadosEnvio[0] &&
+                    result.resultadosEnvio[0].json &&
+                    result.resultadosEnvio[0].json.id_acao_smm
+                ) {
+                    idFinal = result.resultadosEnvio[0].json.id_acao_smm;
+                }
 
-// PRIORIDADE 2 — Caso API um dia retorne id_acao_smm direto
-else if (result.id_acao_smm) {
-    idFinal = result.id_acao_smm;
-}
+                // PRIORIDADE 2 — Caso API um dia retorne id_acao_smm direto
+                else if (result.id_acao_smm) {
+                    idFinal = result.id_acao_smm;
+                }
 
-// PRIORIDADE 3 — fallback (id interno do sistema)
-else if (result.pedidos && result.pedidos.length > 0) {
-    idFinal = result.pedidos[0].id_pedido;
-}
+                // PRIORIDADE 3 — fallback (id interno do sistema)
+                else if (result.pedidos && result.pedidos.length > 0) {
+                    idFinal = result.pedidos[0].id_pedido;
+                }
 
-// Último recurso
-else {
-    idFinal = "N/D";
-}
+                // Último recurso
+                else {
+                    idFinal = "N/D";
+                }
                 // Exibir
                 showNotification(`Pedido criado com sucesso! ID: ${idFinal}`, 'success');
                 showSuccessMessage(`Pedido enviado com sucesso! ID: ${idFinal}`);
@@ -1987,10 +1987,6 @@ else {
                                                 </div>
                                             </div>
                                             <div class="new-order__content-text">
-                                                <p>Somos uma empresa de publicidade digital, com diversos serviços à sua
-                                                    disposição para alavancar seu perfil nas redes sociais,
-                                                    proporcionando novas oportunidades para você ou sua empresa!&nbsp;
-                                                </p>
                                                 <p>Suporte das 6:30 até às 22 horas de segunda-feira a sexta-feira</p>
                                                 <p><br></p>
                                                 <h1>CONTATO</h1>
@@ -1998,7 +1994,8 @@ else {
                                                 <p><br></p>
                                                 <p><strong style="font-weight: bold">E-mail</strong>:
                                                     contato@smmsociais.com</p>
-                                                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Nosso Instagram é <a target="_blank"
+                                                <p><strong style="font-weight: bold">Instagram</strong>: <a
+                                                        target="_blank"
                                                         href="https://www.instagram.com/smmsociais/">@smmsociais</a>
                                                     &nbsp;</p>
                                             </div>
