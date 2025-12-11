@@ -411,94 +411,83 @@
             }
         }
 
-        // Função para carregar serviços da API
-        function loadServices() {
-            return fetch('https://smmsociais.com/api/servico')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Erro ao carregar serviços da API');
-                    }
-                    return response.json();
-                })
-                .then(services => {
-                    renderServices(services);
-
-                    // Garantir que a primeira categoria seja selecionada
-                    setTimeout(() => {
-                        const categorySelect = document.getElementById('orderform-category');
-                        if (categorySelect && categorySelect.options.length > 0) {
-                            categorySelect.selectedIndex = 0;
-                            const event = new Event('change');
-                            categorySelect.dispatchEvent(event);
-                        }
-                    }, 100);
-
-                    return services;
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar serviços:', error);
-                    const serviceSelect = document.getElementById('orderform-service');
-                    if (serviceSelect) {
-                        serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
-                    }
-                    return [];
-                });
-        }
-        // Função para renderizar serviços no formulário
-        function renderServices(services) {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect) return;
-
-            // Limpar opções existentes
-            serviceSelect.innerHTML = '';
-
-            // Adicionar opção padrão
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.textContent = 'Selecione um serviço';
-            serviceSelect.appendChild(defaultOption);
-
-            // Adicionar serviços da API
-            services.forEach(service => {
-                const option = document.createElement('option');
-                option.value = service.id_servico;
-                option.textContent = service.nome;
-                option.setAttribute('data-price', service.preco_1000);
-                option.setAttribute('data-min', service.minimo);
-                option.setAttribute('data-max', service.maximo);
-                option.setAttribute('data-description', service.descricao);
-                option.setAttribute('data-rede', service.rede);
-                option.setAttribute('data-tipo', service.tipo);
-                serviceSelect.appendChild(option);
-            });
-
-            // Verificar se há um serviço específico na URL
-            const urlParams = getUrlParams();
-            const serviceIdFromUrl = urlParams.service;
-
-            if (serviceIdFromUrl) {
-                // Tentar selecionar o serviço da URL
-                selectServiceById(serviceIdFromUrl, services);
-            } else {
-                // Preencher automaticamente com o primeiro serviço se não houver parâmetro
-                if (services.length > 0) {
-                    autoSelectFirstService(services);
-                }
+// Função para carregar serviços da API
+function loadServices() {
+    return fetch('https://smmsociais.com/api/servico')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao carregar serviços da API');
             }
+            return response.json();
+        })
+        .then(services => {
+            // Salvar serviços globalmente para outras funções
+            window._services = services || [];
+            
+            // Renderizar serviços
+            renderServices(services);
+            
+            return services;
+        })
+        .catch(error => {
+            console.error('Erro ao carregar serviços:', error);
+            const serviceSelect = document.getElementById('orderform-service');
+            if (serviceSelect) {
+                serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+            }
+            return [];
+        });
+}
+        // Função para renderizar serviços no formulário
+// Função para renderizar serviços no formulário - CORRIGIDA
+function renderServices(services) {
+    const serviceSelect = document.getElementById('orderform-service');
+    if (!serviceSelect) return;
+
+    // Limpar opções existentes
+    serviceSelect.innerHTML = '';
+
+    // Adicionar opção padrão
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Selecione um serviço';
+    serviceSelect.appendChild(defaultOption);
+
+    // Adicionar serviços da API
+    services.forEach(service => {
+        const option = document.createElement('option');
+        option.value = service.id_servico;
+        option.textContent = service.nome;
+        option.setAttribute('data-price', service.preco_1000);
+        option.setAttribute('data-min', service.minimo);
+        option.setAttribute('data-max', service.maximo);
+        option.setAttribute('data-description', service.descricao);
+        option.setAttribute('data-rede', service.rede);
+        option.setAttribute('data-tipo', service.tipo);
+        serviceSelect.appendChild(option);
+    });
+
     // Configurar event listeners PRIMEIRO
     setupServiceEventListeners(services);
     
+    // Atualizar categorias
+    updateCategories(services);
+
+    // Verificar se há um serviço específico na URL
+    const urlParams = getUrlParams();
+    const serviceIdFromUrl = urlParams.service;
+
     if (serviceIdFromUrl) {
         // Usar setTimeout para garantir que tudo esteja configurado
         setTimeout(() => {
             selectServiceById(serviceIdFromUrl, services);
-        }, 100);
+        }, 150);
     } else {
         // Preencher automaticamente com o primeiro serviço se não houver parâmetro
         if (services.length > 0) {
             setTimeout(() => {
                 autoSelectFirstService(services);
-            }, 100);
+            }, 150);
         }
     }
     
@@ -506,7 +495,40 @@
     updateCategories(services);
 }
 
-        // Função para selecionar serviço por ID
+// Função para selecionar categoria para um serviço - MOVER PARA FORA
+function selectCategoryForService(categoryName) {
+    const categorySelect = document.getElementById('orderform-category');
+    if (!categorySelect || !categoryName) return;
+    
+    for (let i = 0; i < categorySelect.options.length; i++) {
+        if (categorySelect.options[i].value === categoryName) {
+            categorySelect.selectedIndex = i;
+            
+            // Disparar evento change na categoria
+            const event = new Event('change', { bubbles: true });
+            categorySelect.dispatchEvent(event);
+            
+            console.log(`✅ Categoria selecionada: ${categoryName}`);
+            return;
+        }
+    }
+}
+
+// Função para forçar atualização do campo de valor - MOVER PARA FORA
+function updateChargeFieldFromSelectedService() {
+    const serviceSelect = document.getElementById('orderform-service');
+    if (!serviceSelect || serviceSelect.selectedIndex <= 0) return;
+    
+    const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+    const price = selectedOption.getAttribute('data-price');
+    const minQuantity = selectedOption.getAttribute('data-min');
+    
+    if (price && minQuantity) {
+        updateChargeField(price, minQuantity);
+    }
+}
+
+// Função para selecionar serviço por ID - CORRIGIDA (sem funções internas)
 function selectServiceById(serviceId, services) {
     const serviceSelect = document.getElementById('orderform-service');
     if (!serviceSelect) return;
@@ -543,39 +565,7 @@ function selectServiceById(serviceId, services) {
     } else {
         console.warn(`⚠️ Serviço com ID ${serviceId} não encontrado.`);
     }
-    
-    function selectCategoryForService(categoryName) {
-    const categorySelect = document.getElementById('orderform-category');
-    if (!categorySelect || !categoryName) return;
-    
-    for (let i = 0; i < categorySelect.options.length; i++) {
-        if (categorySelect.options[i].value === categoryName) {
-            categorySelect.selectedIndex = i;
-            
-            // Disparar evento change na categoria
-            const event = new Event('change', { bubbles: true });
-            categorySelect.dispatchEvent(event);
-            
-            console.log(`✅ Categoria selecionada: ${categoryName}`);
-            return;
-        }
-    }
-}
-}
-
-function updateChargeFieldFromSelectedService() {
-    const serviceSelect = document.getElementById('orderform-service');
-    if (!serviceSelect || serviceSelect.selectedIndex <= 0) return;
-    
-    const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-    const price = selectedOption.getAttribute('data-price');
-    const minQuantity = selectedOption.getAttribute('data-min');
-    
-    if (price && minQuantity) {
-        updateChargeField(price, minQuantity);
-    }
-}
-        // Função para preencher automaticamente o primeiro serviço
+}      // Função para preencher automaticamente o primeiro serviço
         function autoSelectFirstService(services) {
             const serviceSelect = document.getElementById('orderform-service');
             if (serviceSelect && serviceSelect.options.length > 1) {
@@ -2205,36 +2195,21 @@ Promise.all([saldoPromise, servicesPromise, windowLoadPromise])
     .then(() => {
         document.body.classList.add('loaded');
         
-        // Inicializar após um delay maior para garantir DOM
-        setTimeout(() => {
-            // Forçar verificação de parâmetros da URL
-            const urlParams = getUrlParams();
-            const serviceIdFromUrl = urlParams.service;
-            
-            if (serviceIdFromUrl) {
-                console.log(`🔗 Parâmetro de serviço detectado na URL: ${serviceIdFromUrl}`);
-                // Re-selecionar o serviço (já deve estar selecionado, mas garantir)
-                const services = window._services || [];
-                selectServiceById(serviceIdFromUrl, services);
-            }
-            
-            // Garantir que campos estejam visíveis
+       setTimeout(() => {
             initializeDefaultFields();
-        }, 200);
+        }, 300);
     })
-                .catch(err => {
-                    // se algo muito inesperado acontecer, logamos e mostramos a página (UX)
-                    console.error('Erro ao carregar dados principais:', err);
-                    document.body.classList.add('loaded');
-                    const serviceSelect = document.getElementById('orderform-service');
-                    if (serviceSelect && serviceSelect.innerHTML.includes('Carregando serviços')) {
-                        serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
-                    }
-                })
-                .finally(() => {
-                    // remover loader visual
-                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
-                });
+    .catch(err => {
+        console.error('Erro ao carregar dados principais:', err);
+        document.body.classList.add('loaded');
+        const serviceSelect = document.getElementById('orderform-service');
+        if (serviceSelect && serviceSelect.innerHTML.includes('Carregando serviços')) {
+            serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+        }
+    })
+    .finally(() => {
+        if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+    });
 
             // Segurança extra: fallback para evitar tela eternamente oculta (ex.: bloqueio de CORS extremo)
             setTimeout(() => {
