@@ -21,30 +21,6 @@ const userSchema = new mongoose.Schema({
   indicacoes: { type: Number, default: 0 }, // contador de indicações
 }, { timestamps: true });
 
-/* 🔹 Histórico de Ações Realizadas */
-const actionHistorySchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  token: { type: String, required: true },
-  nome_usuario: { type: String, required: true },
-  id_pedido: { type: String, required: true },
-  id_conta: { type: String, required: true },
-  url_dir: { type: String, required: true },
-  tipo_acao: { type: String, required: true },
-  quantidade_pontos: { type: Number, required: true },
-  tipo: { type: String, default: "seguir" },
-  rede_social: { type: String, default: "TikTok" },
-  valor_confirmacao: { type: Number, required: true },
-  acao_validada: { 
-    type: String, 
-    enum: ["pendente", "valida", "invalida", "pulada"], 
-    default: "pendente"
-  },
-  data: { type: Date, default: Date.now },
-  processing: { type: Boolean, default: false },
-  verify_attempts: { type: Number, default: 0 },
-  verificada_em: { type: Date }
-}, { timestamps: true });
-
 /* 🔹 Ações Disponíveis */
 const actionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
