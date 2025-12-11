@@ -73,9 +73,6 @@ export const User =
 export const Action =
   mongoose.models.Action || mongoose.model("Action", actionSchema);
 
-export const ActionHistory =
-  mongoose.models.ActionHistory || mongoose.model("ActionHistory", actionHistorySchema);
-
 export const Servico =
   mongoose.models.Servico || mongoose.model("Servico", ServicoSchema);
 
