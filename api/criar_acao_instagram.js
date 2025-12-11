@@ -1,9 +1,8 @@
-// /api/criar_acao_instagram.js (ajustada para normalizar links do Instagram e usar ID numérico)
+// /api/criar_acao_instagram.js
 import connectDB from "./db.js";
 import { User, Action, Servico } from './schema.js';
 import mongoose from "mongoose";
 import axios from "axios";
-import crypto from "crypto";
 
 const SMM_API_KEY = process.env.SMM_API_KEY;
 const GANHESOCIAL_URL = process.env.GANHESOCIAL_URL || "https://ganhesocialtest.com/api/smm_acao";
@@ -11,46 +10,22 @@ const SEND_TIMEOUT_MS = process.env.SEND_TIMEOUT_MS ? Number(process.env.SEND_TI
 const RAPIDAPI_TIMEOUT_MS = process.env.RAPIDAPI_TIMEOUT_MS ? Number(process.env.RAPIDAPI_TIMEOUT_MS) : 8000;
 const INSTAGRAM_RAPIDAPI_KEY = process.env.INSTAGRAM_RAPIDAPI_KEY || process.env.RAPIDAPI_KEY || process.env.RAPIDAPI || process.env.rapidapi_key || "";
 
+// Função para gerar números aleatórios de 10 dígitos
+function gerarNumeroAleatorio10Digitos() {
+  // Garante que o número tenha exatamente 10 dígitos (não começa com 0)
+  const min = 1000000000; // Menor número de 10 dígitos
+  const max = 9999999999; // Maior número de 10 dígitos
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Função para formatar como string com 10 dígitos
+function formatar10Digitos(numero) {
+  return numero.toString().padStart(10, '0');
+}
+
 // cache global simples por processo
 global.__rapidapi_cache__ = global.__rapidapi_cache__ || new Map();
 const rapidapiCache = global.__rapidapi_cache__;
-
-// FUNÇÃO ADICIONADA: Gerar ID numérico de 10 dígitos
-function gerarIdPedidoNumerico() {
-  // Gera um número aleatório de 10 dígitos (1000000000 a 9999999999)
-  const min = 1000000000;
-  const max = 9999999999;
-  const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
-  return randomNum.toString();
-}
-
-// FUNÇÃO ADICIONADA: Gerar ID único garantindo que não exista no banco
-async function gerarIdPedidoUnico() {
-  let tentativas = 0;
-  const maxTentativas = 10;
-  
-  while (tentativas < maxTentativas) {
-    const idPedido = gerarIdPedidoNumerico();
-    
-    // Verificar se já existe no banco
-    const existe = await Action.findOne({ id_pedido: idPedido });
-    
-    if (!existe) {
-      return idPedido;
-    }
-    
-    tentativas++;
-    console.log(`⚠ ID ${idPedido} já existe, tentando novamente (tentativa ${tentativas}/${maxTentativas})`);
-    
-    // Pequena pausa entre tentativas
-    await new Promise(resolve => setTimeout(resolve, 10));
-  }
-  
-  // Se não conseguir em 10 tentativas, usa timestamp + random
-  const timestamp = Date.now().toString().slice(-8);
-  const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-  return timestamp + random;
-}
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -463,12 +438,7 @@ const handler = async (req, res) => {
       // criar documentos Action (um por linha) com status pendente
       const createdActions = [];
       for (const it of items) {
-        // Gerar ID único numérico de 10 dígitos
-        const idPedidoNumerico = await gerarIdPedidoUnico();
-        console.log(`🔢 Gerado ID numérico para pedido: ${idPedidoNumerico}`);
-        
         const novaAcao = new Action({
-          id_pedido: idPedidoNumerico, // ← AGORA USANDO ID NUMÉRICO
           userId: usuario._id,
           id_servico: it.id_servico ? String(it.id_servico) : undefined,
           rede: 'instagram',
@@ -513,7 +483,7 @@ const handler = async (req, res) => {
       // enviar cada ação para ganhesocial (fora da transação)
       const resultadosEnvio = [];
       for (const ac of createdActions) {
-        const id_pedido = ac.id_pedido.toString(); // ← AGORA USANDO O ID NUMÉRICO
+        const id_pedido = ac._id.toString();
         const nome_usuario = (ac.link && ac.link.includes("@")) ? ac.link.split("@")[1].trim() : (ac.link ? ac.link.trim() : "");
         const quantidade_pontos = +(Number(ac.valor) * 0.001).toFixed(6);
         let tipo_acao = "Outro";
@@ -528,7 +498,7 @@ const handler = async (req, res) => {
           quantidade: ac.quantidade,
           valor: ac.valor,
           url_dir: ac.link, // ← Agora sempre no formato normalizado
-          id_pedido, // ← AGORA ENVIANDO O ID NUMÉRICO
+          id_pedido,
           meta: {
             contagemInicial: ac.contagemInicial,
           }
@@ -538,14 +508,24 @@ const handler = async (req, res) => {
           console.log("📤 Enviando ação para ganhesocial ->", GANHESOCIAL_URL, "id_pedido:", id_pedido);
           const sendResult = await enviarParaGanheSocial(payloadGanheSocial);
           console.log("📩 Resposta ganhesocial:", sendResult.status, sendResult.statusText);
-          if (sendResult.json && sendResult.json.id_acao_smm) {
-            try {
-              await Action.findByIdAndUpdate(ac._id, { id_acao_smm: sendResult.json.id_acao_smm });
-              console.log("🔁 Action atualizado com id_acao_smm:", sendResult.json.id_acao_smm);
-            } catch (errUpdate) {
-              console.error("❌ Falha ao atualizar Action com id_acao_smm:", errUpdate);
-            }
-          }
+// Gerar número aleatório de 10 dígitos
+const numeroAleatorio = gerarNumeroAleatorio10Digitos();
+const idAcaoSMMFormatado = formatar10Digitos(numeroAleatorio);
+
+try {
+  await Action.findByIdAndUpdate(id_pedido, { 
+    id_acao_smm: idAcaoSMMFormatado 
+  });
+  console.log("🔁 Action atualizado com id_acao_smm gerado:", idAcaoSMMFormatado);
+  
+  // Adicionar ao resultado para retorno
+  resultadosEnvio.push({ 
+    ...resultadosEnvio[resultadosEnvio.length - 1],
+    id_acao_smm_gerado: idAcaoSMMFormatado
+  });
+} catch (errUpdate) {
+  console.error("❌ Falha ao atualizar Action com id_acao_smm:", errUpdate);
+}
           resultadosEnvio.push({ id_pedido, ok: sendResult.ok, status: sendResult.status, json: sendResult.json, raw: sendResult.raw });
         } catch (errSend) {
           console.error("❌ ERRO ao enviar para ganhesocial:", errSend && errSend.message ? errSend.message : errSend);
@@ -553,11 +533,11 @@ const handler = async (req, res) => {
         }
       }
 
-      // resposta final (201) com lista de ids criados (agora numéricos)
+      // resposta final (201) com lista de ids criados
       return res.status(201).json({
         message: "Ações criadas com sucesso",
         pedidos: createdActions.map(a => ({ 
-          id_pedido: a.id_pedido.toString(), // ← AGORA RETORNANDO ID NUMÉRICO
+          id_pedido: a._id.toString(), 
           link: a.link, // ← Agora sempre no formato normalizado
           quantidade: a.quantidade, 
           valor: a.valor, 
