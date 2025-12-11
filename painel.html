@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>New order</title>
     <style>
-        /* Initial Load */
+        /* painel.html */
         body {
             visibility: hidden;
             opacity: 0;
@@ -1403,30 +1403,49 @@
                 // Chamar API para criar ação no endpoint correto
                 const result = await criarAcao(actionData, null, apiEndpoint);
 
-                // Se a API retornou novo saldo, atualiza o display IMEDIATAMENTE
-                if (result && typeof result.newSaldo !== 'undefined') {
-                    const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
-                    if (balanceElement) {
-                        const formatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result.newSaldo || 0);
-                        balanceElement.textContent = formatted;
-                    }
-                } else {
-                    // fallback: recarrega saldo do servidor
-                    await loadUserBalance();
-                }
+// Atualizar saldo
+if (result && typeof result.newSaldo !== 'undefined') {
+  const balanceElement = document.querySelector('.component-navbar-balance-item__navbar-private');
+  if (balanceElement) {
+    const formatted = new Intl.NumberFormat('pt-BR', { 
+      style: 'currency', 
+      currency: 'BRL' 
+    }).format(result.newSaldo || 0);
+    balanceElement.textContent = formatted;
+  }
+} else {
+  await loadUserBalance();
+}
 
-                // Mostrar notificação e mensagem de sucesso
-                showNotification(`Pedido criado com sucesso! ID: ${result.id_pedido}`, 'success');
-                showSuccessMessage(`Pedido enviado com sucesso! ID: ${result.id_pedido}`);
+// Mostrar notificação com tratamento correto dos IDs
+if (result.pedidos && Array.isArray(result.pedidos)) {
+  if (result.pedidos.length === 1) {
+    const pedido = result.pedidos[0];
+    showNotification(`Pedido criado com sucesso! ID: ${pedido.id_pedido}`, 'success');
+    showSuccessMessage(`Pedido enviado com sucesso! ID: ${pedido.id_pedido}`);
+  } else {
+    const ids = result.pedidos.map(p => p.id_pedido).join(', ');
+    showNotification(`${result.pedidos.length} pedidos criados com sucesso!`, 'success');
+    showSuccessMessage(`${result.pedidos.length} pedidos enviados! IDs: ${ids}`);
+  }
+} else if (result.id_pedido) {
+  // Fallback para compatibilidade
+  showNotification(`Pedido criado com sucesso! ID: ${result.id_pedido}`, 'success');
+  showSuccessMessage(`Pedido enviado com sucesso! ID: ${result.id_pedido}`);
+} else {
+  showNotification('Pedido criado com sucesso!', 'success');
+  showSuccessMessage('Pedido enviado com sucesso!');
+}
 
-                // Limpar apenas os campos específicos, mantendo o container expandido
-                const chargeInput = document.getElementById('charge');
-                if (chargeInput) chargeInput.value = '';
+// Limpar campos
+const chargeInput = document.getElementById('charge');
+if (chargeInput) chargeInput.value = '';
 
-                const linkInputField = document.getElementById('orderform-link');
-                if (linkInputField) linkInputField.value = ''; // Remove apenas o valor do link
+const linkInputField = document.getElementById('orderform-link');
+if (linkInputField) linkInputField.value = '';
 
-                // NÃO esconder os campos para manter o container expandido
+// Chame a função:
+displaySuccessMessage(result);
 
             } catch (error) {
                 console.error('Erro ao processar pedido:', error);
