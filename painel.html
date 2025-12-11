@@ -256,6 +256,54 @@
     </style>
     <script>
 
+/* ======== PASTE NO INÍCIO DO SCRIPT (GLOBALS) ======== */
+// guarda o service pedido na URL até que possamos aplicá-lo ao select
+window._pendingServiceId = null;
+
+// ler parâmetro service da URL e preencher pending (chame isso cedo, ex: no loadServices ou DOMContentLoaded)
+function capturePendingServiceFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const s = params.get('service');
+  if (s) {
+    window._pendingServiceId = String(s);
+    console.log('Pending service capturado da URL:', window._pendingServiceId);
+  }
+}
+
+/**
+ * Tenta selecionar o service pendente no select atual.
+ * Retorna true se selecionou, false caso não encontrado.
+ */
+function attemptSelectPendingService() {
+  if (!window._pendingServiceId) return false;
+  const serviceSelect = document.getElementById('orderform-service');
+  if (!serviceSelect) return false;
+
+  const opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(window._pendingServiceId));
+  if (opt) {
+    serviceSelect.value = String(window._pendingServiceId);
+    serviceSelect.dispatchEvent(new Event('change'));
+    showServiceFields();
+    console.log('Pending service selecionado com sucesso:', window._pendingServiceId);
+    // limpa o pending para não re-aplicar novamente
+    window._pendingServiceId = null;
+    return true;
+  }
+  // ainda não existe no select
+  return false;
+}
+
+/* helper slugify (se ainda não tiver no painel) */
+function slugify(str) {
+  return String(str || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
         // coloque isto no topo do seu <script>, antes de qualquer função que use categoryImages
         const categoryImages = {
             'Instagram': 'https://i.imgur.com/Z0xqxOg.png',
@@ -412,38 +460,57 @@
         }
 
         // Função para carregar serviços da API
-        function loadServices() {
-            return fetch('https://smmsociais.com/api/servico')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Erro ao carregar serviços da API');
-                    }
-                    return response.json();
-                })
-                .then(services => {
-                    renderServices(services);
+function loadServices() {
+  capturePendingServiceFromUrl(); // captura pending assim que possível
 
-                    // Garantir que a primeira categoria seja selecionada
-                    setTimeout(() => {
-                        const categorySelect = document.getElementById('orderform-category');
-                        if (categorySelect && categorySelect.options.length > 0) {
-                            categorySelect.selectedIndex = 0;
-                            const event = new Event('change');
-                            categorySelect.dispatchEvent(event);
-                        }
-                    }, 100);
+  return fetch('https://smmsociais.com/api/servico')
+    .then(response => {
+      if (!response.ok) throw new Error('Erro ao carregar serviços da API');
+      return response.json();
+    })
+    .then(services => {
+      // Keep global copy
+      window._services = Array.isArray(services) ? services.slice() : [];
 
-                    return services;
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar serviços:', error);
-                    const serviceSelect = document.getElementById('orderform-service');
-                    if (serviceSelect) {
-                        serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
-                    }
-                    return [];
-                });
+      // Renderiza todas as options (lista completa)
+      renderServices(services);
+
+      // Atualiza categorias (preencher select de categorias) sem forçar change
+      updateCategories(services);
+
+      // Se não foi possível selecionar ainda (porque categorias/filtragem podem reconstruir),
+      // tenta novamente (caso renderServices já tenha criado o option).
+      if (!attemptSelectPendingService()) {
+        // se não achou, não force autoSelectFirst ainda — deixe filterServicesByCategory decidir
+        // e caso não exista categoria/filtragem, selecione o primeiro
+        const categorySelect = document.getElementById('orderform-category');
+        if (!categorySelect || categorySelect.options.length === 0) {
+          // sem categorias — seleciona primeiro serviço disponível
+          if (services.length > 0) autoSelectFirstService(services);
+        } else {
+          // se houver categorias disponíveis, dispare um filtro inicial usando o valor corrente do categorySelect
+          // (não force alterar o categorySelect.selectedIndex aqui, preserve UX)
+          const currentCat = categorySelect.value || categorySelect.options[categorySelect.selectedIndex]?.value;
+          if (currentCat) {
+            filterServicesByCategory(currentCat, services);
+            // filterServicesByCategory chamará attemptSelectPendingService() ao reconstruir o select (veja abaixo)
+          } else {
+            // nenhum valor - tenta selecionar sem filtro
+            if (services.length > 0) autoSelectFirstService(services);
+          }
         }
+      }
+
+      return services;
+    })
+    .catch(error => {
+      console.error('Erro ao carregar serviços:', error);
+      const serviceSelect = document.getElementById('orderform-service');
+      if (serviceSelect) serviceSelect.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+      window._services = [];
+      return [];
+    });
+}
         // Função para renderizar serviços no formulário
         function renderServices(services) {
             const serviceSelect = document.getElementById('orderform-service');
@@ -473,75 +540,64 @@
             });
 
             // Verificar se há um serviço específico na URL
-// Atualizar categorias com base nos serviços — mover antes da seleção da URL
-updateCategories(services);
+            // Atualizar categorias com base nos serviços — mover antes da seleção da URL
+            updateCategories(services);
 
-// Agora tente selecionar o serviço da URL (após categorias terem sido atualizadas)
-const urlParams = getUrlParams();
-const serviceIdFromUrl = urlParams.service;
+            // Agora tente selecionar o serviço da URL (após categorias terem sido atualizadas)
+            const urlParams = getUrlParams();
+            const serviceIdFromUrl = urlParams.service;
 
-if (serviceIdFromUrl) {
-  const serviceSelect = document.getElementById('orderform-service');
+            if (serviceIdFromUrl) {
+                const serviceSelect = document.getElementById('orderform-service');
 
-  // tenta selecionar diretamente por value (mais robusto)
-  if (serviceSelect) {
-    const opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(serviceIdFromUrl));
-    if (opt) {
-      serviceSelect.value = String(serviceIdFromUrl);
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      console.log(`Serviço selecionado via value: ${serviceIdFromUrl}`);
-    } else {
-      // Se não existe (por exemplo, filter ainda não aplicou), re-tenta depois de um pequeno delay
-      setTimeout(() => {
-        // tentar novamente: se o serviço está em services (API) mas ainda não no select, force a seleção por índice
-        selectServiceById(serviceIdFromUrl, services);
-      }, 50);
-    }
-  }
-} else {
-  // Preencher automaticamente com o primeiro serviço se não houver parâmetro
-  if (services.length > 0) {
-    autoSelectFirstService(services);
-  }
-}
+                // tenta selecionar diretamente por value (mais robusto)
+                if (serviceSelect) {
+                    const opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(serviceIdFromUrl));
+                    if (opt) {
+                        serviceSelect.value = String(serviceIdFromUrl);
+                        serviceSelect.dispatchEvent(new Event('change'));
+                        showServiceFields();
+                        console.log(`Serviço selecionado via value: ${serviceIdFromUrl}`);
+                    } else {
+                        // Se não existe (por exemplo, filter ainda não aplicou), re-tenta depois de um pequeno delay
+                        setTimeout(() => {
+                            // tentar novamente: se o serviço está em services (API) mas ainda não no select, force a seleção por índice
+                            selectServiceById(serviceIdFromUrl, services);
+                        }, 50);
+                    }
+                }
+            } else {
+                // Preencher automaticamente com o primeiro serviço se não houver parâmetro
+                if (services.length > 0) {
+                    autoSelectFirstService(services);
+                }
+            }
             // Configurar event listeners
             setupServiceEventListeners(services);
         }
 
+    // tentar aplicar serviço pendente (se existir) depois que todas as options foram criadas
+    attemptSelectPendingService();
+
         // Função para selecionar serviço por ID
-        function selectServiceById(serviceId, services) {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect) return;
+function selectServiceById(serviceId, services) {
+  const serviceSelect = document.getElementById('orderform-service');
+  if (!serviceSelect) return false;
 
-            // Encontrar o serviço pelo ID
-            const service = services.find(s => s.id_servico == serviceId);
-
-            if (service) {
-                // Encontrar a opção correspondente no select
-                for (let i = 0; i < serviceSelect.options.length; i++) {
-                    if (serviceSelect.options[i].value == serviceId) {
-                        serviceSelect.selectedIndex = i;
-
-                        // Disparar o evento change para atualizar todos os campos
-                        const event = new Event('change');
-                        serviceSelect.dispatchEvent(event);
-
-                        // Garantir que os campos sejam exibidos
-                        showServiceFields();
-
-                        console.log(`Serviço selecionado automaticamente: ${service.nome} (ID: ${serviceId})`);
-                        return;
-                    }
-                }
-            }
-
-            // Se não encontrou o serviço, usar o primeiro disponível
-            console.warn(`Serviço com ID ${serviceId} não encontrado. Selecionando primeiro serviço disponível.`);
-            if (services.length > 0) {
-                autoSelectFirstService(services);
-            }
-        }
+  const service = services.find(s => String(s.id_servico) === String(serviceId));
+  if (service) {
+    // tenta selecionar por value
+    const opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(serviceId));
+    if (opt) {
+      serviceSelect.value = String(serviceId);
+      serviceSelect.dispatchEvent(new Event('change'));
+      showServiceFields();
+      console.log(`Serviço selecionado automaticamente: ${service.nome} (ID: ${serviceId})`);
+      return true;
+    }
+  }
+  return false;
+}
 
         // Função para preencher automaticamente o primeiro serviço
         function autoSelectFirstService(services) {
@@ -623,9 +679,6 @@ if (serviceIdFromUrl) {
                 // Seleciona a primeira categoria (índice 1, pois índice 0 era "Favorite services")
                 categorySelect.selectedIndex = 0; // Agora será índice 0 após remover "Favorite services"
 
-                // Dispara o evento change para filtrar os serviços
-                const event = new Event('change');
-                categorySelect.dispatchEvent(event);
             }
 
             // ---------------- custom dropdown (substitui select visualmente) ----------------
@@ -968,53 +1021,49 @@ if (serviceIdFromUrl) {
             }
         }
 
-        // Função para filtrar serviços por categoria
-        function filterServicesByCategory(category, services) {
-            const serviceSelect = document.getElementById('orderform-service');
-            if (!serviceSelect) return;
-
-            // Limpar opções existentes
-            serviceSelect.innerHTML = '';
-
-            // Adicionar opção padrão
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.textContent = 'Selecione um serviço'; // Removida verificação de "-1"
-            serviceSelect.appendChild(defaultOption);
-
             // Filtrar e adicionar serviços
-            const filteredServices = services.filter(service => service.categoria === category);
-            filteredServices.forEach(service => {
-                const option = document.createElement('option');
-                option.value = service.id_servico;
-                option.textContent = service.nome;
-                option.setAttribute('data-price', service.preco_1000);
-                option.setAttribute('data-min', service.minimo);
-                option.setAttribute('data-max', service.maximo);
-                option.setAttribute('data-description', service.descricao);
-                option.setAttribute('data-rede', service.rede);
-                option.setAttribute('data-tipo', service.tipo);
-                serviceSelect.appendChild(option);
-            });
+function filterServicesByCategory(category, services) {
+  const serviceSelect = document.getElementById('orderform-service');
+  if (!serviceSelect) return;
 
-            // Verificar se há um serviço específico na URL após o filtro
-            const urlParams = getUrlParams();
-            const serviceIdFromUrl = urlParams.service;
+  serviceSelect.innerHTML = '';
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Selecione um serviço';
+  serviceSelect.appendChild(defaultOption);
 
-            if (serviceIdFromUrl) {
-                // Tentar selecionar o serviço da URL mesmo após o filtro
-                const serviceExists = filteredServices.some(s => s.id_servico == serviceIdFromUrl);
-                if (serviceExists) {
-                    selectServiceById(serviceIdFromUrl, filteredServices);
-                } else if (filteredServices.length > 0) {
-                    // Se o serviço da URL não está na categoria filtrada, usar o primeiro disponível
-                    autoSelectFirstService(filteredServices);
-                }
-            } else if (filteredServices.length > 0) {
-                // Preencher automaticamente com o primeiro serviço após filtro
-                autoSelectFirstService(filteredServices);
-            }
-        }
+  // Use slug compare para robustez
+  const catSlug = slugify(category || '');
+
+  const filteredServices = services.filter(s => {
+    const sName = (s.categoria || s.category_name || s.category || '');
+    return slugify(sName) === catSlug;
+  });
+
+  filteredServices.forEach(service => {
+    const option = document.createElement('option');
+    option.value = service.id_servico;
+    option.textContent = service.nome;
+    option.setAttribute('data-price', service.preco_1000);
+    option.setAttribute('data-min', service.minimo);
+    option.setAttribute('data-max', service.maximo);
+    option.setAttribute('data-description', service.descricao);
+    option.setAttribute('data-rede', service.rede);
+    option.setAttribute('data-tipo', service.tipo);
+    serviceSelect.appendChild(option);
+  });
+
+  // tentar selecionar pending (se existir e estiver dentro da categoria filtrada)
+  if (!attemptSelectPendingService()) {
+    // se pending não correspondia a essa categoria, e ainda há services, seleciona primeiro
+    if (filteredServices.length > 0) {
+      autoSelectFirstService(filteredServices);
+    } else {
+      // se não há serviços nessa categoria, mantém apenas a opção padrão
+      // opcional: mostrar mensagem "nenhum serviço nessa categoria"
+    }
+  }
+}
 
         // Função para lidar com mudança de serviço
         function handleServiceChange() {
