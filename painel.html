@@ -1455,9 +1455,6 @@ else {
                 const linkInputField = document.getElementById('orderform-link');
                 if (linkInputField) linkInputField.value = '';
 
-                // Chame a função:
-                displaySuccessMessage(result);
-
             } catch (error) {
                 console.error('Erro ao processar pedido:', error);
                 showNotification(error.message || 'Erro ao processar pedido', 'danger');
