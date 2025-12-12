@@ -6,7 +6,6 @@ const userSchema = new mongoose.Schema({
   senha: { type: String, default: null }, 
   provider: { type: String, default: "local" }, 
   googleId: { type: String, default: null },
-  avatar: { type: String, default: null },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
   saldo: { type: Number, default: 0 },
