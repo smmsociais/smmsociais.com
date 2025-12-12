@@ -3,6 +3,7 @@ import connectDB from "./db.js";
 import { User, Action, Servico } from './schema.js';
 import mongoose from "mongoose";
 import axios from "axios";
+import jwt from "jsonwebtoken";
 
 const SMM_API_KEY = process.env.SMM_API_KEY;
 const GANHESOCIAL_URL = process.env.GANHESOCIAL_URL || "https://ganhesocialtest.com/api/smm_acao";
@@ -323,26 +324,53 @@ const handler = async (req, res) => {
     const { authorization } = req.headers || {};
     const chaveEsperada = `Bearer ${SMM_API_KEY}`;
 
+    let usuario = null;
+    let isInternalCall = false;
+
     if (!authorization) {
       console.warn("🔒 Sem header Authorization");
       return res.status(401).json({ error: "Não autorizado" });
     }
 
-    let usuario = null;
-    let isInternalCall = false;
-
+    // chamada interna via SMM_API_KEY (exata)
     if (authorization === chaveEsperada) {
       isInternalCall = true;
       console.log("🟣 Chamada interna autenticada via SMM_API_KEY");
     } else if (authorization.startsWith('Bearer ')) {
       const token = authorization.split(' ')[1].trim();
-      console.log("🔐 Token recebido (criar_acao_tiktok):", token);
-      usuario = await User.findOne({ token });
+      console.log("🔐 Token recebido (criar_acao_instagram):", token.slice(0, 12) + "...");
+
+      // 1) Tentar decodificar/verificar como JWT (recomendado)
+      try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET || "");
+        // payload esperado ter { id } ou { _id } — ajuste conforme seu fluxo
+        const userIdFromJwt = payload?.id || payload?._id || payload?.userId;
+        if (userIdFromJwt) {
+          usuario = await User.findById(String(userIdFromJwt));
+          if (usuario) {
+            console.log("🧾 Usuário identificado via JWT:", usuario.email, usuario._id.toString());
+          }
+        }
+      } catch (e) {
+        // não é um JWT válido — pode ser um token legado
+        console.log("⚠ token não é JWT válido (ou expirado):", e.message);
+      }
+
+      // 2) Fallback: tentar encontrar pelo campo token no DB (legacy)
       if (!usuario) {
-        console.warn("🔒 Token de usuário não encontrado:", token);
+        try {
+          usuario = await User.findOne({ token });
+          if (usuario) console.log("🧾 Usuário identificado via campo token no DB:", usuario.email);
+        } catch (e) {
+          console.warn("Erro buscando usuário por token no DB:", e?.message || e);
+        }
+      }
+
+      if (!usuario) {
+        console.warn("🔒 Token de usuário não encontrado:", token.slice(0, 12) + "...");
         return res.status(401).json({ error: "Não autorizado" });
       }
-      console.log("🧑‍💻 Usuário identificado:", usuario.email);
+
     } else {
       console.warn("🔒 Authorization header inválido:", authorization);
       return res.status(401).json({ error: "Não autorizado" });
