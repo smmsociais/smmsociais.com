@@ -593,28 +593,26 @@ router.get("/orders", async (req, res) => {
 
 // Rota: /api/gerar-pagamento
 router.post("/gerar-pagamento", async (req, res) => {
-    await connectDB();
+
+  const { amount, token } = req.body;
+
+  if (!amount || amount < 1 || amount > 1000) {
+    return res.status(400).json({ error: "Valor inválido. Min: 1, Max: 1000" });
+  }
+
+  if (!token) {
+    return res.status(401).json({ error: "Token não fornecido" });
+  }
+
+  await connectDB();
+
+  const user = await User.findOne({ token });
+
+  if (!user) {
+    return res.status(404).json({ error: "Usuário não encontrado" });
+  }
 
   try {
-   const authHeader = req.headers.authorization || "";
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Não autorizado." });
-    }
-
-    const token = authHeader.split(" ")[1].trim();
-
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
-      return res.status(401).json({ error: "Token inválido ou expirado." });
-    }
-
-    const userId = decoded.id || decoded.userId || decoded.sub;
-    if (!userId) return res.status(401).json({ error: "Token inválido (id ausente)." });
-
-    const usuario = await User.findById(userId);
-    if (!usuario) return res.status(404).json({ error: "Usuário não encontrado." });
 
     const response = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
