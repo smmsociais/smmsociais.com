@@ -313,21 +313,6 @@ const handler = async (req, res) => {
       return res.status(401).json({ error: "Não autorizado" });
     }
 
-    const body = req.body || {};
-    const { bulk, userId: bodyUserId } = body;
-
-    // se chamada interna, usa userId do body
-    if (isInternalCall) {
-      if (!bodyUserId) {
-        return res.status(400).json({ error: "userId obrigatório para chamadas internas" });
-      }
-      usuario = await User.findById(String(bodyUserId));
-      if (!usuario) {
-        return res.status(400).json({ error: "Usuário não encontrado!" });
-      }
-      console.log("🟣 Chamada interna para usuário:", usuario.email);
-    }
-
     // Parse bulk
     let items = [];
     if (bulk && typeof bulk === 'string' && bulk.trim().length > 0) {
