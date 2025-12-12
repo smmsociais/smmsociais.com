@@ -200,40 +200,36 @@
         }
 
         // Função para criar ação individual
-        async function criarAcaoIndividual(formData, endpoint) {
-            const token = loadToken();
-            if (!token) {
-                throw new Error('Token de autenticação não encontrado');
-            }
+// usa o token do usuário (não exponha SMM_API_KEY no frontend)
+async function criarAcaoIndividual(formData, endpoint) {
+    const token = loadToken();
+    if (!token) throw new Error('Token de autenticação não encontrado');
 
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`, // <-- USAR o token do usuário
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+            const text = await response.text().catch(() => null);
+            let errorMsg = text || `HTTP ${response.status}`;
             try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer 123456`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
+                const json = text ? JSON.parse(text) : null;
+                if (json && json.error) errorMsg = json.error;
+            } catch (e) {}
+            if (response.status === 401) throw new Error('Não autorizado');
+            throw new Error(errorMsg || 'Erro ao criar ação');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Erro na criação da ação:', error);
+        throw error;
 
-                if (!response.ok) {
-                    const text = await response.text().catch(() => null);
-                    let errorMsg = text || `HTTP ${response.status}`;
-                    try {
-                        const json = text ? JSON.parse(text) : null;
-                        if (json && json.error) errorMsg = json.error;
-                    } catch (e) { /* não-JSON */ }
-
-                    if (response.status === 401) {
-                        throw new Error('Não autorizado');
-                    }
-                    throw new Error(errorMsg || 'Erro ao criar ação');
-                }
-
-                return await response.json();
-            } catch (error) {
-                console.error('Erro na criação da ação:', error);
-                throw error;
             }
         }
 
