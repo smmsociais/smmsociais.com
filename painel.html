@@ -806,14 +806,22 @@ if (serviceIdFromUrl) {
         }
 
         // Na função updateCategories, modifique para carregar a primeira categoria:
+// ===== substituir por esta versão de updateCategories =====
 function updateCategories(services) {
   const categorySelect = document.getElementById('orderform-category');
   if (!categorySelect) return;
 
-  // mantém só a opção inicial (índice 0) se existir; senão limpa tudo
-  while (categorySelect.options.length > 1) {
-    categorySelect.remove(1);
-  }
+  // guarda o valor atualmente selecionado (pode vir do usuário) antes de limpar
+  const currentValueBefore = categorySelect.value || null;
+
+  // Limpa todas as opções
+  categorySelect.innerHTML = '';
+
+  // cria placeholder padrão (índice 0)
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Categoria';
+  categorySelect.appendChild(placeholder);
 
   // mapa por slug -> { name, icon }
   const categories = new Map();
@@ -827,14 +835,45 @@ function updateCategories(services) {
     categories.set(slug, { name: rawName, icon });
   });
 
-  // preencher options com value = slug, text = display name
-  categories.forEach((meta, slug) => {
+  // determina qual slug deve ser priorizado:
+  // 1) categoria do pending service (se houver)
+  // 2) valor atual antes da limpeza
+  // 3) última categoria escolhida pelo usuário (se armazenada em window._lastSelectedCategory)
+  let preferredSlug = null;
+  if (window._pendingServiceId) {
+    const svc = (window._services || []).find(s => String(s.id_servico) === String(window._pendingServiceId));
+    if (svc) {
+      preferredSlug = slugify((svc.categoria || svc.category_name || svc.category || '').toString().trim());
+    }
+  }
+  if (!preferredSlug && currentValueBefore) preferredSlug = String(currentValueBefore);
+  if (!preferredSlug && window._lastSelectedCategory) preferredSlug = String(window._lastSelectedCategory);
+
+  // constrói um array ordenado de entries e, se houver preferredSlug, move-o para início
+  const entries = Array.from(categories.entries()); // [ [slug, meta], ... ]
+  if (preferredSlug) {
+    const idx = entries.findIndex(e => e[0] === preferredSlug);
+    if (idx > 0) {
+      const [entry] = entries.splice(idx, 1);
+      entries.unshift(entry);
+    }
+  }
+
+  // agora anexa as opções na ordem definida
+  entries.forEach(([slug, meta]) => {
     const option = document.createElement('option');
-    option.value = slug;             // use slug como value (robusto)
-    option.textContent = meta.name;  // texto legível para o usuário
+    option.value = slug;
+    option.textContent = meta.name;
     if (meta.icon) option.setAttribute('data-icon', meta.icon);
     categorySelect.appendChild(option);
   });
+
+  // Seleciona a preferredSlug (se existir e estiver na lista). Caso contrário, mantém placeholder.
+  if (preferredSlug && Array.from(categorySelect.options).some(o => String(o.value) === String(preferredSlug))) {
+    categorySelect.value = String(preferredSlug);
+  } else {
+    categorySelect.value = '';
+  }
 
   // NÃO dispare categorySelect.dispatchEvent('change') aqui:
   // a decisão de filtrar deve ser controlada externamente (loadServices ou lógica de seleção)
@@ -1148,9 +1187,12 @@ function updateCategories(services) {
             const quantityInput = document.getElementById('orderform-quantity');
 
             if (categorySelect) {
-                categorySelect.addEventListener('change', function () {
-                    filterServicesByCategory(this.value, services);
-                });
+// dentro de setupServiceEventListeners, no bloco if (categorySelect) { ... }
+categorySelect.addEventListener('change', function () {
+  // guarda para próxima reconstrução de categorias
+  window._lastSelectedCategory = this.value || '';
+  filterServicesByCategory(this.value, services);
+});
             }
 
             if (serviceSelect) {
