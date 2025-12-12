@@ -817,11 +817,6 @@
             // Limpa todas as opções
             categorySelect.innerHTML = '';
 
-            // cria placeholder padrão (índice 0)
-            const placeholder = document.createElement('option');
-            placeholder.value = '';
-            categorySelect.appendChild(placeholder);
-
             // mapa por slug -> { name, icon }
             const categories = new Map();
 
