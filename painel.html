@@ -712,7 +712,35 @@ if (serviceIdFromUrl) {
   window._pendingServiceId = String(serviceIdFromUrl);
   console.log('renderServices registrou pendingServiceId (não seleciona aqui):', window._pendingServiceId);
 }
-}
+
+            if (serviceIdFromUrl) {
+                const serviceSelect = document.getElementById('orderform-service');
+
+                // tenta selecionar diretamente por value (mais robusto)
+                if (serviceSelect) {
+                    const opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(serviceIdFromUrl));
+                    if (opt) {
+                        serviceSelect.value = String(serviceIdFromUrl);
+                        serviceSelect.dispatchEvent(new Event('change'));
+                        showServiceFields();
+                        console.log(`Serviço selecionado via value: ${serviceIdFromUrl}`);
+                    } else {
+                        // Se não existe (por exemplo, filter ainda não aplicou), re-tenta depois de um pequeno delay
+                        setTimeout(() => {
+                            // tentar novamente: se o serviço está em services (API) mas ainda não no select, force a seleção por índice
+                            selectServiceById(serviceIdFromUrl, services);
+                        }, 50);
+                    }
+                }
+            } else {
+                // Preencher automaticamente com o primeiro serviço se não houver parâmetro
+                if (services.length > 0) {
+                    autoSelectFirstService(services);
+                }
+            }
+            // Configurar event listeners
+            setupServiceEventListeners(services);
+        }
 
         // tentar aplicar serviço pendente (se existir) depois que todas as options foram criadas
         attemptSelectPendingService();
