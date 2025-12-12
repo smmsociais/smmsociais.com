@@ -201,38 +201,48 @@
 
         // Função para criar ação individual
 // usa o token do usuário (não exponha SMM_API_KEY no frontend)
+function getCleanToken() {
+  let token = loadToken();
+  if (!token) return null;
+  token = String(token).trim();
+  // Se por acaso já veio com "Bearer X", limpa
+  if (/^Bearer\s+/i.test(token)) token = token.replace(/^Bearer\s+/i, "").trim();
+  return token;
+}
+
 async function criarAcaoIndividual(formData, endpoint) {
-    const token = loadToken();
-    if (!token) throw new Error('Token de autenticação não encontrado');
+  const token = getCleanToken();
+  if (!token) throw new Error('Token de autenticação não encontrado');
 
-    try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`, // <-- USAR o token do usuário
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        });
+  // DEBUG: conferir token (remova em produção)
+  console.debug('[criarAcaoIndividual] token (primeiros 6 chars):', token.slice(0,6) + '...');
 
-        if (!response.ok) {
-            const text = await response.text().catch(() => null);
-            let errorMsg = text || `HTTP ${response.status}`;
-            try {
-                const json = text ? JSON.parse(text) : null;
-                if (json && json.error) errorMsg = json.error;
-            } catch (e) {}
-            if (response.status === 401) throw new Error('Não autorizado');
-            throw new Error(errorMsg || 'Erro ao criar ação');
-        }
-        return await response.json();
-    } catch (error) {
-        console.error('Erro na criação da ação:', error);
-        throw error;
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    });
 
-            }
-        }
-
+    if (!response.ok) {
+      const text = await response.text().catch(() => null);
+      let errorMsg = text || `HTTP ${response.status}`;
+      try {
+        const json = text ? JSON.parse(text) : null;
+        if (json && json.error) errorMsg = json.error;
+      } catch (e) {}
+      if (response.status === 401) throw new Error('Não autorizado');
+      throw new Error(errorMsg || 'Erro ao criar ação');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Erro na criação da ação:', error);
+    throw error;
+  }
+}
         // Função para mostrar notificações
         function showNotification(message, type = 'success') {
             const notifyWrapper = document.getElementById('notify-wrapper');
