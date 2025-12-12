@@ -591,78 +591,114 @@ router.get("/orders", async (req, res) => {
   }
 });
 
-
 // Rota: /api/gerar-pagamento
 router.post("/gerar-pagamento", async (req, res) => {
-   if (req.method !== "POST") {
-     return res.status(405).json({ error: "Método não permitido" });
-   }
- 
-   const { amount, token } = req.body;
- 
-   if (!amount || amount < 1 || amount > 1000) {
-     return res.status(400).json({ error: "Valor inválido. Min: 1, Max: 1000" });
-   }
- 
-   if (!token) {
-     return res.status(401).json({ error: "Token não fornecido" });
-   }
- 
-   await connectDB();
- 
-   const user = await User.findOne({ token });
- 
-   if (!user) {
-     return res.status(404).json({ error: "Usuário não encontrado" });
-   }
- 
-   try {
- 
-     const response = await fetch("https://api.mercadopago.com/v1/payments", {
-       method: "POST",
-       headers: {
-         Authorization: "Bearer APP_USR-6408647281310844-111910-2b9ac05357a51450c4d1b20822c223ca-3002778257",
-         "Content-Type": "application/json",
-         "X-Idempotency-Key": crypto.randomUUID()
-       },
-       body: JSON.stringify({
-         transaction_amount: Number(parseFloat(amount).toFixed(2)),
-         payment_method_id: "pix",
-         description: "Depósito via PIX",
-         payer: {
-           email: user.email
-         },
-         external_reference: user._id.toString()
-       })
-     });
- 
-     const data = await response.json();
- 
-     if (!response.ok) {
-       console.error(data);
-       return res.status(500).json({ error: "Erro ao gerar pagamento", detalhes: data });
-     }
- 
-     const { point_of_interaction, id } = data;
- 
-     // 🔽 Salva o registro do depósito no MongoDB com createdAt manual
-     await Deposito.create({
-       userEmail: user.email,
-       payment_id: String(id),
-       amount: parseFloat(amount),
-       status: "pending",
-       createdAt: new Date()  // 👈 criado agora e usado depois na limpeza (30 min)
-     });
- 
-     return res.status(200).json({
-       payment_id: id,
-       qr_code_base64: point_of_interaction.transaction_data.qr_code_base64,
-       qr_code: point_of_interaction.transaction_data.qr_code
-     });
- 
-   } catch (error) {
-     console.error(error);
-     return res.status(500).json({ error: "Erro interno ao processar pagamento" });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  try {
+    // ==============================
+    // 🔐 AUTENTICAÇÃO (JWT via Bearer)
+    // ==============================
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Não autorizado." });
+    }
+
+    const token = authHeader.split(" ")[1].trim();
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
+
+    const userId = decoded.id || decoded.userId || decoded.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Token inválido (id ausente)." });
+    }
+
+    await connectDB();
+
+    const usuario = await User.findById(userId);
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    // ==============================
+    // 🔢 VALIDAÇÃO DO AMOUNT
+    // ==============================
+    const { amount } = req.body;
+
+    if (!amount || amount < 1 || amount > 1000) {
+      return res.status(400).json({
+        error: "Valor inválido. Min: 1, Max: 1000"
+      });
+    }
+
+    // ==============================
+    // 💳 CRIAR PAGAMENTO PIX
+    // ==============================
+    try {
+      const response = await fetch("https://api.mercadopago.com/v1/payments", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer APP_USR-6408647281310844-111910-2b9ac05357a51450c4d1b20822c223ca-3002778257",
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": crypto.randomUUID(),
+        },
+        body: JSON.stringify({
+          transaction_amount: Number(parseFloat(amount).toFixed(2)),
+          payment_method_id: "pix",
+          description: "Depósito via PIX",
+          payer: {
+            email: usuario.email,
+          },
+          external_reference: usuario._id.toString(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error(data);
+        return res.status(500).json({ error: "Erro ao gerar pagamento", detalhes: data });
+      }
+
+      const { point_of_interaction, id } = data;
+
+      // ==============================
+      // 💾 SALVAR REGISTRO NO MONGODB
+      // ==============================
+      await Deposito.create({
+        userEmail: usuario.email,
+        payment_id: String(id),
+        amount: parseFloat(amount),
+        status: "pending",
+        createdAt: new Date(),
+      });
+
+      // ==============================
+      // 🔽 RETORNO AO CLIENTE
+      // ==============================
+      return res.status(200).json({
+        payment_id: id,
+        qr_code_base64: point_of_interaction.transaction_data.qr_code_base64,
+        qr_code: point_of_interaction.transaction_data.qr_code,
+      });
+
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({
+        error: "Erro interno ao processar pagamento",
+      });
+    }
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erro interno no servidor" });
   }
 });
 
