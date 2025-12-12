@@ -818,18 +818,13 @@
             categorySelect.innerHTML = '';
 
 // cria placeholder padrão (índice 0) mostrando a categoria 'Instagram' como default visualmente
+// cria placeholder padrão (índice 0) com rótulo fixo
 const placeholder = document.createElement('option');
 placeholder.value = '';
+placeholder.textContent = 'Categoria'; // <- texto fixo
 
-// tenta obter icon da categoria Instagram (fallback para null)
-const instagramIcon = getCategoryImageForName('Instagram') || categoryImages['Instagram'] || null;
-
-// texto visível do option (apenas texto — não HTML)
-placeholder.textContent = 'Instagram';
-
-// guarda a url/emoji do ícone no data-icon do option (será usado pelo custom dropdown / UI)
-if (instagramIcon) placeholder.setAttribute('data-icon', instagramIcon);
-
+// NÃO setar data-icon no placeholder — evita duplicação visual na badge
+// categorySelect.appendChild(placeholder);
 categorySelect.appendChild(placeholder);
 
 // --- opcional: sincronizar um badge visual ao lado do select para mostrar imagem + texto ---
@@ -852,45 +847,13 @@ ensureCategoryBadge();
 function updateCategoryBadge() {
   const badge = document.getElementById('category-badge');
   if (!badge) return;
-  const opt = categorySelect.options[categorySelect.selectedIndex] || null;
-  let icon = opt && opt.getAttribute('data-icon');
-  let text = opt ? (opt.textContent || '') : '';
 
-  // se não houver icon no option, tenta usar o mapping global para o nome
-  if (!icon && text) {
-    icon = getCategoryImageForName(text) || categoryImages[text] || null;
-  }
-
-  // monta conteúdo do badge (imagem quando url, emoji/texto quando for emoji)
-  badge.innerHTML = '';
-  if (icon) {
-    // se for url (contém "http"), cria img; se for emoji/string curta, mostra como texto
-    if (String(icon).startsWith('http')) {
-      const img = document.createElement('img');
-      img.src = icon;
-      img.alt = text;
-      img.style.width = '20px';
-      img.style.height = '20px';
-      img.style.objectFit = 'cover';
-      img.style.borderRadius = '3px';
-      badge.appendChild(img);
-    } else {
-      const spanIcon = document.createElement('span');
-      spanIcon.textContent = icon;
-      badge.appendChild(spanIcon);
-    }
-  }
+  // mostra sempre apenas o rótulo fixo "Categoria"
+  badge.innerHTML = ''; // limpa
   const spanText = document.createElement('span');
-  spanText.textContent = text || 'Categoria';
+  spanText.textContent = 'Categoria';
   badge.appendChild(spanText);
 }
-
-// atualiza badge inicialmente (placeholder já criado)
-updateCategoryBadge();
-
-// atualizar badge quando o select mudar (inclua isto / confirme que já tem listener)
-categorySelect.addEventListener('change', updateCategoryBadge);
-
             // mapa por slug -> { name, icon }
             const categories = new Map();
 
