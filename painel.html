@@ -841,8 +841,8 @@ function updateCategoryBadge() {
   const badge = document.getElementById('category-badge');
   if (!badge) return;
 
-  const opt = categorySelect.options[categorySelect.selectedIndex] || null;
-  const text = opt ? opt.textContent : 'Categoria';
+  // texto fixo SEM mostrar a categoria real
+  const text = 'Categoria';
 
   badge.innerHTML = '';
   const spanText = document.createElement('span');
