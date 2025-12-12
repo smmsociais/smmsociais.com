@@ -702,4 +702,209 @@ router.post("/gerar-pagamento", async (req, res) => {
   }
 });
 
+// Rota: /api/confirmar-pagamento
+router.get("/confirmar-pagamento", async (req, res) => {  
+if (req.method !== "GET") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  try {
+    // ==============================
+    // 🔐 AUTENTICAÇÃO (JWT via Bearer)
+    // ==============================
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Não autorizado." });
+    }
+
+    const token = authHeader.split(" ")[1].trim();
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
+
+    const userId = decoded.id || decoded.userId || decoded.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Token inválido (id ausente)." });
+    }
+
+    await connectDB();
+
+    const usuario = await User.findById(userId);
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    // 🔄 Atualizar status automaticamente:
+    // De "pendente" para "progress" se validadas > 0
+    await Action.updateMany(
+      { status: "pendente", validadas: { $gt: 0 } },
+      { $set: { status: "progress" } }
+    );
+
+    // De "pendente" ou "progress" para "completed" se validadas === quantidade
+    await Action.updateMany(
+      { status: { $in: ["pendente", "progress"] }, $expr: { $eq: ["$validadas", "$quantidade"] } },
+      { $set: { status: "completed" } }
+    );
+
+    // 🔎 Filtro dinâmico conforme status da query
+    const status = req.query.status;
+    const filtro = { userId: usuario._id };
+
+    if (status && status !== "todos") {
+      if (status === "pending") {
+        filtro.validadas = 0;
+      } else if (status === "progress") {
+        filtro.validadas = { $gt: 0 };
+        filtro.status = "progress";
+      } else {
+        filtro.status = status;
+      }
+    }
+
+    // 🔍 Buscar ações do usuário
+    const acoes = await Action.find(filtro).sort({ dataCriacao: -1 });
+
+    // 🔗 Buscar os serviços relacionados
+    const idsServico = [...new Set(acoes.map(a => a.id_servico))];
+    const servicos = await Servico.find({ id_servico: { $in: idsServico } });
+
+    // 🧩 Anexar detalhes dos serviços a cada ação
+    const acoesComDetalhes = acoes.map(acao => {
+      const obj = acao.toObject();
+      obj.servicoDetalhes = servicos.find(s => s.id_servico === obj.id_servico) || null;
+      return obj;
+    });
+
+    return res.json({ acoes: acoesComDetalhes });
+
+  } catch (error) {
+    console.error("Erro ao buscar histórico de ações:", error);
+    return res.status(500).json({ error: "Erro ao buscar histórico de ações" });
+  }
+});
+
+// Rota: /api/check_payment
+router.get("/check_payment", async (req, res) => {  
+  if (req.method !== "GET")
+    return res.status(405).json({ error: "Método não permitido" });
+
+  await connectDB();
+
+  const { payment_id } = req.query;
+  if (!payment_id) {
+    return res.status(400).json({ error: "payment_id é obrigatório" });
+  }
+
+  const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${payment_id}`, {
+    headers: {
+      Authorization: "Bearer APP_USR-6408647281310844-111910-2b9ac05357a51450c4d1b20822c223ca-3002778257"
+    }
+  });
+
+  const paymentData = await paymentResponse.json();
+
+  if (!paymentResponse.ok) {
+    return res.status(500).json({ error: "Erro no Mercado Pago", detalhes: paymentData });
+  }
+
+  // Buscar depósito correspondente
+  const deposito = await Deposito.findOne({ payment_id });
+
+  if (!deposito) {
+    return res.status(404).json({ error: "Depósito não encontrado" });
+  }
+
+  // Se já confirmado, apenas retorna
+  if (deposito.status === "completed") {
+    return res.json({ status: "completed" });
+  }
+
+  // Se Mercado Pago confirmou o pagamento
+  if (paymentData.status === "approved") {
+    deposito.status = "completed";
+    await deposito.save();
+
+    // Atualizar saldo do usuário
+    await User.updateOne(
+      { email: deposito.userEmail },
+      { $inc: { saldo: deposito.amount } }
+    );
+
+    return res.json({ status: "completed" });
+  }
+
+  return res.json({ status: paymentData.status });
+  }
+);
+
+// Rota: /api/listar-depositos
+router.get("/listar-depositos", async (req, res) => {  
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  try {
+    // ==============================
+    // 🔐 AUTENTICAÇÃO (JWT via Bearer)
+    // ==============================
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Não autorizado." });
+    }
+
+    const token = authHeader.split(" ")[1].trim();
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
+
+    const userId = decoded.id || decoded.userId || decoded.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Token inválido (id ausente)." });
+    }
+
+    await connectDB();
+
+    const usuario = await User.findById(userId);
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    // 🕒 Tempo limite: 30 minutos
+    const limiteTempo = new Date(Date.now() - 30 * 60 * 1000);
+
+    // 🧹 Limpa pagamentos pendentes que passaram de 30 min
+    await Deposito.deleteMany({
+      userEmail: usuario.email,
+      status: "pending",
+      createdAt: { $lte: limiteTempo }
+    });
+
+    // ✅ Busca pendentes (menos de 30 min) + completed
+    const depositos = await Deposito.find({
+      userEmail: usuario.email,
+      $or: [
+        { status: "completed" },
+        { status: "pending", createdAt: { $gt: limiteTempo } }
+      ]
+    })
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    return res.status(200).json(depositos);
+
+  } catch (error) {
+    console.error("Erro ao listar depósitos:", error);
+    return res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
 export default router;
