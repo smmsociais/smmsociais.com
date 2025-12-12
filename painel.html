@@ -274,184 +274,184 @@
          * Tenta selecionar o service pendente no select atual.
          * Retorna true se selecionou, false caso não encontrado.
          */
-function attemptSelectPendingService() {
-  if (!window._pendingServiceId) return false;
-  const services = window._services || [];
-  if (!services.length) return false;
+        function attemptSelectPendingService() {
+            if (!window._pendingServiceId) return false;
+            const services = window._services || [];
+            if (!services.length) return false;
 
-  const pendingId = String(window._pendingServiceId);
-  const svc = services.find(s => String(s.id_servico) === pendingId);
-  const categorySelect = document.getElementById('orderform-category');
+            const pendingId = String(window._pendingServiceId);
+            const svc = services.find(s => String(s.id_servico) === pendingId);
+            const categorySelect = document.getElementById('orderform-category');
 
-  console.log('attemptSelectPendingService: tentando aplicar', pendingId, 'svc?', !!svc, 'categorySelect?', !!categorySelect);
+            console.log('attemptSelectPendingService: tentando aplicar', pendingId, 'svc?', !!svc, 'categorySelect?', !!categorySelect);
 
-  // se temos svc e categoria, determine a categoria slug e chame filter diretamente
-  if (svc && categorySelect) {
-    const catRaw = (svc.categoria || svc.category_name || svc.category || '').toString().trim();
-    const catSlug = slugify(catRaw);
+            // se temos svc e categoria, determine a categoria slug e chame filter diretamente
+            if (svc && categorySelect) {
+                const catRaw = (svc.categoria || svc.category_name || svc.category || '').toString().trim();
+                const catSlug = slugify(catRaw);
 
-    // se a categoria não estiver selecionada, selecione-a (SE existir) e reconstrua o select chamando filter diretamente
-    if (String(categorySelect.value) !== String(catSlug)) {
-      // tenta achar option por value (slug) ou por texto (nome legível)
-      const catOpt = Array.from(categorySelect.options).find(o => String(o.value) === String(catSlug));
-      if (catOpt) {
-        categorySelect.value = String(catSlug);
-      } else {
-        const catByName = Array.from(categorySelect.options).find(o => String(o.textContent).trim() === catRaw);
-        if (catByName) categorySelect.value = catByName.value;
-      }
+                // se a categoria não estiver selecionada, selecione-a (SE existir) e reconstrua o select chamando filter diretamente
+                if (String(categorySelect.value) !== String(catSlug)) {
+                    // tenta achar option por value (slug) ou por texto (nome legível)
+                    const catOpt = Array.from(categorySelect.options).find(o => String(o.value) === String(catSlug));
+                    if (catOpt) {
+                        categorySelect.value = String(catSlug);
+                    } else {
+                        const catByName = Array.from(categorySelect.options).find(o => String(o.textContent).trim() === catRaw);
+                        if (catByName) categorySelect.value = catByName.value;
+                    }
 
-      console.log('attemptSelectPendingService: ajustou categorySelect para', categorySelect.value, 'e chamou filterServicesByCategory diretamente');
-      // chama a função de filtro diretamente (evita dependência de event handlers e race conditions)
-      filterServicesByCategory(categorySelect.value, window._services || []);
-      // filterServicesByCategory irá aplicar o pending (e limpar window._pendingServiceId) se possível
-      return true; // retornamos true porque já acionamos o fluxo que aplica o pending
-    }
-  }
+                    console.log('attemptSelectPendingService: ajustou categorySelect para', categorySelect.value, 'e chamou filterServicesByCategory diretamente');
+                    // chama a função de filtro diretamente (evita dependência de event handlers e race conditions)
+                    filterServicesByCategory(categorySelect.value, window._services || []);
+                    // filterServicesByCategory irá aplicar o pending (e limpar window._pendingServiceId) se possível
+                    return true; // retornamos true porque já acionamos o fluxo que aplica o pending
+                }
+            }
 
-  // Se categoría já estava correta (ou não há categoriaSelect), tente selecionar diretamente no select atual
-  const serviceSelect = document.getElementById('orderform-service');
-  if (serviceSelect) {
-    const opt = Array.from(serviceSelect.options).find(o => String(o.value) === pendingId);
-    if (opt) {
-      serviceSelect.value = pendingId;
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      console.log('attemptSelectPendingService: pending selecionado diretamente (opt existente):', pendingId);
-      window._pendingServiceId = null;
-      return true;
-    }
+            // Se categoría já estava correta (ou não há categoriaSelect), tente selecionar diretamente no select atual
+            const serviceSelect = document.getElementById('orderform-service');
+            if (serviceSelect) {
+                const opt = Array.from(serviceSelect.options).find(o => String(o.value) === pendingId);
+                if (opt) {
+                    serviceSelect.value = pendingId;
+                    serviceSelect.dispatchEvent(new Event('change'));
+                    showServiceFields();
+                    console.log('attemptSelectPendingService: pending selecionado diretamente (opt existente):', pendingId);
+                    window._pendingServiceId = null;
+                    return true;
+                }
 
-    // se não existe, e temos svc, cria a option e seleciona
-    if (svc) {
-      appendServiceOption(serviceSelect, svc);
-      serviceSelect.value = pendingId;
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      console.log('attemptSelectPendingService: option criada e selecionada:', pendingId);
-      window._pendingServiceId = null;
-      return true;
-    }
-  }
+                // se não existe, e temos svc, cria a option e seleciona
+                if (svc) {
+                    appendServiceOption(serviceSelect, svc);
+                    serviceSelect.value = pendingId;
+                    serviceSelect.dispatchEvent(new Event('change'));
+                    showServiceFields();
+                    console.log('attemptSelectPendingService: option criada e selecionada:', pendingId);
+                    window._pendingServiceId = null;
+                    return true;
+                }
+            }
 
-  return false;
+            return false;
 
-  // se chegamos aqui, tentamos selecionar diretamente no serviceSelect (option já exista)
-  if (serviceSelect) {
-    const opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(window._pendingServiceId));
-    if (opt) {
-      serviceSelect.value = String(window._pendingServiceId);
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      console.log('Pending service selecionado com sucesso (opt existente):', window._pendingServiceId);
-      window._pendingServiceId = null;
-      return true;
-    }
+            // se chegamos aqui, tentamos selecionar diretamente no serviceSelect (option já exista)
+            if (serviceSelect) {
+                const opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(window._pendingServiceId));
+                if (opt) {
+                    serviceSelect.value = String(window._pendingServiceId);
+                    serviceSelect.dispatchEvent(new Event('change'));
+                    showServiceFields();
+                    console.log('Pending service selecionado com sucesso (opt existente):', window._pendingServiceId);
+                    window._pendingServiceId = null;
+                    return true;
+                }
 
-    // Se não existe, MAS encontramos os dados completos do serviço (svc),
-    // vamos criar a option explicitamente e selecioná-la.
-    if (svc) {
-      const existsNow = Array.from(serviceSelect.options).some(o => String(o.value) === String(window._pendingServiceId));
-      if (!existsNow) {
-        const newOpt = document.createElement('option');
-        newOpt.value = svc.id_servico;
-        newOpt.textContent = svc.nome;
-        newOpt.setAttribute('data-price', svc.preco_1000);
-        newOpt.setAttribute('data-min', svc.minimo);
-        newOpt.setAttribute('data-max', svc.maximo);
-        newOpt.setAttribute('data-description', svc.descricao || '');
-        newOpt.setAttribute('data-rede', svc.rede || '');
-        newOpt.setAttribute('data-tipo', svc.tipo || '');
+                // Se não existe, MAS encontramos os dados completos do serviço (svc),
+                // vamos criar a option explicitamente e selecioná-la.
+                if (svc) {
+                    const existsNow = Array.from(serviceSelect.options).some(o => String(o.value) === String(window._pendingServiceId));
+                    if (!existsNow) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = svc.id_servico;
+                        newOpt.textContent = svc.nome;
+                        newOpt.setAttribute('data-price', svc.preco_1000);
+                        newOpt.setAttribute('data-min', svc.minimo);
+                        newOpt.setAttribute('data-max', svc.maximo);
+                        newOpt.setAttribute('data-description', svc.descricao || '');
+                        newOpt.setAttribute('data-rede', svc.rede || '');
+                        newOpt.setAttribute('data-tipo', svc.tipo || '');
 
-        // inserir após a opção padrão (índice 0)
-        if (serviceSelect.options.length > 0) {
-          serviceSelect.insertBefore(newOpt, serviceSelect.options[1] || null);
-        } else {
-          serviceSelect.appendChild(newOpt);
+                        // inserir após a opção padrão (índice 0)
+                        if (serviceSelect.options.length > 0) {
+                            serviceSelect.insertBefore(newOpt, serviceSelect.options[1] || null);
+                        } else {
+                            serviceSelect.appendChild(newOpt);
+                        }
+
+                        console.log('attemptSelectPendingService: criou option para pending e vai selecionar:', window._pendingServiceId);
+                    }
+
+                    // agora seleciona e dispara change
+                    serviceSelect.value = String(window._pendingServiceId);
+                    serviceSelect.dispatchEvent(new Event('change'));
+                    showServiceFields();
+                    window._pendingServiceId = null;
+                    return true;
+                }
+            }
+
+            // não conseguiu selecionar ainda
+            return false;
+
+            // se chegamos aqui, tentamos selecionar diretamente no serviceSelect (option já existe)
+            if (serviceSelect) {
+                // procurar option já existente
+                let opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(window._pendingServiceId));
+                if (opt) {
+                    serviceSelect.value = String(window._pendingServiceId);
+                    serviceSelect.dispatchEvent(new Event('change'));
+                    showServiceFields();
+                    console.log('Pending service selecionado com sucesso:', window._pendingServiceId);
+                    window._pendingServiceId = null;
+                    return true;
+                }
+
+                // Se não existe, MAS encontramos os dados completos do serviço (svc),
+                // vamos criar a option *explicitamente* (evita o fallback de escolher o primeiro).
+                if (svc) {
+                    // evitar duplicatas caso alguém tenha criado enquanto processávamos
+                    const existsNow = Array.from(serviceSelect.options).some(o => String(o.value) === String(window._pendingServiceId));
+                    if (!existsNow) {
+                        // cria option no topo (índice 1) logo após a opção padrão
+                        const newOpt = document.createElement('option');
+                        newOpt.value = svc.id_servico;
+                        newOpt.textContent = svc.nome;
+                        newOpt.setAttribute('data-price', svc.preco_1000);
+                        newOpt.setAttribute('data-min', svc.minimo);
+                        newOpt.setAttribute('data-max', svc.maximo);
+                        newOpt.setAttribute('data-description', svc.descricao || '');
+                        newOpt.setAttribute('data-rede', svc.rede || '');
+                        newOpt.setAttribute('data-tipo', svc.tipo || '');
+
+                        // inserir após a opção padrão (índice 0)
+                        if (serviceSelect.options.length > 0) {
+                            serviceSelect.insertBefore(newOpt, serviceSelect.options[1] || null);
+                        } else {
+                            serviceSelect.appendChild(newOpt);
+                        }
+                    }
+
+                    // agora seleciona e dispara change
+                    serviceSelect.value = String(window._pendingServiceId);
+                    serviceSelect.dispatchEvent(new Event('change'));
+                    showServiceFields();
+                    console.log('Pending service criado e selecionado:', window._pendingServiceId);
+                    window._pendingServiceId = null;
+                    return true;
+                }
+            }
+
+            // não conseguiu selecionar ainda
+            return false;
+
+            // se chegamos aqui, tentamos selecionar diretamente no serviceSelect (option já existe)
+            if (serviceSelect) {
+                const opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(window._pendingServiceId));
+                if (opt) {
+                    serviceSelect.value = String(window._pendingServiceId);
+                    serviceSelect.dispatchEvent(new Event('change'));
+                    showServiceFields();
+                    console.log('Pending service selecionado com sucesso:', window._pendingServiceId);
+                    window._pendingServiceId = null; // sucesso: limpa pending
+                    return true;
+                }
+            }
+
+            // não conseguiu selecionar ainda
+            return false;
         }
-
-        console.log('attemptSelectPendingService: criou option para pending e vai selecionar:', window._pendingServiceId);
-      }
-
-      // agora seleciona e dispara change
-      serviceSelect.value = String(window._pendingServiceId);
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      window._pendingServiceId = null;
-      return true;
-    }
-  }
-
-  // não conseguiu selecionar ainda
-  return false;
-
-  // se chegamos aqui, tentamos selecionar diretamente no serviceSelect (option já existe)
-  if (serviceSelect) {
-    // procurar option já existente
-    let opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(window._pendingServiceId));
-    if (opt) {
-      serviceSelect.value = String(window._pendingServiceId);
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      console.log('Pending service selecionado com sucesso:', window._pendingServiceId);
-      window._pendingServiceId = null;
-      return true;
-    }
-
-    // Se não existe, MAS encontramos os dados completos do serviço (svc),
-    // vamos criar a option *explicitamente* (evita o fallback de escolher o primeiro).
-    if (svc) {
-      // evitar duplicatas caso alguém tenha criado enquanto processávamos
-      const existsNow = Array.from(serviceSelect.options).some(o => String(o.value) === String(window._pendingServiceId));
-      if (!existsNow) {
-        // cria option no topo (índice 1) logo após a opção padrão
-        const newOpt = document.createElement('option');
-        newOpt.value = svc.id_servico;
-        newOpt.textContent = svc.nome;
-        newOpt.setAttribute('data-price', svc.preco_1000);
-        newOpt.setAttribute('data-min', svc.minimo);
-        newOpt.setAttribute('data-max', svc.maximo);
-        newOpt.setAttribute('data-description', svc.descricao || '');
-        newOpt.setAttribute('data-rede', svc.rede || '');
-        newOpt.setAttribute('data-tipo', svc.tipo || '');
-
-        // inserir após a opção padrão (índice 0)
-        if (serviceSelect.options.length > 0) {
-          serviceSelect.insertBefore(newOpt, serviceSelect.options[1] || null);
-        } else {
-          serviceSelect.appendChild(newOpt);
-        }
-      }
-
-      // agora seleciona e dispara change
-      serviceSelect.value = String(window._pendingServiceId);
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      console.log('Pending service criado e selecionado:', window._pendingServiceId);
-      window._pendingServiceId = null;
-      return true;
-    }
-  }
-
-  // não conseguiu selecionar ainda
-  return false;
-
-  // se chegamos aqui, tentamos selecionar diretamente no serviceSelect (option já existe)
-  if (serviceSelect) {
-    const opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(window._pendingServiceId));
-    if (opt) {
-      serviceSelect.value = String(window._pendingServiceId);
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      console.log('Pending service selecionado com sucesso:', window._pendingServiceId);
-      window._pendingServiceId = null; // sucesso: limpa pending
-      return true;
-    }
-  }
-
-  // não conseguiu selecionar ainda
-  return false;
-}
         /* helper slugify (se ainda não tiver no painel) */
         function slugify(str) {
             return String(str || '')
@@ -703,15 +703,15 @@ function attemptSelectPendingService() {
             updateCategories(services);
 
             // Agora tente selecionar o serviço da URL (após categorias terem sido atualizadas)
-// --- Dentro de renderServices(services) ---
-// Em vez de tentar selecionar diretamente por value aqui,
-// apenas registre o pending para ser aplicado depois pelo fluxo centralizado.
-const urlParams = getUrlParams();
-const serviceIdFromUrl = urlParams.service;
-if (serviceIdFromUrl) {
-  window._pendingServiceId = String(serviceIdFromUrl);
-  console.log('renderServices registrou pendingServiceId (não seleciona aqui):', window._pendingServiceId);
-}
+            // --- Dentro de renderServices(services) ---
+            // Em vez de tentar selecionar diretamente por value aqui,
+            // apenas registre o pending para ser aplicado depois pelo fluxo centralizado.
+            const urlParams = getUrlParams();
+            const serviceIdFromUrl = urlParams.service;
+            if (serviceIdFromUrl) {
+                window._pendingServiceId = String(serviceIdFromUrl);
+                console.log('renderServices registrou pendingServiceId (não seleciona aqui):', window._pendingServiceId);
+            }
 
             if (serviceIdFromUrl) {
                 const serviceSelect = document.getElementById('orderform-service');
@@ -806,77 +806,76 @@ if (serviceIdFromUrl) {
         }
 
         // Na função updateCategories, modifique para carregar a primeira categoria:
-// ===== substituir por esta versão de updateCategories =====
-function updateCategories(services) {
-  const categorySelect = document.getElementById('orderform-category');
-  if (!categorySelect) return;
+        // ===== substituir por esta versão de updateCategories =====
+        function updateCategories(services) {
+            const categorySelect = document.getElementById('orderform-category');
+            if (!categorySelect) return;
 
-  // guarda o valor atualmente selecionado (pode vir do usuário) antes de limpar
-  const currentValueBefore = categorySelect.value || null;
+            // guarda o valor atualmente selecionado (pode vir do usuário) antes de limpar
+            const currentValueBefore = categorySelect.value || null;
 
-  // Limpa todas as opções
-  categorySelect.innerHTML = '';
+            // Limpa todas as opções
+            categorySelect.innerHTML = '';
 
-  // cria placeholder padrão (índice 0)
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = 'Categoria';
-  categorySelect.appendChild(placeholder);
+            // cria placeholder padrão (índice 0)
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            categorySelect.appendChild(placeholder);
 
-  // mapa por slug -> { name, icon }
-  const categories = new Map();
+            // mapa por slug -> { name, icon }
+            const categories = new Map();
 
-  services.forEach(service => {
-    const rawName = (service.categoria || service.category_name || service.category || '').toString().trim();
-    if (!rawName) return;
-    const slug = slugify(rawName);
-    if (categories.has(slug)) return; // evita duplicata
-    const icon = service.category_icon || getCategoryImageForName(rawName) || null;
-    categories.set(slug, { name: rawName, icon });
-  });
+            services.forEach(service => {
+                const rawName = (service.categoria || service.category_name || service.category || '').toString().trim();
+                if (!rawName) return;
+                const slug = slugify(rawName);
+                if (categories.has(slug)) return; // evita duplicata
+                const icon = service.category_icon || getCategoryImageForName(rawName) || null;
+                categories.set(slug, { name: rawName, icon });
+            });
 
-  // determina qual slug deve ser priorizado:
-  // 1) categoria do pending service (se houver)
-  // 2) valor atual antes da limpeza
-  // 3) última categoria escolhida pelo usuário (se armazenada em window._lastSelectedCategory)
-  let preferredSlug = null;
-  if (window._pendingServiceId) {
-    const svc = (window._services || []).find(s => String(s.id_servico) === String(window._pendingServiceId));
-    if (svc) {
-      preferredSlug = slugify((svc.categoria || svc.category_name || svc.category || '').toString().trim());
-    }
-  }
-  if (!preferredSlug && currentValueBefore) preferredSlug = String(currentValueBefore);
-  if (!preferredSlug && window._lastSelectedCategory) preferredSlug = String(window._lastSelectedCategory);
+            // determina qual slug deve ser priorizado:
+            // 1) categoria do pending service (se houver)
+            // 2) valor atual antes da limpeza
+            // 3) última categoria escolhida pelo usuário (se armazenada em window._lastSelectedCategory)
+            let preferredSlug = null;
+            if (window._pendingServiceId) {
+                const svc = (window._services || []).find(s => String(s.id_servico) === String(window._pendingServiceId));
+                if (svc) {
+                    preferredSlug = slugify((svc.categoria || svc.category_name || svc.category || '').toString().trim());
+                }
+            }
+            if (!preferredSlug && currentValueBefore) preferredSlug = String(currentValueBefore);
+            if (!preferredSlug && window._lastSelectedCategory) preferredSlug = String(window._lastSelectedCategory);
 
-  // constrói um array ordenado de entries e, se houver preferredSlug, move-o para início
-  const entries = Array.from(categories.entries()); // [ [slug, meta], ... ]
-  if (preferredSlug) {
-    const idx = entries.findIndex(e => e[0] === preferredSlug);
-    if (idx > 0) {
-      const [entry] = entries.splice(idx, 1);
-      entries.unshift(entry);
-    }
-  }
+            // constrói um array ordenado de entries e, se houver preferredSlug, move-o para início
+            const entries = Array.from(categories.entries()); // [ [slug, meta], ... ]
+            if (preferredSlug) {
+                const idx = entries.findIndex(e => e[0] === preferredSlug);
+                if (idx > 0) {
+                    const [entry] = entries.splice(idx, 1);
+                    entries.unshift(entry);
+                }
+            }
 
-  // agora anexa as opções na ordem definida
-  entries.forEach(([slug, meta]) => {
-    const option = document.createElement('option');
-    option.value = slug;
-    option.textContent = meta.name;
-    if (meta.icon) option.setAttribute('data-icon', meta.icon);
-    categorySelect.appendChild(option);
-  });
+            // agora anexa as opções na ordem definida
+            entries.forEach(([slug, meta]) => {
+                const option = document.createElement('option');
+                option.value = slug;
+                option.textContent = meta.name;
+                if (meta.icon) option.setAttribute('data-icon', meta.icon);
+                categorySelect.appendChild(option);
+            });
 
-  // Seleciona a preferredSlug (se existir e estiver na lista). Caso contrário, mantém placeholder.
-  if (preferredSlug && Array.from(categorySelect.options).some(o => String(o.value) === String(preferredSlug))) {
-    categorySelect.value = String(preferredSlug);
-  } else {
-    categorySelect.value = '';
-  }
+            // Seleciona a preferredSlug (se existir e estiver na lista). Caso contrário, mantém placeholder.
+            if (preferredSlug && Array.from(categorySelect.options).some(o => String(o.value) === String(preferredSlug))) {
+                categorySelect.value = String(preferredSlug);
+            } else {
+                categorySelect.value = '';
+            }
 
-  // NÃO dispare categorySelect.dispatchEvent('change') aqui:
-  // a decisão de filtrar deve ser controlada externamente (loadServices ou lógica de seleção)
+            // NÃO dispare categorySelect.dispatchEvent('change') aqui:
+            // a decisão de filtrar deve ser controlada externamente (loadServices ou lógica de seleção)
 
             // ---------------- custom dropdown (substitui select visualmente) ----------------
             function createCustomCategoryDropdown(selectEl) {
@@ -1187,12 +1186,12 @@ function updateCategories(services) {
             const quantityInput = document.getElementById('orderform-quantity');
 
             if (categorySelect) {
-// dentro de setupServiceEventListeners, no bloco if (categorySelect) { ... }
-categorySelect.addEventListener('change', function () {
-  // guarda para próxima reconstrução de categorias
-  window._lastSelectedCategory = this.value || '';
-  filterServicesByCategory(this.value, services);
-});
+                // dentro de setupServiceEventListeners, no bloco if (categorySelect) { ... }
+                categorySelect.addEventListener('change', function () {
+                    // guarda para próxima reconstrução de categorias
+                    window._lastSelectedCategory = this.value || '';
+                    filterServicesByCategory(this.value, services);
+                });
             }
 
             if (serviceSelect) {
@@ -1222,82 +1221,82 @@ categorySelect.addEventListener('change', function () {
         }
 
         // Filtrar e adicionar serviços
-function filterServicesByCategory(categorySlug, services) {
-  const serviceSelect = document.getElementById('orderform-service');
-  if (!serviceSelect) return;
+        function filterServicesByCategory(categorySlug, services) {
+            const serviceSelect = document.getElementById('orderform-service');
+            if (!serviceSelect) return;
 
-  // Limpa e insere a opção padrão
-  serviceSelect.innerHTML = '';
-  const defaultOption = document.createElement('option');
-  defaultOption.value = '';
-  defaultOption.textContent = 'Selecione um serviço';
-  serviceSelect.appendChild(defaultOption);
+            // Limpa e insere a opção padrão
+            serviceSelect.innerHTML = '';
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Selecione um serviço';
+            serviceSelect.appendChild(defaultOption);
 
-  // Monta lista a mostrar (comparo por slug)
-  let toShow;
-  if (!categorySlug || categorySlug === 'all') {
-    toShow = services.slice();
-  } else {
-    toShow = services.filter(s => slugify(s.categoria || s.category_name || s.category || '') === String(categorySlug));
-  }
+            // Monta lista a mostrar (comparo por slug)
+            let toShow;
+            if (!categorySlug || categorySlug === 'all') {
+                toShow = services.slice();
+            } else {
+                toShow = services.filter(s => slugify(s.categoria || s.category_name || s.category || '') === String(categorySlug));
+            }
 
-  // adiciona opções filtradas
-  toShow.forEach(service => appendServiceOption(serviceSelect, service));
+            // adiciona opções filtradas
+            toShow.forEach(service => appendServiceOption(serviceSelect, service));
 
-  // Debug: valores atuais no select
-  console.log('filterServicesByCategory options after rebuild:', Array.from(serviceSelect.options).map(o => o.value));
+            // Debug: valores atuais no select
+            console.log('filterServicesByCategory options after rebuild:', Array.from(serviceSelect.options).map(o => o.value));
 
-  // Se houver um pending, tenta aplicar agora (sem dispatch de eventos)
-  if (window._pendingServiceId) {
-    const pendingId = String(window._pendingServiceId);
-    // se a option já existe, seleciona diretamente
-    const existing = Array.from(serviceSelect.options).find(o => String(o.value) === pendingId);
-    if (existing) {
-      serviceSelect.value = pendingId;
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      console.log('filterServicesByCategory: pending option existia -> selecionado:', pendingId);
-      window._pendingServiceId = null;
-      return;
-    }
+            // Se houver um pending, tenta aplicar agora (sem dispatch de eventos)
+            if (window._pendingServiceId) {
+                const pendingId = String(window._pendingServiceId);
+                // se a option já existe, seleciona diretamente
+                const existing = Array.from(serviceSelect.options).find(o => String(o.value) === pendingId);
+                if (existing) {
+                    serviceSelect.value = pendingId;
+                    serviceSelect.dispatchEvent(new Event('change'));
+                    showServiceFields();
+                    console.log('filterServicesByCategory: pending option existia -> selecionado:', pendingId);
+                    window._pendingServiceId = null;
+                    return;
+                }
 
-    // se não existe, tenta achar os dados na lista global e criar a option explicitamente
-    const svc = (window._services || []).find(s => String(s.id_servico) === pendingId);
-    if (svc) {
-      appendServiceOption(serviceSelect, svc);
-      serviceSelect.value = pendingId;
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      console.log('filterServicesByCategory: pending option criada e selecionada:', pendingId);
-      window._pendingServiceId = null;
-      return;
-    }
+                // se não existe, tenta achar os dados na lista global e criar a option explicitamente
+                const svc = (window._services || []).find(s => String(s.id_servico) === pendingId);
+                if (svc) {
+                    appendServiceOption(serviceSelect, svc);
+                    serviceSelect.value = pendingId;
+                    serviceSelect.dispatchEvent(new Event('change'));
+                    showServiceFields();
+                    console.log('filterServicesByCategory: pending option criada e selecionada:', pendingId);
+                    window._pendingServiceId = null;
+                    return;
+                }
 
-    // se chegou aqui, pending existe, mas ainda não temos os dados completos — esperamos que window._services seja preenchido
-    console.log('filterServicesByCategory: pending presente, mas dados não encontrados ainda:', window._pendingServiceId);
-    return;
-  }
+                // se chegou aqui, pending existe, mas ainda não temos os dados completos — esperamos que window._services seja preenchido
+                console.log('filterServicesByCategory: pending presente, mas dados não encontrados ainda:', window._pendingServiceId);
+                return;
+            }
 
-  // Sem pending: seleciona o primeiro disponível
-  if (serviceSelect.options.length > 1) {
-    serviceSelect.selectedIndex = 1;
-    serviceSelect.dispatchEvent(new Event('change'));
-    showServiceFields();
-  }
-}
+            // Sem pending: seleciona o primeiro disponível
+            if (serviceSelect.options.length > 1) {
+                serviceSelect.selectedIndex = 1;
+                serviceSelect.dispatchEvent(new Event('change'));
+                showServiceFields();
+            }
+        }
 
-// helper para evitar duplicação de código ao criar option do serviço
-function appendServiceOption(serviceSelect, service) {
-  const option = document.createElement('option');
-  option.value = service.id_servico;
-  option.textContent = service.nome;
-  option.setAttribute('data-price', service.preco_1000);
-  option.setAttribute('data-min', service.minimo);
-  option.setAttribute('data-max', service.maximo);
-  option.setAttribute('data-description', service.descricao);
-  option.setAttribute('data-rede', service.rede);
-  option.setAttribute('data-tipo', service.tipo);
-  serviceSelect.appendChild(option);
+        // helper para evitar duplicação de código ao criar option do serviço
+        function appendServiceOption(serviceSelect, service) {
+            const option = document.createElement('option');
+            option.value = service.id_servico;
+            option.textContent = service.nome;
+            option.setAttribute('data-price', service.preco_1000);
+            option.setAttribute('data-min', service.minimo);
+            option.setAttribute('data-max', service.maximo);
+            option.setAttribute('data-description', service.descricao);
+            option.setAttribute('data-rede', service.rede);
+            option.setAttribute('data-tipo', service.tipo);
+            serviceSelect.appendChild(option);
 
         }
 
