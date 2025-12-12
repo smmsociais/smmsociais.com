@@ -805,69 +805,27 @@
             return null;
         }
 
-function updateCategories(services) {
-  const categorySelect = document.getElementById('orderform-category');
-  if (!categorySelect) return;
+        // Na função updateCategories, modifique para carregar a primeira categoria:
+        // ===== substituir por esta versão de updateCategories =====
+        function updateCategories(services) {
+            const categorySelect = document.getElementById('orderform-category');
+            if (!categorySelect) return;
 
-  // guarda valor atualmente selecionado (pode vir do usuário) antes de limpar
-  const currentValueBefore = categorySelect.value || null;
+            // guarda o valor atualmente selecionado (pode vir do usuário) antes de limpar
+            const currentValueBefore = categorySelect.value || null;
 
-  // Limpa todas as opções
-  categorySelect.innerHTML = '';
+            // Limpa todas as opções
+            categorySelect.innerHTML = '';
 
-  // mapa por slug -> { name, icon }
-  const categories = new Map();
-  services.forEach(service => {
-    const rawName = (service.categoria || service.category_name || service.category || '').toString().trim();
-    if (!rawName) return;
-    const slug = slugify(rawName);
-    if (categories.has(slug)) return; // evita duplicata
-    const icon = service.category_icon || getCategoryImageForName(rawName) || null;
-    categories.set(slug, { name: rawName, icon });
-  });
+// cria placeholder padrão (índice 0) mostrando a categoria 'Instagram' como default visualmente
+// cria placeholder padrão (índice 0) com rótulo fixo
+const placeholder = document.createElement('option');
+placeholder.value = '';
+placeholder.textContent = 'Categoria'; // <- texto fixo
 
-  // se não houver categorias, cria placeholder genérico e sai
-  if (categories.size === 0) {
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Categoria';
-    categorySelect.appendChild(placeholder);
-    return;
-  }
-
-  // pega a "primeira" categoria do Map (inserção original da API)
-  const firstEntry = categories.entries().next().value; // [slug, meta]
-  const firstSlug = firstEntry[0];
-  const firstMeta = firstEntry[1];
-
-  // cria placeholder usando a primeira categoria (com value = slug para atuar como seleção inicial)
-  const placeholder = document.createElement('option');
-  placeholder.value = firstSlug;                 // importante: use slug como value para funcionar no filtro
-  placeholder.textContent = firstMeta.name;      // nome legível
-  if (firstMeta.icon) placeholder.setAttribute('data-icon', firstMeta.icon);
-  categorySelect.appendChild(placeholder);
-
-  // adiciona as demais categorias como opções, EXCLUINDO a primeira para evitar duplicata visual
-  categories.forEach((meta, slug) => {
-    if (slug === firstSlug) return; // pula a primeira (já representada pelo placeholder)
-    const opt = document.createElement('option');
-    opt.value = slug;
-    opt.textContent = meta.name;
-    if (meta.icon) opt.setAttribute('data-icon', meta.icon);
-    categorySelect.appendChild(opt);
-  });
-
-  // Se o usuário já tinha uma categoria selecionada válida, re-aplica-a (preserva estado)
-  if (currentValueBefore && Array.from(categorySelect.options).some(o => String(o.value) === String(currentValueBefore))) {
-    categorySelect.value = currentValueBefore;
-  } else {
-    // caso contrário, mantém o placeholder (primeira categoria) selecionado por padrão
-    categorySelect.selectedIndex = 0;
-  }
-
-  // Atualiza o badge visual (se estiver usando)
-  if (typeof updateCategoryBadge === 'function') updateCategoryBadge();
-}
+// NÃO setar data-icon no placeholder — evita duplicação visual na badge
+// categorySelect.appendChild(placeholder);
+categorySelect.appendChild(placeholder);
 
 // --- opcional: sincronizar um badge visual ao lado do select para mostrar imagem + texto ---
 // cria apenas se ainda não existir
@@ -1238,6 +1196,7 @@ function updateCategoryBadge() {
             // chamada: logo após popular as options
             createCustomCategoryDropdown(categorySelect);
             // --------------------------------------------------------------------------------
+        }
 
         function autoSelectFirstCategory(categories) {
             const categorySelect = document.getElementById('orderform-category');
