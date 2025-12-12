@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       );
 
       // info contém email, name, picture quando válido
-      const { email, name, picture } = info;
+      const { email, name } = info;
 
       // cria / encontra usuário
       let user = await User.findOne({ email });
@@ -31,7 +31,6 @@ export default async function handler(req, res) {
         user = await User.create({
           email,
           nome: name,
-          avatar: picture,
           provider: "google",
           senha: ""
         });
@@ -66,14 +65,13 @@ export default async function handler(req, res) {
         { headers: { Authorization: `Bearer ${googleAccessToken}` } }
       );
 
-      const { email, name, picture } = googleUser;
+      const { email, name } = googleUser;
 
       let user = await User.findOne({ email });
       if (!user) {
         user = await User.create({
           email,
           nome: name,
-          avatar: picture,
           provider: "google",
           senha: ""
         });
