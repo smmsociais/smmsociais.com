@@ -678,11 +678,6 @@
             // Limpar opções existentes
             serviceSelect.innerHTML = '';
 
-            // Adicionar opção padrão
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            serviceSelect.appendChild(defaultOption);
-
             // Adicionar serviços da API
             services.forEach(service => {
                 const option = document.createElement('option');
@@ -1291,7 +1286,7 @@
             serviceSelect.innerHTML = '';
             const defaultOption = document.createElement('option');
             defaultOption.value = '';
-            defaultOption.textContent = '';
+            defaultOption.textContent = 'Selecione um serviço';
             serviceSelect.appendChild(defaultOption);
 
             // Monta lista a mostrar (comparo por slug)
