@@ -681,7 +681,6 @@
             // Adicionar opção padrão
             const defaultOption = document.createElement('option');
             defaultOption.value = '';
-            defaultOption.textContent = 'Selecione um serviço';
             serviceSelect.appendChild(defaultOption);
 
             // Adicionar serviços da API
@@ -817,43 +816,43 @@
             // Limpa todas as opções
             categorySelect.innerHTML = '';
 
-// cria placeholder padrão (índice 0) mostrando a categoria 'Instagram' como default visualmente
-// cria placeholder padrão (índice 0) com rótulo fixo
-const placeholder = document.createElement('option');
-placeholder.value = '';
-placeholder.textContent = 'Categoria'; // <- texto fixo
+            // cria placeholder padrão (índice 0) mostrando a categoria 'Instagram' como default visualmente
+            // cria placeholder padrão (índice 0) com rótulo fixo
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Categoria'; // <- texto fixo
 
-// NÃO setar data-icon no placeholder — evita duplicação visual na badge
-// categorySelect.appendChild(placeholder);
-categorySelect.appendChild(placeholder);
+            // NÃO setar data-icon no placeholder — evita duplicação visual na badge
+            // categorySelect.appendChild(placeholder);
+            categorySelect.appendChild(placeholder);
 
-// --- opcional: sincronizar um badge visual ao lado do select para mostrar imagem + texto ---
-// cria apenas se ainda não existir
-function ensureCategoryBadge() {
-  if (document.getElementById('category-badge')) return;
-  const badge = document.createElement('div');
-  badge.id = 'category-badge';
-  badge.style.display = 'inline-flex';
-  badge.style.alignItems = 'center';
-  badge.style.gap = '8px';
-  badge.style.marginRight = '8px';
-  // estilo mínimo; ajuste no seu CSS
-  const container = categorySelect.parentNode || document.body;
-  container.insertBefore(badge, categorySelect);
-}
-ensureCategoryBadge();
+            // --- opcional: sincronizar um badge visual ao lado do select para mostrar imagem + texto ---
+            // cria apenas se ainda não existir
+            function ensureCategoryBadge() {
+                if (document.getElementById('category-badge')) return;
+                const badge = document.createElement('div');
+                badge.id = 'category-badge';
+                badge.style.display = 'inline-flex';
+                badge.style.alignItems = 'center';
+                badge.style.gap = '8px';
+                badge.style.marginRight = '8px';
+                // estilo mínimo; ajuste no seu CSS
+                const container = categorySelect.parentNode || document.body;
+                container.insertBefore(badge, categorySelect);
+            }
+            ensureCategoryBadge();
 
-// atualiza o badge com a option selecionada (ou com o placeholder quando value === '')
-function updateCategoryBadge() {
-  const badge = document.getElementById('category-badge');
-  if (!badge) return;
+            // atualiza o badge com a option selecionada (ou com o placeholder quando value === '')
+            function updateCategoryBadge() {
+                const badge = document.getElementById('category-badge');
+                if (!badge) return;
 
-  // mostra sempre apenas o rótulo fixo "Categoria"
-  badge.innerHTML = ''; // limpa
-  const spanText = document.createElement('span');
-  spanText.textContent = 'Categoria';
-  badge.appendChild(spanText);
-}
+                // mostra sempre apenas o rótulo fixo "Categoria"
+                badge.innerHTML = ''; // limpa
+                const spanText = document.createElement('span');
+                spanText.textContent = 'Categoria';
+                badge.appendChild(spanText);
+            }
             // mapa por slug -> { name, icon }
             const categories = new Map();
 
@@ -906,36 +905,36 @@ function updateCategoryBadge() {
                 categorySelect.value = '';
             }
 
-// --- ajustar placeholder para mostrar a primeira categoria (ou preferredSlug) com o ícone ---
-(function syncPlaceholderWithFirstCategory() {
-  // garante que exista um placeholder (option value = '')
-  let placeholderEl = categorySelect.querySelector('option[value=""]');
-  if (!placeholderEl) {
-    placeholderEl = document.createElement('option');
-    placeholderEl.value = '';
-    categorySelect.insertBefore(placeholderEl, categorySelect.firstChild);
-  }
+            // --- ajustar placeholder para mostrar a primeira categoria (ou preferredSlug) com o ícone ---
+            (function syncPlaceholderWithFirstCategory() {
+                // garante que exista um placeholder (option value = '')
+                let placeholderEl = categorySelect.querySelector('option[value=""]');
+                if (!placeholderEl) {
+                    placeholderEl = document.createElement('option');
+                    placeholderEl.value = '';
+                    categorySelect.insertBefore(placeholderEl, categorySelect.firstChild);
+                }
 
-  // decide qual meta usar para o placeholder: preferredSlug -> primeiro entry
-  let placeholderMeta = null;
-  if (preferredSlug) {
-    const found = entries.find(e => e[0] === String(preferredSlug));
-    if (found) placeholderMeta = found[1];
-  }
-  if (!placeholderMeta) {
-    placeholderMeta = entries[0] ? entries[0][1] : null;
-  }
+                // decide qual meta usar para o placeholder: preferredSlug -> primeiro entry
+                let placeholderMeta = null;
+                if (preferredSlug) {
+                    const found = entries.find(e => e[0] === String(preferredSlug));
+                    if (found) placeholderMeta = found[1];
+                }
+                if (!placeholderMeta) {
+                    placeholderMeta = entries[0] ? entries[0][1] : null;
+                }
 
-  if (placeholderMeta) {
-    placeholderEl.textContent = placeholderMeta.name || 'Categoria';
-    if (placeholderMeta.icon) placeholderEl.setAttribute('data-icon', placeholderMeta.icon);
-    else placeholderEl.removeAttribute('data-icon');
-  } else {
-    // fallback genérico
-    placeholderEl.textContent = 'Categoria';
-    placeholderEl.removeAttribute('data-icon');
-  }
-})();
+                if (placeholderMeta) {
+                    placeholderEl.textContent = placeholderMeta.name || 'Categoria';
+                    if (placeholderMeta.icon) placeholderEl.setAttribute('data-icon', placeholderMeta.icon);
+                    else placeholderEl.removeAttribute('data-icon');
+                } else {
+                    // fallback genérico
+                    placeholderEl.textContent = 'Categoria';
+                    placeholderEl.removeAttribute('data-icon');
+                }
+            })();
 
             // NÃO dispare categorySelect.dispatchEvent('change') aqui:
             // a decisão de filtrar deve ser controlada externamente (loadServices ou lógica de seleção)
@@ -1292,7 +1291,7 @@ function updateCategoryBadge() {
             serviceSelect.innerHTML = '';
             const defaultOption = document.createElement('option');
             defaultOption.value = '';
-            defaultOption.textContent = 'Selecione um serviço';
+            defaultOption.textContent = '';
             serviceSelect.appendChild(defaultOption);
 
             // Monta lista a mostrar (comparo por slug)
