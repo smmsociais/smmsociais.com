@@ -1,5 +1,4 @@
 // api/auth/google/callback.js
-
 import axios from "axios";
 import connectDB from "../../db.js";
 import { User } from "../../schema.js";
@@ -8,6 +7,7 @@ import jwt from "jsonwebtoken";
 export default async function handler(req, res) {
   try {
     const code = req.query.code;
+    const codigoIndicacao = req.query.ref || null; // 🔥 Captura ref na URL
 
     if (!code) {
       return res.status(400).json({ error: "Código não fornecido." });
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
       { headers: { Authorization: `Bearer ${googleAccessToken}` } }
     );
 
-    const { email, name, picture } = googleUser;
+    const { email, name } = googleUser;
 
     // 3 - Conectar ao banco
     await connectDB();
@@ -41,32 +41,63 @@ export default async function handler(req, res) {
     // 4 - Verificar se usuário existe
     let user = await User.findOne({ email });
 
+    // ========== 🔥 Sistema de Afiliados Integrado ==========
     if (!user) {
-      user = await User.create({
+      // Criar código de afiliado
+      const codigoAfiliado = Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase();
+
+      user = new User({
         email,
         nome: name,
-        avatar: picture,
         provider: "google",
-        saldo: 0
+        senha: "",
+        saldo: 0,
+        codigoAfiliado
       });
+
+      // Se há código de indicação na URL
+      if (codigoIndicacao) {
+        const usuarioIndicador = await User.findOne({
+          codigoAfiliado: codigoIndicacao
+        });
+
+        if (usuarioIndicador) {
+          // Relacionar indicado
+          user.indicadoPor = usuarioIndicador._id;
+
+          // Incrementar contador
+          usuarioIndicador.indicacoes =
+            (usuarioIndicador.indicacoes || 0) + 1;
+          await usuarioIndicador.save();
+        }
+      }
+
+      await user.save();
     }
+    // ========================================================
 
     // 5 - Gerar JWT
-    // ❗ corrigido: backend precisa de "id", não "userId"
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // 6 - Redirecionar de volta ao frontend
-    // ❗ corrigido: redirecionar para uma rota *client-side*, não /api/*
-const FRONTEND_BASE = process.env.FRONTEND_URL || "https://smmsociais.com";
-// redireciona para uma rota cliente que captura token e salva no localStorage
-return res.redirect(`${FRONTEND_BASE}/login-success?token=${token}`);
+    // 6 - Redirecionar para o Frontend
+    const FRONTEND_BASE =
+      process.env.FRONTEND_URL || "https://smmsociais.com";
+
+    return res.redirect(
+      `${FRONTEND_BASE}/login-success?token=${token}`
+    );
 
   } catch (error) {
-    console.error("Erro no callback do Google:", error);
-    return res.status(500).json({ error: "Erro interno ao processar login." });
+    console.error("Erro no callback do Google:", error?.response?.data || error);
+    return res.status(500).json({
+      error: "Erro interno ao processar login."
+    });
   }
 }
