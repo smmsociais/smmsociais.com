@@ -279,37 +279,62 @@ function attemptSelectPendingService() {
   const services = window._services || [];
   if (!services.length) return false;
 
-  // encontra o serviço completo na lista global (dados da API)
-  const svc = services.find(s => String(s.id_servico) === String(window._pendingServiceId));
-  const serviceSelect = document.getElementById('orderform-service');
+  const pendingId = String(window._pendingServiceId);
+  const svc = services.find(s => String(s.id_servico) === pendingId);
   const categorySelect = document.getElementById('orderform-category');
 
-  console.log('attemptSelectPendingService: tentando aplicar', window._pendingServiceId, ' svc?', !!svc, 'categorySelect?', !!categorySelect);
+  console.log('attemptSelectPendingService: tentando aplicar', pendingId, 'svc?', !!svc, 'categorySelect?', !!categorySelect);
 
-  // se achou o serviço, garante que a categoria correta está selecionada primeiro
+  // se temos svc e categoria, determine a categoria slug e chame filter diretamente
   if (svc && categorySelect) {
     const catRaw = (svc.categoria || svc.category_name || svc.category || '').toString().trim();
     const catSlug = slugify(catRaw);
 
-    // se a categoria atual não corresponde, marque e dispare change para filtrar
+    // se a categoria não estiver selecionada, selecione-a (SE existir) e reconstrua o select chamando filter diretamente
     if (String(categorySelect.value) !== String(catSlug)) {
-      // tenta definir o value do select de categorias (se existir essa option)
+      // tenta achar option por value (slug) ou por texto (nome legível)
       const catOpt = Array.from(categorySelect.options).find(o => String(o.value) === String(catSlug));
       if (catOpt) {
         categorySelect.value = String(catSlug);
       } else {
-        // tenta localizar por display name
         const catByName = Array.from(categorySelect.options).find(o => String(o.textContent).trim() === catRaw);
         if (catByName) categorySelect.value = catByName.value;
       }
 
-      console.log('attemptSelectPendingService: ajustou categorySelect para', categorySelect.value, 'e disparou change');
-      // dispara change para que filterServicesByCategory reconstrua o select
-      categorySelect.dispatchEvent(new Event('change'));
-      // Não limpar pending aqui — filterServicesByCategory cuidará de aplicar
-      return false;
+      console.log('attemptSelectPendingService: ajustou categorySelect para', categorySelect.value, 'e chamou filterServicesByCategory diretamente');
+      // chama a função de filtro diretamente (evita dependência de event handlers e race conditions)
+      filterServicesByCategory(categorySelect.value, window._services || []);
+      // filterServicesByCategory irá aplicar o pending (e limpar window._pendingServiceId) se possível
+      return true; // retornamos true porque já acionamos o fluxo que aplica o pending
     }
   }
+
+  // Se categoría já estava correta (ou não há categoriaSelect), tente selecionar diretamente no select atual
+  const serviceSelect = document.getElementById('orderform-service');
+  if (serviceSelect) {
+    const opt = Array.from(serviceSelect.options).find(o => String(o.value) === pendingId);
+    if (opt) {
+      serviceSelect.value = pendingId;
+      serviceSelect.dispatchEvent(new Event('change'));
+      showServiceFields();
+      console.log('attemptSelectPendingService: pending selecionado diretamente (opt existente):', pendingId);
+      window._pendingServiceId = null;
+      return true;
+    }
+
+    // se não existe, e temos svc, cria a option e seleciona
+    if (svc) {
+      appendServiceOption(serviceSelect, svc);
+      serviceSelect.value = pendingId;
+      serviceSelect.dispatchEvent(new Event('change'));
+      showServiceFields();
+      console.log('attemptSelectPendingService: option criada e selecionada:', pendingId);
+      window._pendingServiceId = null;
+      return true;
+    }
+  }
+
+  return false;
 
   // se chegamos aqui, tentamos selecionar diretamente no serviceSelect (option já exista)
   if (serviceSelect) {
@@ -687,35 +712,7 @@ if (serviceIdFromUrl) {
   window._pendingServiceId = String(serviceIdFromUrl);
   console.log('renderServices registrou pendingServiceId (não seleciona aqui):', window._pendingServiceId);
 }
-
-            if (serviceIdFromUrl) {
-                const serviceSelect = document.getElementById('orderform-service');
-
-                // tenta selecionar diretamente por value (mais robusto)
-                if (serviceSelect) {
-                    const opt = Array.from(serviceSelect.options).find(o => String(o.value) === String(serviceIdFromUrl));
-                    if (opt) {
-                        serviceSelect.value = String(serviceIdFromUrl);
-                        serviceSelect.dispatchEvent(new Event('change'));
-                        showServiceFields();
-                        console.log(`Serviço selecionado via value: ${serviceIdFromUrl}`);
-                    } else {
-                        // Se não existe (por exemplo, filter ainda não aplicou), re-tenta depois de um pequeno delay
-                        setTimeout(() => {
-                            // tentar novamente: se o serviço está em services (API) mas ainda não no select, force a seleção por índice
-                            selectServiceById(serviceIdFromUrl, services);
-                        }, 50);
-                    }
-                }
-            } else {
-                // Preencher automaticamente com o primeiro serviço se não houver parâmetro
-                if (services.length > 0) {
-                    autoSelectFirstService(services);
-                }
-            }
-            // Configurar event listeners
-            setupServiceEventListeners(services);
-        }
+}
 
         // tentar aplicar serviço pendente (se existir) depois que todas as options foram criadas
         attemptSelectPendingService();
@@ -1166,7 +1163,7 @@ function filterServicesByCategory(categorySlug, services) {
   defaultOption.textContent = 'Selecione um serviço';
   serviceSelect.appendChild(defaultOption);
 
-  // Se categorySlug for vazio ou "all", não filtra (mostra todos)
+  // Monta lista a mostrar (comparo por slug)
   let toShow;
   if (!categorySlug || categorySlug === 'all') {
     toShow = services.slice();
@@ -1177,45 +1174,45 @@ function filterServicesByCategory(categorySlug, services) {
   // adiciona opções filtradas
   toShow.forEach(service => appendServiceOption(serviceSelect, service));
 
-  // Debug: mostra quais option values foram criadas
+  // Debug: valores atuais no select
   console.log('filterServicesByCategory options after rebuild:', Array.from(serviceSelect.options).map(o => o.value));
 
-  // Tentar aplicar pending service (se existir)
-  if (attemptSelectPendingService()) {
-    // selecionado com sucesso pela função central
+  // Se houver um pending, tenta aplicar agora (sem dispatch de eventos)
+  if (window._pendingServiceId) {
+    const pendingId = String(window._pendingServiceId);
+    // se a option já existe, seleciona diretamente
+    const existing = Array.from(serviceSelect.options).find(o => String(o.value) === pendingId);
+    if (existing) {
+      serviceSelect.value = pendingId;
+      serviceSelect.dispatchEvent(new Event('change'));
+      showServiceFields();
+      console.log('filterServicesByCategory: pending option existia -> selecionado:', pendingId);
+      window._pendingServiceId = null;
+      return;
+    }
+
+    // se não existe, tenta achar os dados na lista global e criar a option explicitamente
+    const svc = (window._services || []).find(s => String(s.id_servico) === pendingId);
+    if (svc) {
+      appendServiceOption(serviceSelect, svc);
+      serviceSelect.value = pendingId;
+      serviceSelect.dispatchEvent(new Event('change'));
+      showServiceFields();
+      console.log('filterServicesByCategory: pending option criada e selecionada:', pendingId);
+      window._pendingServiceId = null;
+      return;
+    }
+
+    // se chegou aqui, pending existe, mas ainda não temos os dados completos — esperamos que window._services seja preenchido
+    console.log('filterServicesByCategory: pending presente, mas dados não encontrados ainda:', window._pendingServiceId);
     return;
   }
 
-  // Se existe pending mas attempt ainda não aplicou (por qualquer razão),
-  // tenta inserir explicitamente a option do pending e selecionar.
-  if (window._pendingServiceId) {
-    const svc = (window._services || []).find(s => String(s.id_servico) === String(window._pendingServiceId));
-    if (svc) {
-      // evita duplicata
-      if (!Array.from(serviceSelect.options).some(o => String(o.value) === String(window._pendingServiceId))) {
-        appendServiceOption(serviceSelect, svc);
-        console.log('filterServicesByCategory: criou option explicitamente para pending:', window._pendingServiceId);
-      }
-      // selecionar e disparar mudança
-      serviceSelect.value = String(window._pendingServiceId);
-      serviceSelect.dispatchEvent(new Event('change'));
-      showServiceFields();
-      window._pendingServiceId = null;
-      return;
-    } else {
-      console.log('filterServicesByCategory: pendingServiceId presente mas não encontrado em window._services yet:', window._pendingServiceId);
-    }
-  }
-
-  // Sem pending: seleciona o primeiro disponível (comportamento antigo)
+  // Sem pending: seleciona o primeiro disponível
   if (serviceSelect.options.length > 1) {
     serviceSelect.selectedIndex = 1;
     serviceSelect.dispatchEvent(new Event('change'));
     showServiceFields();
-
-  } else {
-    // opcional: log para debug
-    console.log('Pending service ainda não aplicado — aguardando criar option:', window._pendingServiceId);
   }
 }
 
