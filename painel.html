@@ -880,6 +880,37 @@ function updateCategoryBadge() {
             if (!preferredSlug && currentValueBefore) preferredSlug = String(currentValueBefore);
             if (!preferredSlug && window._lastSelectedCategory) preferredSlug = String(window._lastSelectedCategory);
 
+// --- ajustar placeholder para mostrar a primeira categoria (ou preferredSlug) com o ícone ---
+(function syncPlaceholderWithFirstCategory() {
+  // garante que exista um placeholder (option value = '')
+  let placeholderEl = categorySelect.querySelector('option[value=""]');
+  if (!placeholderEl) {
+    placeholderEl = document.createElement('option');
+    placeholderEl.value = '';
+    categorySelect.insertBefore(placeholderEl, categorySelect.firstChild);
+  }
+
+  // decide qual meta usar para o placeholder: preferredSlug -> primeiro entry
+  let placeholderMeta = null;
+  if (preferredSlug) {
+    const found = entries.find(e => e[0] === String(preferredSlug));
+    if (found) placeholderMeta = found[1];
+  }
+  if (!placeholderMeta) {
+    placeholderMeta = entries[0] ? entries[0][1] : null;
+  }
+
+  if (placeholderMeta) {
+    placeholderEl.textContent = placeholderMeta.name || 'Categoria';
+    if (placeholderMeta.icon) placeholderEl.setAttribute('data-icon', placeholderMeta.icon);
+    else placeholderEl.removeAttribute('data-icon');
+  } else {
+    // fallback genérico
+    placeholderEl.textContent = 'Categoria';
+    placeholderEl.removeAttribute('data-icon');
+  }
+})();
+
             // constrói um array ordenado de entries e, se houver preferredSlug, move-o para início
             const entries = Array.from(categories.entries()); // [ [slug, meta], ... ]
             if (preferredSlug) {
