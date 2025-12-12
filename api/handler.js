@@ -594,23 +594,29 @@ router.get("/orders", async (req, res) => {
 // Rota: /api/gerar-pagamento
 router.post("/gerar-pagamento", async (req, res) => {
 
-  const { amount, token } = req.body;
+  const { amount, token } = authHeader.split(" ")[1].trim();
 
   if (!amount || amount < 1 || amount > 1000) {
     return res.status(400).json({ error: "Valor inválido. Min: 1, Max: 1000" });
   }
 
-  if (!token) {
-    return res.status(401).json({ error: "Token não fornecido" });
-  }
+   const authHeader = req.headers.authorization || "";
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Não autorizado." });
+    }
 
-  await connectDB();
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
 
-  const user = await User.findOne({ token });
+    const userId = decoded.id || decoded.userId || decoded.sub;
+    if (!userId) return res.status(401).json({ error: "Token inválido (id ausente)." });
 
-  if (!user) {
-    return res.status(404).json({ error: "Usuário não encontrado" });
-  }
+    const usuario = await User.findById(userId);
+    if (!usuario) return res.status(404).json({ error: "Usuário não encontrado." });
 
   try {
 
