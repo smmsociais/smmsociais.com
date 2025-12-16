@@ -6,7 +6,7 @@ import axios from "axios";
 import jwt from "jsonwebtoken";
 
 const SMM_API_KEY = process.env.SMM_API_KEY;
-const GANHESOCIAL_URL = process.env.GANHESOCIAL_URL || "https://ganhesocialtest.com/api/smm_acao";
+const GANHESOCIAL_URL = process.env.GANHESOCIAL_URL || "https://ganhesocial.com/api/smm_acao";
 const SEND_TIMEOUT_MS = process.env.SEND_TIMEOUT_MS ? Number(process.env.SEND_TIMEOUT_MS) : 10000;
 const RAPIDAPI_TIMEOUT_MS = process.env.RAPIDAPI_TIMEOUT_MS ? Number(process.env.RAPIDAPI_TIMEOUT_MS) : 8000;
 
