@@ -591,6 +591,85 @@ router.get("/orders", async (req, res) => {
   }
 });
 
+// Rota: /api/incrementar-validadas
+router.post("/incrementar-validadas", async (req, res) => {
+  console.log("[incrementar-validadas] chamada recebida");
+  console.log("Método:", req.method);
+  console.log("Headers:", req.headers);
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  console.log("Corpo recebido (raw):", req.body);
+
+  // 🔐 Autenticação
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.warn("[incrementar-validadas] auth header ausente");
+    return res.status(401).json({ error: "Chave ausente" });
+  }
+
+  const apiKey = String(authHeader).replace(/^Bearer\s+/i, "").trim();
+  if (apiKey !== process.env.SMM_API_KEY) {
+    console.warn("[incrementar-validadas] chave inválida");
+    return res.status(403).json({ error: "Chave inválida" });
+  }
+
+  // 📌 Dados enviados
+  let { id_acao_smm } = req.body || {};
+
+  if (!id_acao_smm) {
+    return res.status(400).json({ error: "id_acao_smm é obrigatório" });
+  }
+
+  const parsedID = Number(id_acao_smm);
+  if (isNaN(parsedID)) {
+    return res.status(400).json({ error: "id_acao_smm inválido" });
+  }
+
+  try {
+    await connectDB();
+
+    // ⬆ Incrementar validadas via Mongoose
+    const updated = await Action.findOneAndUpdate(
+      { id_acao_smm: parsedID },
+      { $inc: { validadas: 1 } },
+      { new: true } // retorna o documento atualizado
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Ação não encontrada" });
+    }
+
+    // 🏁 Se atingiu o limite, marcar como completado
+    if (updated.validadas >= updated.quantidade && updated.status !== "Concluído") {
+      updated.status = "Concluído";
+      await updated.save();
+      console.log("[incrementar-validadas] ação marcada como COMPLETADA");
+    }
+
+    console.log("[incrementar-validadas] SUCESSO:", {
+      id_acao_smm: parsedID,
+      validadas: updated.validadas
+    });
+
+    return res.status(200).json({
+      status: "ok",
+      id_acao_smm: parsedID,
+      novas_validadas: updated.validadas,
+      status_acao: updated.status
+    });
+
+  } catch (err) {
+    console.error("[incrementar-validadas] erro:", err);
+    return res.status(500).json({
+      error: "Erro interno no servidor",
+      details: String(err.message || err)
+    });
+  }
+});
+
 // Rota: /api/gerar-pagamento
 router.post("/gerar-pagamento", async (req, res) => {
   if (req.method !== "POST") {
